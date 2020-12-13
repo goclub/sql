@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	"log"
 )
 
 type DB struct {
@@ -22,7 +23,13 @@ func Open(driverName string, dataSourceName string) (db *DB, dbClose func() erro
 	}
 	return
 }
-
+func (db *DB) Close() error {
+	if db.Core != nil {
+		return db.Core.Close()
+	}
+	log.Print("db is nil,maybe you forget sq.Open()")
+	return nil
+}
 func (db *DB) One(ctx context.Context, ptr Model, qb QB) (has bool , error error) {
 	return
 }
