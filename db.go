@@ -31,9 +31,14 @@ func (db *DB) Close() error {
 	log.Print("db is nil,maybe you forget sq.Open()")
 	return nil
 }
-func (db *DB) One(ctx context.Context, ptr Model, qb QB) (has bool , error error) {
-	qb = qb.BindModel(ptr)
-	return db.QueryRowStructScan(ctx, ptr, qb)
+func (db *DB) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
+	return
+}
+func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+	return
+}
+func (db *DB) MultiCreateModel(ctx context.Context, modelSlicePtr interface{}, checkSQL ...string) (err error) {
+	return
 }
 func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
 	qb.Limit = 1
@@ -65,9 +70,8 @@ func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (
 	}
 	return
 }
-func (db *DB) Count(ctx context.Context, ptr Model, qb QB) (count int, err error) {
+func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	qb.Select = []Column{"COUNT(*)"}
-	qb = qb.BindModel(ptr)
 	var has bool
 	has, err = db.QueryRowScan(ctx, qb, &count);if err != nil {return }
 	if has == false {
@@ -76,12 +80,25 @@ func (db *DB) Count(ctx context.Context, ptr Model, qb QB) (count int, err error
 	}
 	return
 }
-func (db *DB) List(ctx context.Context, slicePtr interface{}, qb QB) error {
+func (db *DB) Model(ctx context.Context, ptr Model, qb QB) (has bool , err error) {
+	qb = qb.BindModel(ptr)
+	return db.QueryRowStructScan(ctx, ptr, qb)
+}
+func (db *DB) SelectModel(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
 	return nil
 }
-func (db *DB) Select(ctx context.Context, slicePtr interface{}, qb QB) error {
-	return nil
+func (db *DB) Update(ctx context.Context, qb QB) (err error) {
+	return
 }
-func (db *DB) Exec(ctx context.Context, query string, values []interface{}) (result sql.Result, err error) {
+func (db *DB) UpdateModel(ctx context.Context, model Model, data map[Column]interface{}, checkSQL ...string) (err error) {
+	return
+}
+func (db *DB) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+	return
+}
+func (db *DB) Relation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (err error) {
+	return
+}
+func (db *DB) SelectRelation(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
 	return
 }

@@ -1,6 +1,6 @@
 package sq
 
-
+type Data map[Column]interface{}
 type OP struct {
 
 }
@@ -12,7 +12,24 @@ type QB struct {
 	Table string
 	Select []Column
 	Where []Condition
+	Update Data
 	Limit int
+	Join Join
+}
+type JoinType string
+func (t JoinType) String() string {
+	return string(t)
+}
+const InnerJoin JoinType = "INNER JOIN"
+const LeftJoin JoinType = "LEFT JOIN"
+const RightJoin JoinType = "RIGHT JOIN"
+const FullOuterJoin JoinType = "FULL OUTER JOIN"
+const CrossJoin JoinType = "CROSS JOIN"
+
+type Join struct {
+	Type JoinType
+	TableName string
+	On []Column
 }
 type Column string
 func Equal(v interface{}) OP {

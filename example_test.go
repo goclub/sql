@@ -2,7 +2,7 @@ package sq_test
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goclub/sql"
 	"log"
@@ -13,15 +13,16 @@ func TestExample(t *testing.T) {
 	ExampleDB_QueryRowScan()
 	ExampleDB_QueryRowScanMultiColumn()
 	ExampleDB_QueryRowStructScan()
-	ExampleDB_One()
 	ExampleDB_Count()
-
-	ExampleSqlx_QueryxRowScanStruct()
-	ExampleSqlx_QueryRowxCount()
-	ExampleSqlx_QueryRowxScan()
-	ExampleSqlx_QueryxScan()
-
-	ExampleSqlx_Select()
+	ExampleCreateModel()
+	ExampleMultiCreateModel()
+	ExampleDB_One()
+	ExampleDB_SelectModel()
+	ExampleDB_UpdateModel()
+	ExampleSoftDeleteModel()
+	ExampleUpdate()
+	ExampleRelation()
+	ExampleSelectRelation()
 }
 var exampleDB *sq.DB
 func init () {
@@ -43,26 +44,53 @@ func init () {
 }
 
 
+type IDUser string
 type User struct {
-	ID string `db:"id"`
+	ID IDUser `db:"id"`
 	Name string `db:"name"`
-	Age string `db:"age"`
-	DeletedAt sql.NullTime `db:"deleted_at"`
+	Age int `db:"age"`
 }
 func (User) TableName() string {return "user"}
 func (u *User) BeforeCreate() {
-	if len(u.ID) == 0 { u.ID = sq.UUID() }
+	if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) }
 }
 func (User) Column () (col struct{
 	ID sq.Column
 	Name sq.Column
 	Age sq.Column
-	DeletedAt sq.Column
 }) {
 	col.ID = "id"
 	col.Name = "name"
 	col.Age = "age"
-	col.DeletedAt = "deleted_at"
+	return
+}
+
+type UserWithAddress struct {
+	UserID IDUser `db:"user.id"`
+	Name string `db:"user.name"`
+	Age int `db:"user.age"`
+	Address string `db:"user_address.address"`
+}
+func (UserWithAddress) FormTable() string {return "user"}
+func (*UserWithAddress) RelationJoin() []sq.Join {
+	return []sq.Join{
+		{
+			Type: 	  	   sq.LeftJoin,
+			TableName:	   "user_address",
+			On:[]sq.Column{"user.id", "user_address.user_id"},
+		},
+	}
+}
+func (UserWithAddress) Column () (col struct{
+	UserID sq.Column
+	Name sq.Column
+	Age sq.Column
+	Address sq.Column
+}) {
+	col.UserID = "user.id"
+	col.Name = "user.name"
+	col.Age = "user.age"
+	col.Address = "user_address.user_id"
 	return
 }
 // 查询单行单列数据
@@ -76,7 +104,7 @@ func ExampleDB_QueryRowScan() {
 		Select: []sq.Column{userCol.Name},
 		Where: sq.
 			And(userCol.ID, sq.Equal(1)),
-	}.Check("SELECT `name` FROM `user` WHERE `id` = ? LIMIT ?")
+	}.Check("SELECT `name` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?")
 	hasName, err := exampleDB.QueryRowScan(ctx, qb, &name) ; if err != nil {
 		panic(err)
 	}
@@ -94,7 +122,7 @@ func ExampleDB_QueryRowScanMultiColumn() {
 		Select: []sq.Column{userCol.Name, userCol.Age},
 		Where: sq.
 			And(userCol.ID, sq.Equal(1)),
-	}.Check("SELECT `name`,`age` FROM `user` WHERE `id` = ? LIMIT ?")
+	}.Check("SELECT `name`,`age` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?")
 	hasName, err := exampleDB.QueryRowScan(ctx, qb, &name,&age) ; if err != nil {
 		panic(err)
 	}
@@ -132,152 +160,152 @@ func ExampleDB_One() {
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
 	}.Check("SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND deleted_at IS NULL LIMIT ?")
-	hasUser, err := exampleDB.One(ctx, &user, qb) ; if err != nil {
+	hasUser, err := exampleDB.Model(ctx, &user, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print(user, hasUser)
 }
-// select count(*) from table 便捷方法
+//  基于 Model 查询 count
 func ExampleDB_Count() {
 	log.Print("ExampleDB_Count")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	count, err := exampleDB.Count(ctx, &User{}, sq.QB{
+	count, err := exampleDB.Count(ctx, sq.QB{
+		Table: User{}.TableName(),
 		Where: sq.And(User{}.Column().Age, sq.GtInt(18)),
 	}) ; if err != nil {
 		panic(err)
 	}
 	log.Print(count)
 }
-
-// // query builder 的示例
-// func ExampleQB() {
-// 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-// 	// 查询多条数据
-// 	{
-// 		var userList []User
-// 		err := exampleDB.List(ctx, &userList, sq.QB{
-// 			Where: sq.
-// 				And("age", sq.GtInt(18)),
-// 		}.Check("SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND deleted_at IS NULL")) ; if err != nil {
-// 			panic(err)
-// 		}
-// 		log.Print(userList)
-// 	}
-// 	{
-// 		var userList []struct {
-// 			Name string `db:"name"`
-// 			Age int `db:"age"`
-// 		}
-// 		err := exampleDB.Select(ctx, &userList, sq.QB{
-// 			Table: User{}.TableName(),
-// 			Where: sq.
-// 				And("age", sq.GtInt(18)),
-// 		}.Check("SELECT `name`,`age` FROM `user` WHERE `age` = ? AND deleted_at IS NULL")) ; if err != nil {
-// 		panic(err)
-// 	}
-// 		log.Print(userList)
-// 	}
-// 	{
-// 		count, err := exampleDB.Count(ctx, &User{}, sq.QB{
-// 			Where: sq.And("age", sq.GtInt(18)),
-// 		}) ; if err != nil {
-// 			panic(err)
-// 		}
-// 		log.Print(count)
-// 	}
-// }
-
-// sqlx 的单行数据查询
-func ExampleSqlx_QueryRowxScan() {
-	log.Print("ExampleSqlx_QueryRowxScan")
-	var name string
-	var has bool
-	// 虽然 row 只 scan 一条数据，但是还是加上 LIMIT ? 以确保最高性能
-	row := exampleDB.Core.QueryRowx(`SELECT name FROM query WHERE id = ? LIMIT ?`, 1, 1)
-	err := row.Scan(&name) ; if err != nil {
-		if err == sql.ErrNoRows {
-			has = false
-		} else {
-			panic(err) // 项目中应该 return err 将可处理的错误传递
-		}
-	} else {
-		has = true
-	}
-	log.Print(name, has)
-}
-// sqlx 的count 查询
-func ExampleSqlx_QueryRowxCount() {
-	log.Print("ExampleSqlx_QueryRowxCount")
-	var count int
-	row := exampleDB.Core.QueryRowx(`SELECT COUNT(*) FROM query`)
-	err := row.Scan(&count) ; if err != nil {
-		if err == sql.ErrNoRows {
-			panic(err) // 虽然 count 必然会有结果，但是还是做个判断（防御措施）
-		} else {
-			panic(err) // 项目中应该 return err 将可处理的错误传递
-		}
-	}
-	log.Print(count)
-}
-// sqlx 的多行数据查询（扫描结构体）
-func ExampleSqlx_QueryxScan() {
-	log.Print("ExampleSqlx_QueryxRowScan")
-	rows, err := exampleDB.Core.Queryx(`SELECT id,name FROM query WHERE name like ?`, `%m%`) ; if err != nil {
-		panic(err)
-	}
-	if rows != nil {
-		defer rows.Close()
-	}
-	type data struct {
-		ID string
-		Name string
-	}
-	var list []data
-	for rows.Next() {
-		var data data
-		err := rows.Scan(&data.ID, &data.Name) ; if err != nil {
-			panic(err) // 项目中应该 return err 将可处理的错误传递
-		}
-		list = append(list, data)
-	}
-	err = rows.Err() ; if err != nil {
-		panic(err) // 项目中应该 return err 将可处理的错误传递
-	}
-	log.Print(list)
-}
-
-// sqlx的多行数据查询（扫描结构体）
-func ExampleSqlx_QueryxRowScanStruct() {
-	log.Print("ExampleSqlx_QueryxRowScanStruct")
-	rows, err := exampleDB.Core.Queryx(`SELECT id,name FROM query WHERE name like ?`, `%m%`) ; if err != nil {
-		panic(err)
-	}
-	if rows != nil {
-		defer rows.Close()
-	}
-	type data struct {
-		ID string `db:"id"`
-		Name string `db:"name"`
-	}
-	var list []data
-	for rows.Next() {
-		var data data
-		// 使用 StructScan 时候 会基于结构体中的 db 结构体标签作为 scan 的标识
-		err := rows.StructScan(&data) ; if err != nil {
-			panic(err) // 项目中应该 return err 将可处理的错误传递
-		}
-		list = append(list, data)
-	}
-	err = rows.Err() ; if err != nil {
-		panic(err) // 项目中应该 return err 将可处理的错误传递
-	}
-	log.Print(list)
-}
-func ExampleSqlx_Select() {
-	log.Print("ExampleSqlx_Select")
-	var userList []User 
-	err := exampleDB.Core.Select(&userList, "SELECT `id`, `name` FROM user WHERE `name` LIKE ?", `%m%`) ; if err != nil {
+// 基于 Model 查询多行数据
+func ExampleDB_SelectModel() {
+	log.Print("ExampleDB_SelectModel")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	var userList []User
+	userCol := User{}.Column()
+	qb := sq.QB{
+		Where: sq.
+			And(userCol.Age, sq.GtInt(18)),
+	}.Check("SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND deleted_at IS NULL")
+	err := exampleDB.SelectModel(ctx, &userList, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print(userList)
+}
+func someUser () (user User) {
+	userCol := user.Column()
+	{
+		oneQB := sq.QB{
+			Where: sq.And(userCol.Name, sq.Equal("update1"),),
+		}.Check("SELECT `id`, `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?")
+		hasUser, err := exampleDB.Model(context.TODO(), &user, oneQB) ; if err != nil {
+		panic(err)
+	}
+		if hasUser == false {
+			panic(errors.New(`example data not found user{name: "update1"}`))
+		}
+	}
+	return
+}
+func ExampleDB_UpdateModel() {
+	log.Print("ExampleDB_UpdateModel")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	var user User
+	user = someUser()
+	userCol := user.Column()
+	// Update() 会优先以 `id` = user.ID 作为 WHERE 条件
+	// 若 user 不存在 user.ID 则以包含结构体标签 `sq:"PRI"` 的字段作为 WHERE 条件
+	// 存在多个 `sq:"PRI"`则以多个条件查询
+	updateCheckSQL := "UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"
+	err := exampleDB.UpdateModel(ctx, &user, sq.Data{
+		userCol.Name: "newUpdate",
+	}, updateCheckSQL) ; if err != nil {
+		panic(err)
+	}
+	log.Print(user.Name) // newUpdate ( db.Update() 会自动给 user 对应字段赋值)
+	// 在已知主键字段的情况下可以不读取 Model
+	someID := IDUser("290f187c-3de0-11eb-b378-0242ac130002")
+	err = exampleDB.UpdateModel(ctx, &User{
+		ID: someID,
+	}, sq.Data{userCol.Name: "newUpdate",}, updateCheckSQL) ; if err != nil {
+		panic(err)
+	}
+}
+
+func ExampleUpdate() {
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	userCol := User{}.Column()
+	err := exampleDB.Update(ctx, sq.QB{
+		Table:  User{}.TableName(),
+		Where:  sq.And(userCol.Name, sq.Equal("multiUpdate")),
+		Update: sq.Data{
+			userCol.Age: 28,
+		},
+	}.Check("UPDATE `user` SET `age` = ? WHERE `name` = ? AND `deleted_at` IS NULL"))
+	if err != nil {
+		panic(err)
+	}
+}
+func ExampleCreateModel() {
+	log.Print("ExampleCreateModel")
+	ctx := context.TODO()
+	var user User
+	checkInsertSQL := "INSERT INTO `user` (`id`, `name`, `age`) VALUES (?, ?, ?)"
+	err := exampleDB.CreateModel(ctx, &user, checkInsertSQL) ; if err != nil {
+		panic(err)
+	}
+}
+func ExampleMultiCreateModel() {
+	log.Print("ExampleMultiCreateModel")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	userList := []User{
+		{Name:"a", Age:1},
+		{Name:"b", Age:2},
+	}
+	checkInsertSQL := "INSERT INTO `user` (`id`, `name`, `age`) VALUES (?, ?, ?)"
+	err := exampleDB.MultiCreateModel(ctx, &userList, checkInsertSQL) ; if err != nil {
+		panic(err)
+	}
+}
+func ExampleSoftDeleteModel() {
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	user := someUser()
+	softDeletedCheckSQL := "UPDATE `user` SET `deleted_at` = NULL"
+	err := exampleDB.SoftDeleteModel(ctx, &user, softDeletedCheckSQL) ; if err != nil {
+		panic(err)
+	}
+}
+func ExampleRelation() {
+	log.Print("ExampleRelation")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	userWithAddress := UserWithAddress{}
+	userWithAddressCol := userWithAddress.Column()
+	checkSQL := "SELECT `user.id`, `user.name`, `user.age`, `user_address.address` " +
+		"FROM `user` " +
+		"LEFT JOIN `user_address` " +
+		"ON `user.id` = `user_address.id " +
+		"WHERE `user.id` = ? " +
+		"AND `user.deleted_at` IS NULL " +
+		"AND `user_address.deleted_at` IS NULL" +
+		"LIMIT ?"
+	err := exampleDB.Relation(ctx, &userWithAddress, sq.QB{Where: sq.And(userWithAddressCol.UserID, sq.Equal("290f187c-3de0-11eb-b378-0242ac130002"))}, checkSQL) ; if err != nil {
+		panic(err)
+	}
+}
+
+func ExampleSelectRelation() {
+	log.Print("ExampleSelectRelation")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	var userWithAddressList []UserWithAddress
+	userWithAddressCol := UserWithAddress{}.Column()
+	checkSQL := "SELECT `user.id`, `user.name`, `user.age`, `user_address.address` " +
+		"FROM `user` " +
+		"LEFT JOIN `user_address` " +
+		"ON `user.id` = `user_address.id " +
+		"WHERE `user.age` > ? " +
+		"AND `user.deleted_at` IS NULL " +
+		"AND `user_address.deleted_at` IS NULL"
+	err := exampleDB.SelectRelation(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
+		panic(err)
+	}
 }
