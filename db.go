@@ -84,7 +84,7 @@ func (db *DB) Model(ctx context.Context, ptr Model, qb QB) (has bool , err error
 	qb = qb.BindModel(ptr)
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
-func (db *DB) SelectModel(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
+func (db *DB) ModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
 	return nil
 }
 func (db *DB) Update(ctx context.Context, qb QB) (err error) {
@@ -99,6 +99,6 @@ func (db *DB) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string
 func (db *DB) Relation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (err error) {
 	return
 }
-func (db *DB) SelectRelation(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
+func (db *DB) RelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
 	return
 }

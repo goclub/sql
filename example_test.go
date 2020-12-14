@@ -17,12 +17,12 @@ func TestExample(t *testing.T) {
 	ExampleCreateModel()
 	ExampleMultiCreateModel()
 	ExampleDB_One()
-	ExampleDB_SelectModel()
+	ExampleDB_ModelList()
 	ExampleDB_UpdateModel()
 	ExampleSoftDeleteModel()
 	ExampleUpdate()
 	ExampleRelation()
-	ExampleSelectRelation()
+	ExampleRelationList()
 }
 var exampleDB *sq.DB
 func init () {
@@ -178,8 +178,8 @@ func ExampleDB_Count() {
 	log.Print(count)
 }
 // 基于 Model 查询多行数据
-func ExampleDB_SelectModel() {
-	log.Print("ExampleDB_SelectModel")
+func ExampleDB_ModelList() {
+	log.Print("ExampleDB_ModelList")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	var userList []User
 	userCol := User{}.Column()
@@ -187,7 +187,7 @@ func ExampleDB_SelectModel() {
 		Where: sq.
 			And(userCol.Age, sq.GtInt(18)),
 	}.Check("SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND deleted_at IS NULL")
-	err := exampleDB.SelectModel(ctx, &userList, qb) ; if err != nil {
+	err := exampleDB.ModelList(ctx, &userList, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print(userList)
@@ -222,7 +222,7 @@ func ExampleDB_UpdateModel() {
 	}, updateCheckSQL) ; if err != nil {
 		panic(err)
 	}
-	log.Print(user.Name) // newUpdate ( db.Update() 会自动给 user 对应字段赋值)
+	log.Print(user.Name) // newUpdate ( db.UpdateModel() 会自动给 user 对应字段赋值)
 	// 在已知主键字段的情况下可以不读取 Model
 	someID := IDUser("290f187c-3de0-11eb-b378-0242ac130002")
 	err = exampleDB.UpdateModel(ctx, &User{
@@ -293,8 +293,8 @@ func ExampleRelation() {
 	}
 }
 
-func ExampleSelectRelation() {
-	log.Print("ExampleSelectRelation")
+func ExampleRelationList() {
+	log.Print("ExampleRelationList")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	var userWithAddressList []UserWithAddress
 	userWithAddressCol := UserWithAddress{}.Column()
@@ -305,7 +305,7 @@ func ExampleSelectRelation() {
 		"WHERE `user.age` > ? " +
 		"AND `user.deleted_at` IS NULL " +
 		"AND `user_address.deleted_at` IS NULL"
-	err := exampleDB.SelectRelation(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
+	err := exampleDB.RelationList(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 }
