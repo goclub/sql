@@ -217,7 +217,7 @@ func ExampleDB_UpdateModel() {
 	// 若 user 不存在 user.ID 则以包含结构体标签 `sq:"PRI"` 的字段作为 WHERE 条件
 	// 存在多个 `sq:"PRI"`则以多个条件查询
 	updateCheckSQL := "UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"
-	err := exampleDB.UpdateModel(ctx, &user, sq.Data{
+	err := exampleDB.UpdateModel(ctx, &user, sq.UpdateData{
 		userCol.Name: "newUpdate",
 	}, updateCheckSQL) ; if err != nil {
 		panic(err)
@@ -227,7 +227,7 @@ func ExampleDB_UpdateModel() {
 	someID := IDUser("290f187c-3de0-11eb-b378-0242ac130002")
 	err = exampleDB.UpdateModel(ctx, &User{
 		ID: someID,
-	}, sq.Data{userCol.Name: "newUpdate",}, updateCheckSQL) ; if err != nil {
+	}, sq.UpdateData{userCol.Name: "newUpdate",}, updateCheckSQL) ; if err != nil {
 		panic(err)
 	}
 }
@@ -238,7 +238,7 @@ func ExampleUpdate() {
 	err := exampleDB.Update(ctx, sq.QB{
 		Table:  User{}.TableName(),
 		Where:  sq.And(userCol.Name, sq.Equal("multiUpdate")),
-		Update: sq.Data{
+		Update: sq.UpdateData{
 			userCol.Age: 28,
 		},
 	}.Check("UPDATE `user` SET `age` = ? WHERE `name` = ? AND `deleted_at` IS NULL"))
