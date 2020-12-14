@@ -1,6 +1,6 @@
 package sq
 
-type UpdateData map[Column]interface{}
+type UpdateColumn map[Column]interface{}
 type OP struct {
 
 }
@@ -12,7 +12,7 @@ type QB struct {
 	Table string
 	Select []Column
 	Where []Condition
-	Update UpdateData
+	Update UpdateColumn
 	Limit int
 	Join Join
 }
