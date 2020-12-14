@@ -9,6 +9,10 @@ import (
 	"testing"
 )
 
+
+
+
+
 func TestExample(t *testing.T) {
 	ExampleDB_QueryRowScan()
 	ExampleDB_QueryRowScanMultiColumn()
@@ -16,13 +20,14 @@ func TestExample(t *testing.T) {
 	ExampleDB_Count()
 	ExampleCreateModel()
 	ExampleMultiCreateModel()
-	ExampleDB_One()
+	ExampleDB_Model()
 	ExampleDB_ModelList()
 	ExampleDB_UpdateModel()
 	ExampleSoftDeleteModel()
 	ExampleUpdate()
 	ExampleRelation()
 	ExampleRelationList()
+	ExamplePaging()
 }
 var exampleDB *sq.DB
 func init () {
@@ -99,12 +104,13 @@ func ExampleDB_QueryRowScan() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	userCol := User{}.Column()
 	var name string
+	checkSQL := "SELECT `name` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?"
 	qb := sq.QB{
 		Table: User{}.TableName(),
 		Select: []sq.Column{userCol.Name},
 		Where: sq.
 			And(userCol.ID, sq.Equal(1)),
-	}.Check("SELECT `name` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?")
+	}.Check(checkSQL)
 	hasName, err := exampleDB.QueryRowScan(ctx, qb, &name) ; if err != nil {
 		panic(err)
 	}
@@ -117,12 +123,13 @@ func ExampleDB_QueryRowScanMultiColumn() {
 	userCol := User{}.Column()
 	var name string
 	var age int
+	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?"
 	qb := sq.QB{
 		Table: User{}.TableName(),
 		Select: []sq.Column{userCol.Name, userCol.Age},
 		Where: sq.
 			And(userCol.ID, sq.Equal(1)),
-	}.Check("SELECT `name`,`age` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?")
+	}.Check(checkSQL)
 	hasName, err := exampleDB.QueryRowScan(ctx, qb, &name,&age) ; if err != nil {
 		panic(err)
 	}
@@ -137,12 +144,13 @@ func ExampleDB_QueryRowStructScan() {
 		Age int `db:"age"`
 	}{}
 	userCol := User{}.Column()
+	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?"
 	qb := sq.QB{
 		Table: User{}.TableName(),
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
-	}.Check("SELECT `name`,`age` FROM `user` WHERE `name` = ? AND `age` = ? AND deleted_at IS NULL LIMIT ?")
+	}.Check(checkSQL)
 	hasUser, err := exampleDB.QueryRowStructScan(ctx, &userNameAge, qb) ; if err != nil {
 		panic(err)
 	}
@@ -150,16 +158,17 @@ func ExampleDB_QueryRowStructScan() {
 }
 
 // 基于 Model 查询单行数据 （可省略 qb.Table）
-func ExampleDB_One() {
-	log.Print("ExampleDB_One")
+func ExampleDB_Model() {
+	log.Print("ExampleDB_Model")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	user := User{}
 	userCol := user.Column()
+	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND deleted_at IS NULL LIMIT ?"
 	qb := sq.QB{
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
-	}.Check("SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND deleted_at IS NULL LIMIT ?")
+	}.Check(checkSQL)
 	hasUser, err := exampleDB.Model(ctx, &user, qb) ; if err != nil {
 		panic(err)
 	}
@@ -183,10 +192,11 @@ func ExampleDB_ModelList() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	var userList []User
 	userCol := User{}.Column()
+	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND deleted_at IS NULL"
 	qb := sq.QB{
 		Where: sq.
 			And(userCol.Age, sq.GtInt(18)),
-	}.Check("SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND deleted_at IS NULL")
+	}.Check(checkSQL)
 	err := exampleDB.ModelList(ctx, &userList, qb) ; if err != nil {
 		panic(err)
 	}
@@ -195,10 +205,9 @@ func ExampleDB_ModelList() {
 func someUser () (user User) {
 	userCol := user.Column()
 	{
-		oneQB := sq.QB{
+		hasUser, err := exampleDB.Model(context.TODO(), &user, sq.QB{
 			Where: sq.And(userCol.Name, sq.Equal("update1"),),
-		}.Check("SELECT `id`, `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?")
-		hasUser, err := exampleDB.Model(context.TODO(), &user, oneQB) ; if err != nil {
+		}) ; if err != nil {
 		panic(err)
 	}
 		if hasUser == false {
@@ -216,10 +225,10 @@ func ExampleDB_UpdateModel() {
 	// Update() 会优先以 `id` = user.ID 作为 WHERE 条件
 	// 若 user 不存在 user.ID 则以包含结构体标签 `sq:"PRI"` 的字段作为 WHERE 条件
 	// 存在多个 `sq:"PRI"`则以多个条件查询
-	updateCheckSQL := "UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"
+	checkSQL := "UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"
 	err := exampleDB.UpdateModel(ctx, &user, sq.UpdateColumn{
 		userCol.Name: "newUpdate",
-	}, updateCheckSQL) ; if err != nil {
+	}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 	log.Print(user.Name) // newUpdate ( db.UpdateModel() 会自动给 user 对应字段赋值)
@@ -227,7 +236,7 @@ func ExampleDB_UpdateModel() {
 	someID := IDUser("290f187c-3de0-11eb-b378-0242ac130002")
 	err = exampleDB.UpdateModel(ctx, &User{
 		ID: someID,
-	}, sq.UpdateColumn{userCol.Name: "newUpdate",}, updateCheckSQL) ; if err != nil {
+	}, sq.UpdateColumn{userCol.Name: "newUpdate",}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 }
@@ -235,13 +244,14 @@ func ExampleDB_UpdateModel() {
 func ExampleUpdate() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	userCol := User{}.Column()
+	checkSQL := "UPDATE `user` SET `age` = ? WHERE `name` = ? AND `deleted_at` IS NULL"
 	err := exampleDB.Update(ctx, sq.QB{
 		Table:  User{}.TableName(),
 		Where:  sq.And(userCol.Name, sq.Equal("multiUpdate")),
 		Update: sq.UpdateColumn{
 			userCol.Age: 28,
 		},
-	}.Check("UPDATE `user` SET `age` = ? WHERE `name` = ? AND `deleted_at` IS NULL"))
+	}.Check(checkSQL))
 	if err != nil {
 		panic(err)
 	}
@@ -308,4 +318,28 @@ func ExampleRelationList() {
 	err := exampleDB.RelationList(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
+}
+func ExamplePaging() {
+	log.Print("ExamplePaging")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	var userList []User
+	userCol := User{}.Column()
+	baseQB := sq.QB{
+		Table: User{}.TableName(),
+		Where: sq.And(userCol.Age, sq.GtInt(18)),
+	}
+	page := 1
+	perPage := 10
+	checkSQL := "SELECT `id`, `name`, `age` FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL LIMIT ? OFFSET ?"
+	pagingQB :=  baseQB.Paging(page, perPage)
+	err := exampleDB.ModelList(ctx, &userList, pagingQB.Check(checkSQL)) ; if err != nil {
+		panic(err)
+	}
+	log.Print(userList)
+	var count int
+	checkCountSQL := "SELECT COUNT(*) FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL"
+	count, err = exampleDB.Count(ctx, baseQB.Check(checkCountSQL)) ; if err != nil {
+		panic(err)
+	}
+	log.Print(count)
 }

@@ -57,3 +57,6 @@ func (qb QB) BindModel(model Model) QB {
 	qb.Table = model.TableName()
 	return qb
 }
+func (qb QB) Paging(page int, perPage int) QB {
+	return qb
+}
