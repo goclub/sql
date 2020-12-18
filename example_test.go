@@ -37,7 +37,7 @@ func init () {
 		Password:"somepass",
 		Host: "127.0.0.1",
 		Port:"3306",
-		DB: "goclub_sql",
+		DB: "example_goclub_sql",
 	}.String()) ; if err != nil {
 		panic(err)
 	}

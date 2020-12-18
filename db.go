@@ -42,7 +42,7 @@ func (db *DB) MultiCreateModel(ctx context.Context, modelSlicePtr interface{}, c
 }
 func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
 	qb.Limit = 1
-	query, values := qb.ToSelect()
+	query, values := qb.SQLSelect()
 	row := db.Core.QueryRowx(query, values...)
 	err = row.Scan(desc...) ; if err != nil {
 		if err == sql.ErrNoRows {
@@ -57,7 +57,7 @@ func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has
 }
 func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
 	qb.Limit = 1
-	query, values := qb.ToSelect()
+	query, values := qb.SQLSelect()
 	row := db.Core.QueryRowx(query, values...)
 	err = row.StructScan(ptr) ; if err != nil {
 		if err == sql.ErrNoRows {
@@ -75,7 +75,7 @@ func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	var has bool
 	has, err = db.QueryRowScan(ctx, qb, &count);if err != nil {return }
 	if has == false {
-		query, _ := qb.ToSelect()
+		query, _ := qb.SQLSelect()
 		panic(errors.New("goclub/sql: Count() " + query + "not found data"))
 	}
 	return
