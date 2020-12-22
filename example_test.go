@@ -14,20 +14,20 @@ import (
 
 
 func TestExample(t *testing.T) {
-	ExampleDB_QueryRowScan()
-	ExampleDB_QueryRowScanMultiColumn()
-	ExampleDB_QueryRowStructScan()
-	ExampleDB_Count()
-	ExampleCreateModel()
-	ExampleMultiCreateModel()
-	ExampleDB_Model()
-	ExampleDB_ModelList()
-	ExampleDB_UpdateModel()
-	ExampleSoftDeleteModel()
-	ExampleUpdate()
-	ExampleRelation()
-	ExampleRelationList()
-	ExamplePaging()
+	// ExampleDB_QueryRowScan()
+	// ExampleDB_QueryRowScanMultiColumn()
+	// ExampleDB_QueryRowStructScan()
+	// ExampleDB_Count()
+	// ExampleCreateModel()
+	// ExampleMultiCreateModel()
+	// ExampleDB_Model()
+	// ExampleDB_ModelList()
+	// ExampleDB_UpdateModel()
+	// ExampleSoftDeleteModel()
+	// ExampleUpdate()
+	// ExampleRelation()
+	// ExampleRelationList()
+	// ExamplePaging()
 }
 var exampleDB *sq.DB
 func init () {
