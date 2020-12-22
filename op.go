@@ -1,6 +1,8 @@
 package sq
 
 import (
+	"errors"
+	"reflect"
 	"time"
 )
 
@@ -8,7 +10,7 @@ type OP struct {
 	Symbol string
 	Values []interface{}
 	Raw string
-	SubQuery string
+	Placeholder string
 }
 func (op OP) sql(column Column) string {
 	var and stringQueue
@@ -17,8 +19,8 @@ func (op OP) sql(column Column) string {
 	} else {
 		and.Push(column.wrapField())
 		and.Push(op.Symbol)
-		if len(op.SubQuery) != 0 {
-			and.Push(op.SubQuery)
+		if len(op.Placeholder) != 0 {
+			and.Push(op.Placeholder)
 		} else {
 			and.Push(sqlPlaceholder)
 		}
@@ -46,7 +48,7 @@ func Raw(raw string, values ...interface{}) OP {
 func SubQuery(symbol string, qb QB) OP {
 	query, values := qb.SQLSelect()
 	return OP {
-		SubQuery: "(" + query + ")",
+		Placeholder: "(" + query + ")",
 		Symbol: symbol,
 		Values: values,
 	}
@@ -55,6 +57,29 @@ func Like(s string) OP {
 	return OP {
 		Symbol: "LIKE",
 		Values: []interface{}{"%" + s + "%"},
+	}
+}
+func In(slice interface{}) OP {
+	var placeholder string
+	var values []interface{}
+	rValue := reflect.ValueOf(slice)
+	if rValue.Type().Kind() != reflect.Slice {
+		panic(errors.New("sq.In(" + rValue.Type().Name() + ") slice must be slice"))
+	}
+	if rValue.Len() == 0 {
+		placeholder = "(NULL)"
+	} else {
+		var placeholderList stringQueue
+		for i:=0;i<rValue.Len();i++ {
+			values = append(values, rValue.Index(i).Interface())
+			placeholderList.Push(sqlPlaceholder)
+		}
+		placeholder = "(" + placeholderList.Join(", ") + ")"
+	}
+	return OP{
+		Symbol:      "IN",
+		Values:      values,
+		Placeholder: placeholder,
 	}
 }
 func LikeLeft(s string) OP {

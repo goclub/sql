@@ -372,3 +372,37 @@ func (suite TestQBSuite) TestLikeRight() {
 	assert.Equal(t, "SELECT * FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL", query)
 	assert.Equal(t, []interface{}{"%nimo"}, values)
 }
+
+
+func (suite TestQBSuite) TestIn() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: "user",
+		Where: []sq.Condition{
+			{"id", sq.In([]string{"a","b"})},
+		},
+	}
+	query, values := qb.SQLSelect()
+	ands := []sq.Condition(
+		sq.And("id", sq.In([]string{"a","b"})),
+	)
+	assert.Equal(t, qb.Where, ands)
+	assert.Equal(t, "SELECT * FROM `user` WHERE `id` IN (?, ?) AND `deleted_at` IS NULL", query)
+	assert.Equal(t, []interface{}{"a","b"}, values)
+}
+func (suite TestQBSuite) TestInPanic() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: "user",
+		Where: []sq.Condition{
+			{"id", sq.In("a")},
+		},
+	}
+	query, values := qb.SQLSelect()
+	ands := []sq.Condition(
+		sq.And("id", sq.In([]string{"a","b"})),
+	)
+	assert.Equal(t, qb.Where, ands)
+	assert.Equal(t, "SELECT * FROM `user` WHERE `id` IN (?, ?) AND `deleted_at` IS NULL", query)
+	assert.Equal(t, []interface{}{"a","b"}, values)
+}
