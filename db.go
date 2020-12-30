@@ -81,7 +81,7 @@ func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	return
 }
 func (db *DB) Model(ctx context.Context, ptr Model, qb QB) (has bool , err error) {
-	qb = qb.BindModel(ptr)
+	qb.Table = ptr
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
 func (db *DB) ModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {

@@ -2,6 +2,7 @@ package sq
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 )
 
@@ -9,19 +10,19 @@ type UpdateColumn map[Column]interface{}
 
 
 type QB struct {
-	Table string
+	Table Table
+	tableName string
 	TableRaw func ()(query string, values []interface{})
+	softDelete string
 	Select []Column
+	Index string
 	Where []Condition
 	WhereOR [][]Condition
 	WhereRaw func ()(query string, values []interface{})
 	Update UpdateColumn
 	Limit int
 	Join Join
-	SoftDelete Column
 }
-const DisableSoftDelete Column = "DisableSoftDelete"
-const DefaultSoftDeletedField = "deleted_at"
 type JoinType string
 func (t JoinType) String() string {
 	return string(t)
@@ -46,10 +47,6 @@ func (qb QB) Check(checkSQL ...string) QB {
 	return qb
 }
 
-func (qb QB) BindModel(model Model) QB {
-	qb.Table = model.TableName()
-	return qb
-}
 func (qb QB) Paging(page int, perPage int) QB {
 	return qb
 }
@@ -87,22 +84,47 @@ func (s Statement) Switch(
 }
 func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 	var sqlList stringQueue
-	tableName := "`" + qb.Table + "`"
+	if qb.Table == nil && qb.TableRaw == nil {
+		panic(errors.New("qb must have qb.Table or qb.TableRaw"))
+	}
+	if qb.Table != nil {
+		qb.tableName = "`" + qb.Table.TableName() + "`"
+		qb.softDelete = qb.Table.SoftDelete()
+	}
 	if qb.TableRaw != nil {
 		var subTableValues []interface{}
-		tableName, subTableValues = qb.TableRaw()
+		qb.tableName, subTableValues = qb.TableRaw()
 		values = append(values, subTableValues...)
 	}
 	statement.Switch(
 	   func(_Select int) {
 	   	sqlList.Push("SELECT")
+	   	if qb.Table != nil {
+	   		rValue := reflect.ValueOf(qb.Table)
+	   		rType := rValue.Type()
+			if rType.Kind() == reflect.Ptr {
+				rValue = rValue.Elem()
+				rType = rValue.Type()
+			}
+	   		for i:=0;i<rType.NumField();i++ {
+	   			field := rType.Field(i)
+	   			tag, has := field.Tag.Lookup("db")
+	   			if !has {continue}
+	   			if tag != "" {
+					qb.Select = append(qb.Select, Column(tag))
+				}
+			}
+		}
 	   	if len(qb.Select) == 0 {
 	   		sqlList.Push("*")
 		} else {
 			sqlList.Push("`" + strings.Join(columnsToStrings(qb.Select), "`, `") + "`")
 		}
 		sqlList.Push("FROM")
-	   	sqlList.Push(tableName)
+	   	sqlList.Push(qb.tableName)
+	   	if qb.Index != "" {
+	   		sqlList.Push(qb.Index)
+		}
 	}, func(_Update bool) {
 
 	}, func(_Delete string) {
@@ -134,16 +156,10 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 				whereString = "(" + whereString + ")"
 			}
 		}
-		needSoftDelete := true
-		switch qb.SoftDelete {
-		case "":
-			qb.SoftDelete = DefaultSoftDeletedField
-		case DisableSoftDelete:
-			qb.SoftDelete = ""
-			needSoftDelete = false
-		}
+		needSoftDelete := qb.softDelete != ""
+
 		if needSoftDelete  {
-			whereSofeDelete := qb.SoftDelete.wrapField() + " IS NULL"
+			whereSofeDelete := qb.softDelete
 			if len(whereString) != 0 {
 				whereString += " AND " + whereSofeDelete
 			} else {

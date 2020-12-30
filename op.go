@@ -166,3 +166,10 @@ func LtOrEqualTime(t time.Time) OP {
 		Values: []interface{}{t},
 	}
 }
+
+func IsNull() OP {
+	return OP{
+		Symbol: "IS NULL",
+		Values: nil,
+	}
+}

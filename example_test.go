@@ -2,15 +2,14 @@ package sq_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goclub/sql"
 	"log"
 	"testing"
+	"time"
 )
-
-
-
 
 
 func TestExample(t *testing.T) {
@@ -54,11 +53,16 @@ type User struct {
 	ID IDUser `db:"id"`
 	Name string `db:"name"`
 	Age int `db:"age"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+	// AutoIncrementID uint64 `db:"auto_increment_id"`
 }
 func (User) TableName() string {return "user"}
-func (u *User) BeforeCreate() {
-	if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) }
-}
+func (User) SoftDelete() string { return "`is_deleted` = 0" }
+func (u *User) BeforeCreate() { if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) } }
+func (u *User) AfterCreate(result sql.Result) error { u.CreatedAt = time.Now() ;return nil }
+func (u *User) AfterUpdate() { u.UpdatedAt = time.Now() }
+
 func (User) Column () (col struct{
 	ID sq.Column
 	Name sq.Column
@@ -104,9 +108,9 @@ func ExampleDB_QueryRowScan() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	userCol := User{}.Column()
 	var name string
-	checkSQL := "SELECT `name` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?"
+	checkSQL := "SELECT `name` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
-		Table: User{}.TableName(),
+		Table: &User{},
 		Select: []sq.Column{userCol.Name},
 		Where: sq.
 			And(userCol.ID, sq.Equal(1)),
@@ -123,9 +127,9 @@ func ExampleDB_QueryRowScanMultiColumn() {
 	userCol := User{}.Column()
 	var name string
 	var age int
-	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?"
+	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
-		Table: User{}.TableName(),
+		Table: User{},
 		Select: []sq.Column{userCol.Name, userCol.Age},
 		Where: sq.
 			And(userCol.ID, sq.Equal(1)),
@@ -144,9 +148,9 @@ func ExampleDB_QueryRowStructScan() {
 		Age int `db:"age"`
 	}{}
 	userCol := User{}.Column()
-	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND deleted_at IS NULL LIMIT ?"
+	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
-		Table: User{}.TableName(),
+		Table: User{},
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
@@ -163,7 +167,7 @@ func ExampleDB_Model() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	user := User{}
 	userCol := user.Column()
-	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND deleted_at IS NULL LIMIT ?"
+	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
@@ -179,7 +183,7 @@ func ExampleDB_Count() {
 	log.Print("ExampleDB_Count")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	count, err := exampleDB.Count(ctx, sq.QB{
-		Table: User{}.TableName(),
+		Table: User{},
 		Where: sq.And(User{}.Column().Age, sq.GtInt(18)),
 	}) ; if err != nil {
 		panic(err)
@@ -192,7 +196,7 @@ func ExampleDB_ModelList() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	var userList []User
 	userCol := User{}.Column()
-	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND deleted_at IS NULL"
+	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND `is_deleted` = 0"
 	qb := sq.QB{
 		Where: sq.
 			And(userCol.Age, sq.GtInt(18)),
@@ -246,7 +250,7 @@ func ExampleUpdate() {
 	userCol := User{}.Column()
 	checkSQL := "UPDATE `user` SET `age` = ? WHERE `name` = ? AND `deleted_at` IS NULL"
 	err := exampleDB.Update(ctx, sq.QB{
-		Table:  User{}.TableName(),
+		Table: User{},
 		Where:  sq.And(userCol.Name, sq.Equal("multiUpdate")),
 		Update: sq.UpdateColumn{
 			userCol.Age: 28,
@@ -325,7 +329,7 @@ func ExamplePaging() {
 	var userList []User
 	userCol := User{}.Column()
 	baseQB := sq.QB{
-		Table: User{}.TableName(),
+		Table: User{},
 		Where: sq.And(userCol.Age, sq.GtInt(18)),
 	}
 	page := 1
