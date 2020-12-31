@@ -8,7 +8,6 @@ import (
 	"github.com/goclub/sql"
 	"log"
 	"testing"
-	"time"
 )
 
 
@@ -53,15 +52,15 @@ type User struct {
 	ID IDUser `db:"id"`
 	Name string `db:"name"`
 	Age int `db:"age"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
+	CreatedAt string `db:"created_at"`
+	UpdatedAt string `db:"updated_at"`
 	// AutoIncrementID uint64 `db:"auto_increment_id"`
 }
 func (User) TableName() string {return "user"}
 func (User) SoftDelete() string { return "`is_deleted` = 0" }
 func (u *User) BeforeCreate() { if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) } }
-func (u *User) AfterCreate(result sql.Result) error { u.CreatedAt = time.Now() ;return nil }
-func (u *User) AfterUpdate() { u.UpdatedAt = time.Now() }
+func (u *User) AfterCreate(result sql.Result) error {return nil }
+// func (u *User) BeforeUpdate() { u.UpdatedAt = time.Now() }
 
 func (User) Column () (col struct{
 	ID sq.Column
