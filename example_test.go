@@ -8,6 +8,7 @@ import (
 	"github.com/goclub/sql"
 	"log"
 	"testing"
+	"time"
 )
 
 
@@ -52,15 +53,19 @@ type User struct {
 	ID IDUser `db:"id"`
 	Name string `db:"name"`
 	Age int `db:"age"`
-	CreatedAt string `db:"created_at"`
-	UpdatedAt string `db:"updated_at"`
-	// AutoIncrementID uint64 `db:"auto_increment_id"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+	AutoIncrementID int64 `db:"auto_increment_id" sq:"ignoreInsert"`
 }
 func (User) TableName() string {return "user"}
-func (User) SoftDelete() string { return "`is_deleted` = 0" }
-func (u *User) BeforeCreate() { if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) } }
-func (u *User) AfterCreate(result sql.Result) error {return nil }
-// func (u *User) BeforeUpdate() { u.UpdatedAt = time.Now() }
+func (User) SoftDelete() string {return "`is_deleted` = 0"}
+func (u *User) BeforeCreate() {if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) }}
+func (u *User) AfterCreate(result sql.Result) (err error) {
+	u.AutoIncrementID, err = result.LastInsertId() ; if err != nil {return}
+	return nil
+}
+func (u *User) BeforeUpdate(){}
+func (u *User) AfterUpdate(){}
 
 func (User) Column () (col struct{
 	ID sq.Column
@@ -79,13 +84,14 @@ type UserWithAddress struct {
 	Age int `db:"user.age"`
 	Address string `db:"user_address.address"`
 }
-func (UserWithAddress) FormTable() string {return "user"}
+func (UserWithAddress) SoftDelete() string {return "`user`.`is_deleted` = 0 AND `user_address`.`is_deleted` = 0"}
+func (UserWithAddress) TableName() string {return "user"}
 func (*UserWithAddress) RelationJoin() []sq.Join {
 	return []sq.Join{
 		{
 			Type: 	  	   sq.LeftJoin,
 			TableName:	   "user_address",
-			On:[]sq.Column{"user.id", "user_address.user_id"},
+			On:"`user`.`id` = `user_address`.`user_id`",
 		},
 	}
 }
@@ -229,8 +235,8 @@ func ExampleDB_UpdateModel() {
 	// 若 user 不存在 user.ID 则以包含结构体标签 `sq:"PRI"` 的字段作为 WHERE 条件
 	// 存在多个 `sq:"PRI"`则以多个条件查询
 	checkSQL := "UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"
-	err := exampleDB.UpdateModel(ctx, &user, sq.UpdateColumn{
-		userCol.Name: "newUpdate",
+	err := exampleDB.UpdateModel(ctx, &user, []sq.Data{
+		{userCol.Name, "newUpdate"},
 	}, checkSQL) ; if err != nil {
 		panic(err)
 	}
@@ -239,7 +245,7 @@ func ExampleDB_UpdateModel() {
 	someID := IDUser("290f187c-3de0-11eb-b378-0242ac130002")
 	err = exampleDB.UpdateModel(ctx, &User{
 		ID: someID,
-	}, sq.UpdateColumn{userCol.Name: "newUpdate",}, checkSQL) ; if err != nil {
+	}, []sq.Data{{userCol.Name, "newUpdate",},}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 }
@@ -251,8 +257,8 @@ func ExampleUpdate() {
 	err := exampleDB.Update(ctx, sq.QB{
 		Table: User{},
 		Where:  sq.And(userCol.Name, sq.Equal("multiUpdate")),
-		Update: sq.UpdateColumn{
-			userCol.Age: 28,
+		Update: []sq.Data{
+			{userCol.Age, 28,},
 		},
 	}.Check(checkSQL))
 	if err != nil {
@@ -301,9 +307,10 @@ func ExampleRelation() {
 		"AND `user.deleted_at` IS NULL " +
 		"AND `user_address.deleted_at` IS NULL" +
 		"LIMIT ?"
-	err := exampleDB.Relation(ctx, &userWithAddress, sq.QB{Where: sq.And(userWithAddressCol.UserID, sq.Equal("290f187c-3de0-11eb-b378-0242ac130002"))}, checkSQL) ; if err != nil {
+	has, err := exampleDB.Relation(ctx, &userWithAddress, sq.QB{Where: sq.And(userWithAddressCol.UserID, sq.Equal("290f187c-3de0-11eb-b378-0242ac130002"))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
+	log.Print("has", has)
 }
 
 func ExampleRelationList() {

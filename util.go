@@ -15,7 +15,13 @@ func (v stringQueue) Join(sep string) string {
 }
 func columnsToStrings (columns []Column) (strings []string) {
 	for _, column := range columns {
-		strings = append(strings, column.String())
+		strings = append(strings, column.wrapField())
+	}
+	return
+}
+func columnsToStringsWithAS (columns []Column) (strings []string) {
+	for _, column := range columns {
+		strings = append(strings, column.wrapFieldWithAS())
 	}
 	return
 }

@@ -3,6 +3,7 @@ package sq_test
 import (
 	"context"
 	sq "github.com/goclub/sql"
+	"github.com/stretchr/testify/suite"
 	"log"
 	"testing"
 )
@@ -16,11 +17,6 @@ func init () {
 		Host: "127.0.0.1",
 		Port:"3306",
 		DB: "test_goclub_sql",
-		Query: map[string]string{
-			"charset": "utf8",
-			"parseTime": "true",
-			"loc": "Local",
-		},
 	}.String()) ; if err != nil {
 		panic(err)
 	}
@@ -30,15 +26,30 @@ func init () {
 		panic(err)
 	}
 }
-func TestDateTime(t *testing.T) {
-	var user User
-	userCol := user.Column()
-	has, err := testDB.QueryRowStructScan(context.TODO(), &user, sq.QB{
-		Table:    User{},
-		Where: sq.And(userCol.ID, sq.Equal("0d2d88ab-4035-11eb-a5e1-0242ac120003")),
-	})
-	log.Print(user.CreatedAt.String(),user.UpdatedAt.String())
-	log.Print(has, err)
-	log.Printf("%+v", user)
+func TestDB(t *testing.T) {
+	suite.Run(t, new(TestDBSuite))
+}
+type TestDBSuite struct {
+	suite.Suite
 }
 
+func (suite TestDBSuite) TestCreateModel() {
+	user := User{
+		Name:"nimo",
+	}
+	err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
+		panic(err)
+	}
+	log.Print(user)
+}
+func (suite TestDBSuite) TestRelation() {
+	userWithAddress := UserWithAddress{}
+	userWithAddressCol := userWithAddress.Column()
+	has, err := testDB.Relation(context.TODO(), &userWithAddress, sq.QB{
+		Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
+		Debug: true,
+	}) ; if err != nil {
+		panic(err)
+	}
+	log.Print(has, userWithAddress)
+}

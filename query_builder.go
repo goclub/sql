@@ -2,15 +2,18 @@ package sq
 
 import (
 	"errors"
+	"log"
 	"reflect"
 	"strings"
 )
 
-type UpdateColumn map[Column]interface{}
-
+type Data struct {
+	Column Column
+	Value interface{}
+}
 
 type QB struct {
-	Table Table
+	Table Tabler
 	tableName string
 	TableRaw func ()(query string, values []interface{})
 	softDelete string
@@ -19,9 +22,11 @@ type QB struct {
 	Where []Condition
 	WhereOR [][]Condition
 	WhereRaw func ()(query string, values []interface{})
-	Update UpdateColumn
+	Update []Data
+	Insert []Data
 	Limit int
-	Join Join
+	Join []Join
+	Debug bool
 }
 type JoinType string
 func (t JoinType) String() string {
@@ -36,12 +41,21 @@ const CrossJoin JoinType = "CROSS JOIN"
 type Join struct {
 	Type JoinType
 	TableName string
-	On []Column
+	On string
 }
 type Column string
 func (c Column) String() string { return string(c)}
 func (c Column) wrapField() string {
-	return "`" + strings.ReplaceAll(c.String(), ".", "`.`") + "`"
+	s := c.String()
+	return "`" + strings.ReplaceAll(s, ".", "`.`") + "`"
+}
+func (c Column) wrapFieldWithAS() string {
+	s := c.String()
+	column := c.wrapField()
+	if strings.Contains(s, ".") {
+		column += ` AS "` + s + `"`
+	}
+	return column
 }
 func (qb QB) Check(checkSQL ...string) QB {
 	return qb
@@ -96,10 +110,9 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 		qb.tableName, subTableValues = qb.TableRaw()
 		values = append(values, subTableValues...)
 	}
-	statement.Switch(
-	   func(_Select int) {
-	   	sqlList.Push("SELECT")
-	   	if qb.Table != nil {
+	statement.Switch(func(_Select int) {
+	  sqlList.Push("SELECT")
+	  if qb.Table != nil {
 	   		rValue := reflect.ValueOf(qb.Table)
 	   		rType := rValue.Type()
 			if rType.Kind() == reflect.Ptr {
@@ -115,25 +128,44 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 				}
 			}
 		}
-	   	if len(qb.Select) == 0 {
+	  if len(qb.Select) == 0 {
 	   		sqlList.Push("*")
 		} else {
-			sqlList.Push("`" + strings.Join(columnsToStrings(qb.Select), "`, `") + "`")
+			sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
 		}
 		sqlList.Push("FROM")
-	   	sqlList.Push(qb.tableName)
-	   	if qb.Index != "" {
-	   		sqlList.Push(qb.Index)
+	  sqlList.Push(qb.tableName)
+	  if qb.Index != "" {
+	  	sqlList.Push(qb.Index)
+		}
+		for _, join := range qb.Join {
+			sqlList.Push(join.Type.String())
+			sqlList.Push("`" + join.TableName + "`")
+			sqlList.Push("ON")
+			sqlList.Push(join.On)
 		}
 	}, func(_Update bool) {
 
 	}, func(_Delete string) {
 
 	}, func(_Insert []int) {
-
+			sqlList.Push("INSERT INTO")
+			sqlList.Push(qb.tableName)
+			var columns []string
+			for _, item := range qb.Insert {
+				columns = append(columns, item.Column.wrapField())
+				values = append(values, item.Value)
+			}
+			sqlList.Push("(" + strings.Join(columns, ",") + ")")
+			sqlList.Push("VALUES")
+			var placeholders []string
+			for _, _ = range columns {
+				placeholders = append(placeholders, "?")
+			}
+			sqlList.Push("(" + strings.Join(placeholders, ",") + ")")
 	})
 	// where
-	{
+	if statement == statement.Enum().Select || statement == statement.Enum().Update {
 		var whereString string
 		if qb.WhereRaw != nil {
 			var whereValues []interface{}
@@ -173,8 +205,16 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 	}
 
 	query = sqlList.Join(" ")
+	defer func() {
+		if qb.Debug {
+			log.Print("goclub/sql debug:\r\n" + query, values)
+		}
+	}()
 	return
 }
 func (qb QB) SQLSelect() (query string, values []interface{}) {
 	return qb.SQL(Statement("").Enum().Select)
+}
+func (qb QB) SQLInsert() (query string, values []interface{}) {
+	return qb.SQL(Statement("").Enum().Insert)
 }

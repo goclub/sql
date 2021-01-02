@@ -12,6 +12,11 @@ type DataSourceName struct {
 	Host string
 	Port string
 	DB string
+	// 	map[string]string{
+	// 	"charset": "utf8",
+	// 	"parseTime": "True",
+	// 	"loc": "Local",
+	// }
 	Query map[string]string
 }
 func (config DataSourceName) String() (dataSourceName string) {
@@ -28,13 +33,6 @@ func (config DataSourceName) String() (dataSourceName string) {
 		"/",
 		config.DB,
 		"?",
-	}
-	if len(config.Query) == 0 {
-		config.Query = map[string]string{
-			"charset": "utf8",
-			"parseTime": "True",
-			"loc": "Local",
-		}
 	}
 	configList = append(configList)
 	values := url.Values{}
