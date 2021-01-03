@@ -145,7 +145,15 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 			sqlList.Push(join.On)
 		}
 	}, func(_Update bool) {
-
+		sqlList.Push("UPDATE")
+		sqlList.Push(qb.tableName)
+		sqlList.Push("SET")
+		var sets  []string
+		for _, data := range qb.Update {
+			sets = append(sets, data.Column.wrapField()+"=?")
+			values = append(values, data.Value)
+		}
+		sqlList.Push(strings.Join(sets, ","))
 	}, func(_Delete string) {
 
 	}, func(_Insert []int) {
@@ -217,4 +225,7 @@ func (qb QB) SQLSelect() (query string, values []interface{}) {
 }
 func (qb QB) SQLInsert() (query string, values []interface{}) {
 	return qb.SQL(Statement("").Enum().Insert)
+}
+func (qb QB) SQLUpdate() (query string, values []interface{}) {
+	return qb.SQL(Statement("").Enum().Update)
 }

@@ -2,6 +2,9 @@ package sq
 
 import "database/sql"
 
+type UpdateModeler interface {
+	UpdateModelWhere() []Condition
+}
 type Tabler interface {
 	TableName() string
 	SoftDelete() string

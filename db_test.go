@@ -53,3 +53,7 @@ func (suite TestDBSuite) TestRelation() {
 	}
 	log.Print(has, userWithAddress)
 }
+
+func (suite TestDBSuite) TestUpdate() {
+
+}

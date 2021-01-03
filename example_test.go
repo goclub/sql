@@ -54,11 +54,12 @@ type User struct {
 	Name string `db:"name"`
 	Age int `db:"age"`
 	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-	AutoIncrementID int64 `db:"auto_increment_id" sq:"ignoreInsert"`
+	UpdatedAt time.Time `db:"updated_at" sq:"ignore"`
+	AutoIncrementID int64 `db:"auto_increment_id" sq:"ignore"`
 }
 func (User) TableName() string {return "user"}
 func (User) SoftDelete() string {return "`is_deleted` = 0"}
+
 func (u *User) BeforeCreate() {if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) }}
 func (u *User) AfterCreate(result sql.Result) (err error) {
 	u.AutoIncrementID, err = result.LastInsertId() ; if err != nil {return}
@@ -66,7 +67,6 @@ func (u *User) AfterCreate(result sql.Result) (err error) {
 }
 func (u *User) BeforeUpdate(){}
 func (u *User) AfterUpdate(){}
-
 func (User) Column () (col struct{
 	ID sq.Column
 	Name sq.Column
@@ -274,18 +274,18 @@ func ExampleCreateModel() {
 		panic(err)
 	}
 }
-func ExampleMultiCreateModel() {
-	log.Print("ExampleMultiCreateModel")
-	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	userList := []User{
-		{Name:"a", Age:1},
-		{Name:"b", Age:2},
-	}
-	checkInsertSQL := "INSERT INTO `user` (`id`, `name`, `age`) VALUES (?, ?, ?)"
-	err := exampleDB.MultiCreateModel(ctx, &userList, checkInsertSQL) ; if err != nil {
-		panic(err)
-	}
-}
+// func ExampleMultiCreateModel() {
+// 	log.Print("ExampleMultiCreateModel")
+// 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+// 	userList := []User{
+// 		{Name:"a", Age:1},
+// 		{Name:"b", Age:2},
+// 	}
+// 	checkInsertSQL := "INSERT INTO `user` (`id`, `name`, `age`) VALUES (?, ?, ?)"
+// 	err := exampleDB.MultiCreateModel(ctx, &userList, checkInsertSQL) ; if err != nil {
+// 		panic(err)
+// 	}
+// }
 func ExampleSoftDeleteModel() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	user := someUser()
