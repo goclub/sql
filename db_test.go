@@ -45,7 +45,7 @@ func (suite TestDBSuite) TestCreateModel() {
 func (suite TestDBSuite) TestRelation() {
 	userWithAddress := UserWithAddress{}
 	userWithAddressCol := userWithAddress.Column()
-	has, err := testDB.Relation(context.TODO(), &userWithAddress, sq.QB{
+	has, err := testDB.QueryRelation(context.TODO(), &userWithAddress, sq.QB{
 		Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
 		Debug: true,
 	}) ; if err != nil {
@@ -57,3 +57,4 @@ func (suite TestDBSuite) TestRelation() {
 func (suite TestDBSuite) TestUpdate() {
 
 }
+

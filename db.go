@@ -7,8 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"reflect"
-	"strings"
-	"time"
 )
 
 type DB struct {
@@ -39,9 +37,10 @@ func (db *DB) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return
 }
 func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
-	ptr.BeforeCreate()
+	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
+		Debug:true,
 	}
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
@@ -51,23 +50,23 @@ func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (e
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
 	for i:=0;i<elemType.NumField();i++ {
-		itemType := elemType.Field(i)
-		column, hasDBTag := itemType.Tag.Lookup("db")
+		fieldType := elemType.Field(i)
+		fieldValue := elemValue.Field(i)
+		// `db:"name"`
+		column, hasDBTag := fieldType.Tag.Lookup("db")
 		if !hasDBTag {continue}
 		if column == "" {continue}
-		sqTag := itemType.Tag.Get("sq")
-		sqTags := strings.Split(sqTag, "|")
-		shouldIgnoreInsert := false
-		for _, tag := range sqTags {
-			if tag == "ignore" { shouldIgnoreInsert = true ; break }
-		}
+
+		// `sq:"ignore"`
+		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
 		if shouldIgnoreInsert {continue}
-		for _, field := range createAndUpdateTimeField {
-			if itemType.Name == field {
-				elemValue.Field(i).Set(reflect.ValueOf(time.Now()))
+		// created updated time.Time
+		for _, timeField := range createAndUpdateTimeField {
+			if fieldType.Name == timeField {
+				setTimeNow(fieldValue, fieldType)
 			}
 		}
-		qb.Insert = append(qb.Insert, Data{Column(column), elemValue.Field(i).Interface()})
+		qb.Insert = append(qb.Insert, Data{Column(column), fieldValue.Interface()})
 	}
 	query, values := qb.SQLInsert()
 	result, err := db.Core.ExecContext(ctx, query, values...) ; if err != nil {
@@ -82,11 +81,11 @@ func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has
 	qb.Limit = 1
 	query, values := qb.SQLSelect()
 	row := db.Core.QueryRowx(query, values...)
-	err = row.Scan(desc...) ; if err != nil {
-		if err == sql.ErrNoRows {
-			has = false
+	scanErr := row.Scan(desc...) ; if scanErr != nil {
+		if scanErr == sql.ErrNoRows {
+			return false, nil
 		} else {
-			return
+			return false, scanErr
 		}
 	} else {
 		has = true
@@ -97,11 +96,11 @@ func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (
 	qb.Limit = 1
 	query, values := qb.SQLSelect()
 	row := db.Core.QueryRowx(query, values...)
-	err = row.StructScan(ptr) ; if err != nil {
-		if err == sql.ErrNoRows {
-			has = false
+	scanErr := row.StructScan(ptr) ; if err != nil {
+		if scanErr == sql.ErrNoRows {
+			return false, nil
 		} else {
-			return
+			return false, scanErr
 		}
 	} else {
 		has = true
@@ -118,12 +117,20 @@ func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	}
 	return
 }
-func (db *DB) Model(ctx context.Context, ptr Model, qb QB) (has bool , err error) {
+func (db *DB) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error) {
 	qb.Table = ptr
 	qb.Limit = 1
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
-func (db *DB) ModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
+func (db *DB) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
+	elemType := reflect.TypeOf(modelSlicePtr).Elem()
+	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
+	modelInterface := reflectItemValue.Interface().(Model)
+	qb.Table = modelInterface
+	query, values := qb.SQLSelect()
+	err := db.Core.SelectContext(ctx, modelSlicePtr,query , values...) ; if err != nil {
+		return err
+	}
 	return nil
 }
 func (db *DB) Update(ctx context.Context, qb QB) (err error) {
@@ -145,25 +152,25 @@ func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, che
 		IDValue interface{}
 	}{}
 	for i:=0;i<elemType.NumField();i++ {
-		itemType := elemType.Field(i)
-		column, hasDBTag := itemType.Tag.Lookup("db")
+		fieldType := elemType.Field(i)
+		fieldValue := elemValue.Field(i)
+		column, hasDBTag := fieldType.Tag.Lookup("db")
 		if !hasDBTag {continue}
+
+		// find primary id
 		if column == "id" {
 			idData.HasID = true
-			idData.IDValue = elemValue.Field(i).Interface()
+			idData.IDValue = fieldValue.Interface()
 		}
-		for _, field := range updateTimeField {
-			if itemType.Name == field {
-				updateTime := time.Now()
-				elemValue.Field(i).Set(reflect.ValueOf(updateTime))
-				sqTag := itemType.Tag.Get("sq")
-				sqTags := strings.Split(sqTag, "|")
-				var shouldIgnoreUpdate bool
-				for _, tag := range sqTags {
-					if tag == "ignore" { shouldIgnoreUpdate = true ; break }
-				}
-				if !shouldIgnoreUpdate {
-					updateData = append(updateData, Data{Column(column), updateTime})
+
+		//  updated time.Time
+		for _, timeField := range updateTimeField {
+			if fieldType.Name == timeField {
+				setTimeNow(fieldValue, fieldType)
+				// UpdatedAt time.Time `sq:"ignore"`
+				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
+				if !shouldIgnore {
+					updateData = append(updateData, Data{Column(column), fieldValue.Interface()})
 				}
 			}
 		}
@@ -197,12 +204,12 @@ func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, che
 func (db *DB) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
 	return
 }
-func (db *DB) Relation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
+func (db *DB) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
 	qb.Table = ptr
 	qb.Limit = 1
 	qb.Join = ptr.RelationJoin()
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
-func (db *DB) RelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
+func (db *DB) QueryRelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
 	return
 }

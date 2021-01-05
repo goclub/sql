@@ -2,24 +2,21 @@ package sq_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goclub/sql"
 	"log"
 	"testing"
-	"time"
 )
 
 
 func TestExample(t *testing.T) {
 	// ExampleDB_QueryRowScan()
-	// ExampleDB_QueryRowScanMultiColumn()
 	// ExampleDB_QueryRowStructScan()
 	// ExampleDB_Count()
-	// ExampleCreateModel()
+	ExampleCreateModel()
 	// ExampleMultiCreateModel()
-	// ExampleDB_Model()
+	// ExampleDB_QueryModel()
 	// ExampleDB_ModelList()
 	// ExampleDB_UpdateModel()
 	// ExampleSoftDeleteModel()
@@ -48,35 +45,7 @@ func init () {
 }
 
 
-type IDUser string
-type User struct {
-	ID IDUser `db:"id"`
-	Name string `db:"name"`
-	Age int `db:"age"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" sq:"ignore"`
-	AutoIncrementID int64 `db:"auto_increment_id" sq:"ignore"`
-}
-func (User) TableName() string {return "user"}
-func (User) SoftDelete() string {return "`is_deleted` = 0"}
 
-func (u *User) BeforeCreate() {if len(u.ID) == 0 { u.ID = IDUser(sq.UUID()) }}
-func (u *User) AfterCreate(result sql.Result) (err error) {
-	u.AutoIncrementID, err = result.LastInsertId() ; if err != nil {return}
-	return nil
-}
-func (u *User) BeforeUpdate(){}
-func (u *User) AfterUpdate(){}
-func (User) Column () (col struct{
-	ID sq.Column
-	Name sq.Column
-	Age sq.Column
-}) {
-	col.ID = "id"
-	col.Name = "name"
-	col.Age = "age"
-	return
-}
 
 type UserWithAddress struct {
 	UserID IDUser `db:"user.id"`
@@ -84,7 +53,7 @@ type UserWithAddress struct {
 	Age int `db:"user.age"`
 	Address string `db:"user_address.address"`
 }
-func (UserWithAddress) SoftDelete() string {return "`user`.`is_deleted` = 0 AND `user_address`.`is_deleted` = 0"}
+func (UserWithAddress) SoftDeleteWhere() (sq.QueryValues) {return sq.QueryValues{"`user`.`is_deleted` = 0 AND `user_address`.`is_deleted` = 0", nil}}
 func (UserWithAddress) TableName() string {return "user"}
 func (*UserWithAddress) RelationJoin() []sq.Join {
 	return []sq.Join{
@@ -107,78 +76,97 @@ func (UserWithAddress) Column () (col struct{
 	col.Address = "user_address.user_id"
 	return
 }
-// 查询单行单列数据
+// 查询单行多列数据
+// sq.QB 是 goclub/sql 的核心功能。 QB = query builder 用于生成 SQL。
+//
+// qb.Table 字段要求传入一个实现了 TableName() string  和 SoftDeleteWhere() QueryValues 方法的结构体
+// 可以通过 sq.Table("user", sq.QueryValues{"`deleted_at` IS NULL", nil}) 快速创建。
+//
+// qb.Select 用于定义 SQL 语句 SELECT 的内容
+//
+// &name 用于接收查询结果
+//
+// hasName 当没有查询到数据时 hasName = false ，否则为 true
+//
+// 通过 qb.Debug = true 可以在执行 SQL 时打印 sql语句和占位符对应的值
 func ExampleDB_QueryRowScan() {
 	log.Print("ExampleDB_QueryRowScan")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	userCol := User{}.Column()
-	var name string
-	checkSQL := "SELECT `name` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?"
-	qb := sq.QB{
-		Table: &User{},
-		Select: []sq.Column{userCol.Name},
-		Where: sq.
-			And(userCol.ID, sq.Equal(1)),
-	}.Check(checkSQL)
-	hasName, err := exampleDB.QueryRowScan(ctx, qb, &name) ; if err != nil {
-		panic(err)
+	{
+		log.Print("查询单行单列")
+		var name string
+		qb := sq.QB{
+			Debug: true, // Debug 时候会通过 log.Print 打印执行的 SQL
+			Table: sq.Table("user", sq.QueryValues{"`deleted_at` IS NULL", nil}),
+			Select: []sq.Column{"name"},
+			Where: sq.
+				And("id", sq.Equal(1)),
+		}
+		// SELECT `name` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?
+		hasName, err := exampleDB.QueryRowScan(ctx, qb, &name) ; if err != nil {
+			panic(err)
+		}
+		log.Print(" name:", name, " hasName:", hasName)
 	}
-	log.Print(name, hasName)
-}
-// 查询单行多列数据
-func ExampleDB_QueryRowScanMultiColumn() {
-	log.Print("ExampleDB_QueryRowScanMultiColumn")
-	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	userCol := User{}.Column()
-	var name string
-	var age int
-	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?"
-	qb := sq.QB{
-		Table: User{},
-		Select: []sq.Column{userCol.Name, userCol.Age},
-		Where: sq.
-			And(userCol.ID, sq.Equal(1)),
-	}.Check(checkSQL)
-	hasName, err := exampleDB.QueryRowScan(ctx, qb, &name,&age) ; if err != nil {
-		panic(err)
+	{
+		log.Print("查询单行多列")
+		var name string
+		var age int
+		qb := sq.QB{
+			Debug: true,
+			Table: TableUser{}, // 为了避免每次都使用 sq.Table(tableName, softDeleteWhere) 定义出 TableUser 结构体并传入 https://github.com/goclub/sql/blob/main/example_user_test.go
+			Select: []sq.Column{"name","age"},
+			Where: sq.
+				And("id", sq.Equal(1)),
+		}
+		// SELECT `name`, `age` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?
+		hasUser, err := exampleDB.QueryRowScan(ctx, qb, &name, &age) ; if err != nil {
+			panic(err)
+		}
+		log.Print(" name:", name, " age", age, " hasUser:", hasUser)
 	}
-	log.Print(name, hasName)
 }
 // 查询单行多列数据(扫描到结构体)
 func ExampleDB_QueryRowStructScan() {
 	log.Print("ExampleDB_QueryRowStructScan")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	userNameAge := struct {
+	// 定义查询结果对应的结构体，并组合  TableUser 以提供表名和软删信息
+	type UserNameAge struct {
 		Name string `db:"name"`
 		Age int `db:"age"`
-	}{}
+		TableUser // https://github.com/goclub/sql/blob/main/example_user_test.go
+	}
+	userNameAge := UserNameAge{}
 	userCol := User{}.Column()
-	checkSQL := "SELECT `name`,`age` FROM `user` WHERE `id` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
-		Table: User{},
+		Debug: true,
+		Table: UserNameAge{},
+		// Select 为空时候会根据 qb.Table (UserNameAge{})  结构体每个字段的 `db:"xxx"`作为 Select 参数
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
-	}.Check(checkSQL)
+	}
+	// SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `age` = ? AND `deleted_at` IS NULL LIMIT ?
 	hasUser, err := exampleDB.QueryRowStructScan(ctx, &userNameAge, qb) ; if err != nil {
 		panic(err)
 	}
-	log.Print(userNameAge, hasUser)
+	log.Print("userNameAge.Name:",userNameAge.Name, " userNameAge.Age:",userNameAge.Age, " hasUser:", hasUser)
 }
 
 // 基于 Model 查询单行数据 （可省略 qb.Table）
-func ExampleDB_Model() {
+func ExampleDB_QueryModel() {
 	log.Print("ExampleDB_Model")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	user := User{}
 	userCol := user.Column()
 	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
+		Debug: true,
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
 	}.Check(checkSQL)
-	hasUser, err := exampleDB.Model(ctx, &user, qb) ; if err != nil {
+	hasUser, err := exampleDB.QueryModel(ctx, &user, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print(user, hasUser)
@@ -206,7 +194,7 @@ func ExampleDB_ModelList() {
 		Where: sq.
 			And(userCol.Age, sq.GtInt(18)),
 	}.Check(checkSQL)
-	err := exampleDB.ModelList(ctx, &userList, qb) ; if err != nil {
+	err := exampleDB.QueryModelList(ctx, &userList, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print(userList)
@@ -214,7 +202,7 @@ func ExampleDB_ModelList() {
 func someUser () (user User) {
 	userCol := user.Column()
 	{
-		hasUser, err := exampleDB.Model(context.TODO(), &user, sq.QB{
+		hasUser, err := exampleDB.QueryModel(context.TODO(), &user, sq.QB{
 			Where: sq.And(userCol.Name, sq.Equal("update1"),),
 		}) ; if err != nil {
 		panic(err)
@@ -307,7 +295,7 @@ func ExampleRelation() {
 		"AND `user.deleted_at` IS NULL " +
 		"AND `user_address.deleted_at` IS NULL" +
 		"LIMIT ?"
-	has, err := exampleDB.Relation(ctx, &userWithAddress, sq.QB{Where: sq.And(userWithAddressCol.UserID, sq.Equal("290f187c-3de0-11eb-b378-0242ac130002"))}, checkSQL) ; if err != nil {
+	has, err := exampleDB.QueryRelation(ctx, &userWithAddress, sq.QB{Where: sq.And(userWithAddressCol.UserID, sq.Equal("290f187c-3de0-11eb-b378-0242ac130002"))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 	log.Print("has", has)
@@ -325,7 +313,7 @@ func ExampleRelationList() {
 		"WHERE `user.age` > ? " +
 		"AND `user.deleted_at` IS NULL " +
 		"AND `user_address.deleted_at` IS NULL"
-	err := exampleDB.RelationList(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
+	err := exampleDB.QueryRelationList(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 }
@@ -342,7 +330,7 @@ func ExamplePaging() {
 	perPage := 10
 	checkSQL := "SELECT `id`, `name`, `age` FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL LIMIT ? OFFSET ?"
 	pagingQB :=  baseQB.Paging(page, perPage)
-	err := exampleDB.ModelList(ctx, &userList, pagingQB.Check(checkSQL)) ; if err != nil {
+	err := exampleDB.QueryModelList(ctx, &userList, pagingQB.Check(checkSQL)) ; if err != nil {
 		panic(err)
 	}
 	log.Print(userList)

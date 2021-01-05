@@ -3,7 +3,6 @@ package sq
 import (
 	"errors"
 	"log"
-	"reflect"
 	"strings"
 )
 
@@ -14,9 +13,10 @@ type Data struct {
 
 type QB struct {
 	Table Tabler
-	tableName string
+		tableName string
 	TableRaw func ()(query string, values []interface{})
-	softDelete string
+	DisableSoftDelete bool
+		softDelete QueryValues
 	Select []Column
 	Index string
 	Where []Condition
@@ -103,7 +103,15 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 	}
 	if qb.Table != nil {
 		qb.tableName = "`" + qb.Table.TableName() + "`"
-		qb.softDelete = qb.Table.SoftDelete()
+		switch statement {
+		case statement.Enum().Select,
+			 statement.Enum().Update:
+			qb.softDelete = qb.Table.SoftDeleteWhere()
+		case statement.Enum().Insert:
+		case statement.Enum().Delete:
+		default:
+			panic(errors.New("statement can not be " + statement.String()))
+		}
 	}
 	if qb.TableRaw != nil {
 		var subTableValues []interface{}
@@ -112,22 +120,9 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 	}
 	statement.Switch(func(_Select int) {
 	  sqlList.Push("SELECT")
-	  if qb.Table != nil {
-	   		rValue := reflect.ValueOf(qb.Table)
-	   		rType := rValue.Type()
-			if rType.Kind() == reflect.Ptr {
-				rValue = rValue.Elem()
-				rType = rValue.Type()
-			}
-	   		for i:=0;i<rType.NumField();i++ {
-	   			field := rType.Field(i)
-	   			tag, has := field.Tag.Lookup("db")
-	   			if !has {continue}
-	   			if tag != "" {
-					qb.Select = append(qb.Select, Column(tag))
-				}
-			}
-		}
+	  if qb.Table != nil && len(qb.Select) == 0 {
+		qb.Select = TagToColumns(qb.Table)
+	  }
 	  if len(qb.Select) == 0 {
 	   		sqlList.Push("*")
 		} else {
@@ -196,14 +191,16 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 				whereString = "(" + whereString + ")"
 			}
 		}
-		needSoftDelete := qb.softDelete != ""
-
-		if needSoftDelete  {
-			whereSofeDelete := qb.softDelete
-			if len(whereString) != 0 {
-				whereString += " AND " + whereSofeDelete
-			} else {
-				whereString += whereSofeDelete
+		if !qb.DisableSoftDelete {
+			needSoftDelete := qb.softDelete.Query != ""
+			if needSoftDelete  {
+				whereSoftDelete := qb.softDelete
+				values = append(values, whereSoftDelete.Values...)
+				if len(whereString) != 0 {
+					whereString += " AND " + whereSoftDelete.Query
+				} else {
+					whereString += whereSoftDelete.Query
+				}
 			}
 		}
 		if len(whereString) != 0 {
@@ -211,11 +208,14 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 			sqlList.Push(whereString)
 		}
 	}
-
+	if qb.Limit != 0 {
+		sqlList.Push("LIMIT ?")
+		values = append(values, qb.Limit)
+	}
 	query = sqlList.Join(" ")
 	defer func() {
 		if qb.Debug {
-			log.Print("goclub/sql debug:\r\n" + query, values)
+			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
 		}
 	}()
 	return
