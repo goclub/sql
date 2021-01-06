@@ -19,6 +19,10 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 > 推荐不了解 database/sql 的使用者阅读： [Go SQL 数据库教程
 ](https://learnku.com/docs/go-database-sql/overview/9474)
 
+## 准备工作
+
+[定义结构体](https://github.com/goclub/sql/blob/main/example_user_test.go)
+
 ### QueryRowScan
 
 > 查询单行多列数据 

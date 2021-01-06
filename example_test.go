@@ -97,7 +97,7 @@ func ExampleDB_QueryRowScan() {
 		var name string
 		qb := sq.QB{
 			Debug: true, // Debug 时候会通过 log.Print 打印执行的 SQL
-			Table: sq.Table("user", sq.QueryValues{"`deleted_at` IS NULL", nil}),
+			Table: TableUser{},
 			Select: []sq.Column{"name"},
 			Where: sq.
 				And("id", sq.Equal(1)),
@@ -114,7 +114,7 @@ func ExampleDB_QueryRowScan() {
 		var age int
 		qb := sq.QB{
 			Debug: true,
-			Table: TableUser{}, // 为了避免每次都使用 sq.Table(tableName, softDeleteWhere) 定义出 TableUser 结构体并传入 https://github.com/goclub/sql/blob/main/example_user_test.go
+			Table: TableUser{},
 			Select: []sq.Column{"name","age"},
 			Where: sq.
 				And("id", sq.Equal(1)),

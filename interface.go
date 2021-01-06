@@ -45,19 +45,22 @@ type Relation interface {
 	RelationJoin () []Join
 }
 
-type SoftDeleteIsDeleted struct {}
-func (SoftDeleteIsDeleted) SoftDeleteWhere() (QueryValues) {return QueryValues{"`is_deleted` = 0", nil}}
-func (SoftDeleteIsDeleted) SoftDeleteSet() (QueryValues)   {return QueryValues{"`is_deleted` = 1" ,nil}}
-
 type SoftDeleteDeletedAt struct {}
 func (SoftDeleteDeletedAt) SoftDeleteWhere() (QueryValues) {return QueryValues{"`deleted_at` IS NULL", nil}}
 func (SoftDeleteDeletedAt) SoftDeleteSet() (QueryValues)   {return QueryValues{"`deleted_at` = ?" ,[]interface{}{time.Now()}}}
 
+type SoftDeleteDeleteTime struct {}
+func (SoftDeleteDeleteTime) SoftDeleteWhere() (QueryValues) {return QueryValues{"`delete_time` IS NULL", nil}}
+func (SoftDeleteDeleteTime) SoftDeleteSet() (QueryValues)   {return QueryValues{"`delete_time` = ?" ,[]interface{}{time.Now()}}}
 
-type DefaultModel struct {
-	CreatedAtUpdatedAt
+type SoftDeleteIsDeleted struct {}
+func (SoftDeleteIsDeleted) SoftDeleteWhere() (QueryValues) {return QueryValues{"`is_deleted` = 0", nil}}
+func (SoftDeleteIsDeleted) SoftDeleteSet() (QueryValues)   {return QueryValues{"`is_deleted` = 1" ,nil}}
+
+type DefaultLifeCycle struct {
+
 }
-func (DefaultModel) AfterCreate(result sql.Result) error {return nil}
-func (DefaultModel) BeforeCreate() error {return nil}
-func (DefaultModel) BeforeUpdate() error {return nil}
-func (DefaultModel) AfterUpdate() error {return nil}
+func (v *DefaultLifeCycle) BeforeCreate() error {return nil}
+func (v *DefaultLifeCycle) AfterCreate(result sql.Result) error {return nil}
+func (v *DefaultLifeCycle) BeforeUpdate() error {return nil}
+func (v *DefaultLifeCycle) AfterUpdate() error {return nil}

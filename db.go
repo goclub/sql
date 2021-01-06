@@ -12,8 +12,8 @@ import (
 type DB struct {
 	Core *sqlx.DB
 }
-var createTimeField = []string{"CreatedAt","GMTCreate","CreatedTime",}
-var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdatedTime",}
+var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
+var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdateTime",}
 var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
 func Open(driverName string, dataSourceName string) (db *DB, dbClose func() error, err error) {
 	var coreDB *sqlx.DB

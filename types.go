@@ -10,6 +10,21 @@ type CreatedAtUpdatedAt struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
+func (v *CreatedAtUpdatedAt) BeforeCreate() {
+	v.CreatedAt = time.Now()
+	v.UpdatedAt = time.Now()
+}
+func (v *CreatedAtUpdatedAt) BeforeUpdate() {
+	v.UpdatedAt = time.Now()
+}
+type CreateTimeUpdateTime struct {
+	CreateTime time.Time `db:"create_time"`
+	UpdateTime time.Time `db:"update_time"`
+}
+type GMTCreateGMTUpdate struct {
+	GMTCreate time.Time `db:"gmt_create"`
+	GMTUpdate time.Time `db:"gmt_update"`
+}
 
 func setTimeNow (fieldValue reflect.Value, fieldType reflect.StructField) {
 	if fieldValue.IsZero() {
