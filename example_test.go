@@ -13,10 +13,10 @@ import (
 func TestExample(t *testing.T) {
 	// ExampleDB_QueryRowScan()
 	// ExampleDB_QueryRowStructScan()
-	// ExampleDB_Count()
-	ExampleCreateModel()
-	// ExampleMultiCreateModel()
 	// ExampleDB_QueryModel()
+	ExampleDB_Count()
+	// ExampleCreateModel()
+	// ExampleMultiCreateModel()
 	// ExampleDB_ModelList()
 	// ExampleDB_UpdateModel()
 	// ExampleSoftDeleteModel()
@@ -34,6 +34,9 @@ func init () {
 		Host: "127.0.0.1",
 		Port:"3306",
 		DB: "example_goclub_sql",
+		Query: map[string]string{
+			"parseTime": "true",
+		},
 	}.String()) ; if err != nil {
 		panic(err)
 	}
@@ -44,45 +47,8 @@ func init () {
 	}
 }
 
-
-
-
-type UserWithAddress struct {
-	UserID IDUser `db:"user.id"`
-	Name string `db:"user.name"`
-	Age int `db:"user.age"`
-	Address string `db:"user_address.address"`
-}
-func (UserWithAddress) SoftDeleteWhere() (sq.QueryValues) {return sq.QueryValues{"`user`.`is_deleted` = 0 AND `user_address`.`is_deleted` = 0", nil}}
-func (UserWithAddress) TableName() string {return "user"}
-func (*UserWithAddress) RelationJoin() []sq.Join {
-	return []sq.Join{
-		{
-			Type: 	  	   sq.LeftJoin,
-			TableName:	   "user_address",
-			On:"`user`.`id` = `user_address`.`user_id`",
-		},
-	}
-}
-func (UserWithAddress) Column () (col struct{
-	UserID sq.Column
-	Name sq.Column
-	Age sq.Column
-	Address sq.Column
-}) {
-	col.UserID = "user.id"
-	col.Name = "user.name"
-	col.Age = "user.age"
-	col.Address = "user_address.user_id"
-	return
-}
 // 查询单行多列数据
 // sq.QB 是 goclub/sql 的核心功能。 QB = query builder 用于生成 SQL。
-//
-// qb.Table 字段要求传入一个实现了 TableName() string  和 SoftDeleteWhere() QueryValues 方法的结构体
-// 可以通过 sq.Table("user", sq.QueryValues{"`deleted_at` IS NULL", nil}) 快速创建。
-//
-// qb.Select 用于定义 SQL 语句 SELECT 的内容
 //
 // &name 用于接收查询结果
 //
@@ -153,35 +119,37 @@ func ExampleDB_QueryRowStructScan() {
 	log.Print("userNameAge.Name:",userNameAge.Name, " userNameAge.Age:",userNameAge.Age, " hasUser:", hasUser)
 }
 
-// 基于 Model 查询单行数据 （可省略 qb.Table）
+// 基于 Model 查询单行数据 （可不传递 qb.Table）
 func ExampleDB_QueryModel() {
 	log.Print("ExampleDB_Model")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	user := User{}
 	userCol := user.Column()
-	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `name` = ? AND `age` = ? AND `is_deleted` = 0 LIMIT ?"
 	qb := sq.QB{
 		Debug: true,
 		Where: sq.
 			And(userCol.Name, sq.Equal("nimo")).
 			And(userCol.Age, sq.Equal(18)),
-	}.Check(checkSQL)
+	}
+	// SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = ? AND `age` = ? LIMIT ?
 	hasUser, err := exampleDB.QueryModel(ctx, &user, qb) ; if err != nil {
 		panic(err)
 	}
-	log.Print(user, hasUser)
+	log.Printf("user: %+v\r\n hasUser: %v", user, hasUser)
 }
 //  基于 Model 查询 count
 func ExampleDB_Count() {
 	log.Print("ExampleDB_Count")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	// SELECT COUNT(*) FROM `user` WHERE `age` = ? AND `deleted_at` IS NULL
 	count, err := exampleDB.Count(ctx, sq.QB{
+		Debug: true,
 		Table: User{},
-		Where: sq.And(User{}.Column().Age, sq.GtInt(18)),
+		Where: sq.And(User{}.Column().Age, sq.Equal(18)),
 	}) ; if err != nil {
 		panic(err)
 	}
-	log.Print(count)
+	log.Print("count: ", count)
 }
 // 基于 Model 查询多行数据
 func ExampleDB_ModelList() {

@@ -10,11 +10,11 @@ type CreatedAtUpdatedAt struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
-func (v *CreatedAtUpdatedAt) BeforeCreate() {
+func (v *CreatedAtUpdatedAt) ColumnBeforeCreate() {
 	v.CreatedAt = time.Now()
 	v.UpdatedAt = time.Now()
 }
-func (v *CreatedAtUpdatedAt) BeforeUpdate() {
+func (v *CreatedAtUpdatedAt) ColumnBeforeUpdate() {
 	v.UpdatedAt = time.Now()
 }
 type CreateTimeUpdateTime struct {

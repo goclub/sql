@@ -18,6 +18,7 @@ type QB struct {
 	DisableSoftDelete bool
 		softDelete QueryValues
 	Select []Column
+	SelectRaw []QueryValues
 	Index string
 	Where []Condition
 	WhereOR [][]Condition
@@ -25,8 +26,13 @@ type QB struct {
 	Update []Data
 	Insert []Data
 	Limit int
+	limitRaw limitRaw
 	Join []Join
 	Debug bool
+}
+type limitRaw struct {
+	Valid bool
+	Limit int
 }
 type JoinType string
 func (t JoinType) String() string {
@@ -120,15 +126,24 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 	}
 	statement.Switch(func(_Select int) {
 	  sqlList.Push("SELECT")
-	  if qb.Table != nil && len(qb.Select) == 0 {
-		qb.Select = TagToColumns(qb.Table)
+	  if qb.SelectRaw == nil {
+		  if qb.Table != nil && len(qb.Select) == 0 {
+			  qb.Select = TagToColumns(qb.Table)
+		  }
+		  if len(qb.Select) == 0 {
+			  sqlList.Push("*")
+		  } else {
+			  sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
+		  }
+	  } else {
+		  var rawColumns []string
+		  for _, queryValues := range qb.SelectRaw {
+			  rawColumns = append(rawColumns, queryValues.Query)
+			  values = append(values, queryValues.Values...)
+		  }
+		  sqlList.Push(strings.Join(rawColumns, ", "))
 	  }
-	  if len(qb.Select) == 0 {
-	   		sqlList.Push("*")
-		} else {
-			sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
-		}
-		sqlList.Push("FROM")
+	  sqlList.Push("FROM")
 	  sqlList.Push(qb.tableName)
 	  if qb.Index != "" {
 	  	sqlList.Push(qb.Index)
@@ -208,7 +223,12 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 			sqlList.Push(whereString)
 		}
 	}
-	if qb.Limit != 0 {
+	limit := qb.Limit
+	// 优先使用 qb.limitRaw, 因为 db.Count 需要用到
+	if qb.limitRaw.Valid {
+		limit = qb.limitRaw.Limit
+	}
+	if limit != 0 {
 		sqlList.Push("LIMIT ?")
 		values = append(values, qb.Limit)
 	}

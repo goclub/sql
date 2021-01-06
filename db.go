@@ -96,7 +96,7 @@ func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (
 	qb.Limit = 1
 	query, values := qb.SQLSelect()
 	row := db.Core.QueryRowx(query, values...)
-	scanErr := row.StructScan(ptr) ; if err != nil {
+	scanErr := row.StructScan(ptr) ; if scanErr != nil {
 		if scanErr == sql.ErrNoRows {
 			return false, nil
 		} else {
@@ -108,7 +108,8 @@ func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (
 	return
 }
 func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
-	qb.Select = []Column{"COUNT(*)"}
+	qb.SelectRaw = []QueryValues{{"COUNT(*)", nil}}
+	qb.limitRaw = limitRaw{Valid: true, Limit: 0}
 	var has bool
 	has, err = db.QueryRowScan(ctx, qb, &count);if err != nil {return }
 	if has == false {
