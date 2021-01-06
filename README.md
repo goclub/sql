@@ -1,8 +1,9 @@
 # sql
-
 [![Go Reference](https://pkg.go.dev/badge/github.com/goclub/sql.svg)](https://pkg.go.dev/github.com/goclub/sql)
 
-> 让你了解每一个函数执行的sql是什么 - goclub/sql
+![](./cat.png)
+
+> goclub/sql 让你了解每一个函数执行的sql是什么，保证SQL的性能最大化的同时超越ORM的便捷。
 
 ## 指南
 
@@ -27,7 +28,6 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 
 ### QueryRowScan
  
-
 [查询单行多列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryRowScan)
 
 ### QueryRowStructScan
