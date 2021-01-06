@@ -5,6 +5,7 @@ import (
 	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/goclub/sql"
+	"github.com/jmoiron/sqlx"
 	"log"
 	"testing"
 )
@@ -13,9 +14,11 @@ import (
 func TestExample(t *testing.T) {
 	// ExampleDB_QueryRowScan()
 	// ExampleDB_QueryRowStructScan()
+	ExampleDB_SelectScan()
+	// ExampleDB_Select()
 	// ExampleDB_QueryModel()
 	// ExampleDB_Count()
-	ExampleDB_ModelList()
+	// ExampleDB_ModelList()
 
 }
 var exampleDB *sq.DB
@@ -110,6 +113,53 @@ func ExampleDB_QueryRowStructScan() {
 		panic(err)
 	}
 	log.Print("userNameAge.Name:",userNameAge.Name, " userNameAge.Age:",userNameAge.Age, " hasUser:", hasUser)
+}
+// 查询多行单列数据
+func ExampleDB_SelectScan() {
+	log.Print("ExampleDB_SelectScan")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	qb := sq.QB{
+		Debug: true,
+		Table: TableUser{},
+		Select: []sq.Column{User{}.Column().ID},
+	}
+	var userIDList []IDUser
+	// SELECT `id` FROM `user` WHERE `deleted_at` IS NULL
+	err := exampleDB.SelectScan(ctx, qb, func(rows *sqlx.Rows) error {
+		var userID IDUser
+		err := rows.Scan(&userID) ; if err != nil {
+			return err
+		}
+		userIDList = append(userIDList, userID)
+		return nil
+	}) ; if err != nil {
+		panic(err)
+	}
+	log.Print("userIDList:", userIDList)
+}
+// 查询多行多列数据解析结构体切片
+func ExampleDB_Select() {
+	log.Print("ExampleDB_Select")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	// 定义查询结果对应的结构体，并组合  TableUser 以提供表名和软删信息
+	type UserNameAge struct {
+		Name string `db:"name"`
+		Age int `db:"age"`
+		TableUser // https://github.com/goclub/sql/blob/main/example_user_test.go
+	}
+	userNameAgeList := []UserNameAge{}
+	userCol := User{}.Column()
+	qb := sq.QB{
+		Debug: true,
+		Table: UserNameAge{},
+		Where: sq.
+			And(userCol.Age, sq.Equal(18)),
+	}
+	// SELECT `name`, `age` FROM `user` WHERE `age` = ? AND `deleted_at` IS NULL
+	err := exampleDB.Select(ctx, &userNameAgeList, qb) ; if err != nil {
+		panic(err)
+	}
+	log.Print("userNameAgeList:", userNameAgeList)
 }
 
 // 基于 Model 查询单行数据 （可不传递 qb.Table）

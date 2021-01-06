@@ -34,14 +34,24 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 
 [查询单行数据并解析到结构体](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryRowStructScan)
 
-## QueryModel
+### SelectScan
+
+[查询多行单列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.SelectScan)
+
+### Select
+ 
+[查询多行多列数据解析结构体切片](https://pkg.go.dev/github.com/goclub/sql/#example-DB.Select)
+
+### QueryModel
 
 [基于 Model 查询单行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModel)
 
-## QueryModelList
+若无需查询全部字段可考虑使用 QueryRowStructScan 查询
+
+### QueryModelList
 
 [基于 Model 查询多行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModelList)
 
-## Count
+### Count
 
 [计数查询 count(*)](https://pkg.go.dev/github.com/goclub/sql/#example-DB.Count)

@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"reflect"
+	"time"
 )
 
 type DB struct {
@@ -92,6 +93,134 @@ func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has
 	}
 	return
 }
+func ScanBytes(bytes *[][]byte) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item []byte
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*bytes = append(*bytes, item)
+		return nil
+	}
+}
+type UintLister interface {
+	Append(i uint)
+}
+func ScanUintIDList(list UintLister) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item uint
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		list.Append(item)
+		return nil
+	}
+}
+type IntLister interface {
+	Append(i int)
+}
+func ScanIntIDList(list IntLister) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item int
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		list.Append(item)
+		return nil
+	}
+}
+type BytesIDLister interface {
+	Append(data []byte)
+}
+func ScanBytesIDList(list BytesIDLister) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item []byte
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		list.Append(item)
+		return nil
+	}
+}
+type StringLister interface {
+	Append(s string)
+}
+func ScanStringIDList(list StringLister) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item string
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		list.Append(item)
+		return nil
+	}
+}
+func ScanStrings(strings *[]string) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item string
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*strings = append(*strings, item
+		return nil
+	}
+}
+func ScanInts(ints *[]int) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item int
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*ints = append(*ints, item)
+		return nil
+	}
+}
+func ScanBool(bools *[]bool) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item bool
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*bools = append(*bools, item)
+		return nil
+	}
+}
+func ScanTimes(times *[]time.Time) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item time.Time
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*times = append(*times, item)
+		return nil
+	}
+}
+func ScanUints(uints *[]uint) func(rows *sqlx.Rows) error {
+	return func(rows *sqlx.Rows) error {
+		var item uint
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*uints = append(*uints, item)
+		return nil
+	}
+}
+func (db *DB) SelectScan(ctx context.Context,qb QB, scan func(rows *sqlx.Rows) error ) (error) {
+	query, values := qb.SQLSelect()
+	rows, err := db.Core.Queryx(query, values...) ; if err != nil {
+		return  err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := scan(rows) ; if err != nil {
+			return err
+		}
+	}
+	if rowsErr := rows.Err(); rowsErr != nil {
+		return rowsErr
+	}
+	return nil
+}
 func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
 	qb.Limit = 1
 	query, values := qb.SQLSelect()
@@ -106,6 +235,10 @@ func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (
 		has = true
 	}
 	return
+}
+func (db *DB) Select(ctx context.Context, slicePtr interface{}, qb QB) (err error) {
+	query, values := qb.SQLSelect()
+	return db.Core.SelectContext(ctx, slicePtr, query, values...)
 }
 func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	qb.SelectRaw = []QueryValues{{"COUNT(*)", nil}}
@@ -124,7 +257,11 @@ func (db *DB) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err 
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
 func (db *DB) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
-	elemType := reflect.TypeOf(modelSlicePtr).Elem()
+	ptrType := reflect.TypeOf(modelSlicePtr)
+	if ptrType.Kind() != reflect.Ptr {
+		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
+	}
+	elemType := ptrType.Elem()
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
 	tablerInterface := reflectItemValue.Interface().(Tabler)
 	qb.Table = tablerInterface
