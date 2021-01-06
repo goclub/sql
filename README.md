@@ -15,7 +15,7 @@
 
 GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性能不高的 SQL。虽然合理使用也可以写出高效SQL，但使用者在使用 ORM 的时候容易忽略最终运行的SQL是什么。
 
-[goclub/sql](https://github.com/goclub/sql) 提供介于手写 sql 和 ORM 之间的 使用体验。
+[goclub/sql](https://github.com/goclub/sql) 提供介于手写 sql 和 ORM 之间的使用体验。
 
 ## 教程
 

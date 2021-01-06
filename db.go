@@ -161,7 +161,7 @@ func ScanStrings(strings *[]string) func(rows *sqlx.Rows) error {
 		err := rows.Scan(&item) ; if err != nil {
 			return err
 		}
-		*strings = append(*strings, item
+		*strings = append(*strings, item)
 		return nil
 	}
 }
