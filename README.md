@@ -38,6 +38,10 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 
 [基于 Model 查询单行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModel)
 
+## QueryModelList
+
+[基于 Model 查询多行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModelList)
+
 ## Count
 
 [计数查询 count(*)](https://pkg.go.dev/github.com/goclub/sql/#example-DB.Count)

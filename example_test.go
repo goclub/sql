@@ -14,16 +14,9 @@ func TestExample(t *testing.T) {
 	// ExampleDB_QueryRowScan()
 	// ExampleDB_QueryRowStructScan()
 	// ExampleDB_QueryModel()
-	ExampleDB_Count()
-	// ExampleCreateModel()
-	// ExampleMultiCreateModel()
-	// ExampleDB_ModelList()
-	// ExampleDB_UpdateModel()
-	// ExampleSoftDeleteModel()
-	// ExampleUpdate()
-	// ExampleRelation()
-	// ExampleRelationList()
-	// ExamplePaging()
+	// ExampleDB_Count()
+	ExampleDB_ModelList()
+
 }
 var exampleDB *sq.DB
 func init () {
@@ -137,6 +130,23 @@ func ExampleDB_QueryModel() {
 	}
 	log.Printf("user: %+v\r\n hasUser: %v", user, hasUser)
 }
+// 基于 Model 查询多行数据
+func ExampleDB_ModelList() {
+	log.Print("ExampleDB_ModelList")
+	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
+	var userList []User
+	userCol := User{}.Column()
+	qb := sq.QB{
+		Debug: true,
+		Where: sq.
+			And(userCol.Age, sq.GtInt(10)),
+	}
+	// SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL
+	err := exampleDB.QueryModelList(ctx, &userList, qb) ; if err != nil {
+		panic(err)
+	}
+	log.Print(userList)
+}
 //  基于 Model 查询 count
 func ExampleDB_Count() {
 	log.Print("ExampleDB_Count")
@@ -150,22 +160,6 @@ func ExampleDB_Count() {
 		panic(err)
 	}
 	log.Print("count: ", count)
-}
-// 基于 Model 查询多行数据
-func ExampleDB_ModelList() {
-	log.Print("ExampleDB_ModelList")
-	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	var userList []User
-	userCol := User{}.Column()
-	checkSQL := "SELECT `id`,`name`,`age`,`deleted_at` FROM `user` WHERE `age` > ? AND `is_deleted` = 0"
-	qb := sq.QB{
-		Where: sq.
-			And(userCol.Age, sq.GtInt(18)),
-	}.Check(checkSQL)
-	err := exampleDB.QueryModelList(ctx, &userList, qb) ; if err != nil {
-		panic(err)
-	}
-	log.Print(userList)
 }
 func someUser () (user User) {
 	userCol := user.Column()

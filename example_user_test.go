@@ -24,13 +24,13 @@ type User struct {
 	ID IDUser `db:"id"`
 	Name string `db:"name"`
 	Age int `db:"age"`
+	// CreatedAtUpdatedAt 表明表是支持 created_at 和 updated_at 字段的，还可以使用 sq.CreateTimeUpdateTime sq.GMTCreateGMTUpdate
+	sq.CreatedAtUpdatedAt
 	// 通过组合 TableUser 让 User 支持 TableName() SoftDeleteWhere() SoftDeleteSet() 等方法
 	TableUser
 	// 每个 Model 都应该具有生命周期触发函数 BeforeCreate() AfterCreate() BeforeUpdate() AfterUpdate() 方法
 	// 通过 sq.DefaultLifeCycle 可配置默认的生命周期触发函数
 	sq.DefaultLifeCycle
-	// CreatedAtUpdatedAt 表明表是支持 created_at 和 updated_at 字段的，还可以使用 sq.CreateTimeUpdateTime sq.GMTCreateGMTUpdate
-	sq.CreatedAtUpdatedAt
 }
 // 因为 user 表的 id 字段是 uuid，所以在 User 的 BeforeCreate 生命周期去创建 id
 func (u *User) BeforeCreate() error {
@@ -83,3 +83,4 @@ func (UserWithAddress) Column () (col struct{
 	col.Address = "user_address.user_id"
 	return
 }
+

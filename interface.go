@@ -34,8 +34,8 @@ type Model interface {
 	TableName() string
 	SoftDeleteWhere() QueryValues
 	SoftDeleteSet() QueryValues
-	AfterCreate(result sql.Result) error
 	BeforeCreate() error
+	AfterCreate(result sql.Result) error
 	BeforeUpdate() error
 	AfterUpdate() error
 }

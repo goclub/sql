@@ -126,8 +126,8 @@ func (db *DB) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err 
 func (db *DB) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
 	elemType := reflect.TypeOf(modelSlicePtr).Elem()
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
-	modelInterface := reflectItemValue.Interface().(Model)
-	qb.Table = modelInterface
+	tablerInterface := reflectItemValue.Interface().(Tabler)
+	qb.Table = tablerInterface
 	query, values := qb.SQLSelect()
 	err := db.Core.SelectContext(ctx, modelSlicePtr,query , values...) ; if err != nil {
 		return err
