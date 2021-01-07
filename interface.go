@@ -21,7 +21,7 @@ type table struct {
 	softDeleteWhere QueryValues
 }
 func (t table) TableName() string { return t.tableName }
-func (t table) SoftDeleteWhere() (QueryValues) {
+func (t table) SoftDeleteWhere() QueryValues {
 	return t.softDeleteWhere
 }
 func Table(tableName string, softDeleteWhere QueryValues) Tabler {
@@ -46,16 +46,16 @@ type Relation interface {
 }
 
 type SoftDeleteDeletedAt struct {}
-func (SoftDeleteDeletedAt) SoftDeleteWhere() (QueryValues) {return QueryValues{"`deleted_at` IS NULL", nil}}
-func (SoftDeleteDeletedAt) SoftDeleteSet() (QueryValues)   {return QueryValues{"`deleted_at` = ?" ,[]interface{}{time.Now()}}}
+func (SoftDeleteDeletedAt) SoftDeleteWhere() QueryValues {return QueryValues{"`deleted_at` IS NULL", nil}}
+func (SoftDeleteDeletedAt) SoftDeleteSet() QueryValues   {return QueryValues{"`deleted_at` = ?" ,[]interface{}{time.Now()}}}
 
 type SoftDeleteDeleteTime struct {}
-func (SoftDeleteDeleteTime) SoftDeleteWhere() (QueryValues) {return QueryValues{"`delete_time` IS NULL", nil}}
-func (SoftDeleteDeleteTime) SoftDeleteSet() (QueryValues)   {return QueryValues{"`delete_time` = ?" ,[]interface{}{time.Now()}}}
+func (SoftDeleteDeleteTime) SoftDeleteWhere() QueryValues {return QueryValues{"`delete_time` IS NULL", nil}}
+func (SoftDeleteDeleteTime) SoftDeleteSet() QueryValues   {return QueryValues{"`delete_time` = ?" ,[]interface{}{time.Now()}}}
 
 type SoftDeleteIsDeleted struct {}
-func (SoftDeleteIsDeleted) SoftDeleteWhere() (QueryValues) {return QueryValues{"`is_deleted` = 0", nil}}
-func (SoftDeleteIsDeleted) SoftDeleteSet() (QueryValues)   {return QueryValues{"`is_deleted` = 1" ,nil}}
+func (SoftDeleteIsDeleted) SoftDeleteWhere() QueryValues {return QueryValues{"`is_deleted` = 0", nil}}
+func (SoftDeleteIsDeleted) SoftDeleteSet() QueryValues   {return QueryValues{"`is_deleted` = 1" ,nil}}
 
 type DefaultLifeCycle struct {
 

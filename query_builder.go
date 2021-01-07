@@ -12,9 +12,10 @@ type Data struct {
 }
 
 type QB struct {
+	Union Union
 	Table Tabler
 		tableName string
-	TableRaw func ()(query string, values []interface{})
+	TableRaw QueryValues
 	DisableSoftDelete bool
 		softDelete QueryValues
 	Select []Column
@@ -22,13 +23,33 @@ type QB struct {
 	Index string
 	Where []Condition
 	WhereOR [][]Condition
-	WhereRaw func ()(query string, values []interface{})
+	WhereRaw func ()QueryValues
 	Update []Data
 	Insert []Data
 	Limit int
 	limitRaw limitRaw
 	Join []Join
 	Debug bool
+}
+type Union struct {
+	Tables []QB
+	UnionAll bool
+}
+func (union Union) SQLSelect() (qv QueryValues) {
+	var sqlList stringQueue
+	var subQueryList []string
+	for _, table := range union.Tables {
+		subQV := table.SQLSelect()
+		subQueryList = append(subQueryList, "(" + subQV.Query + ")")
+		qv.Values = append(qv.Values, subQV.Values...)
+	}
+	unionText := "UNION"
+	if union.UnionAll {
+		unionText += " ALL"
+	}
+	sqlList.Push(strings.Join(subQueryList, " "+ unionText+ " "))
+	qv.Query = sqlList.Join(" ")
+	return
 }
 type limitRaw struct {
 	Valid bool
@@ -102,10 +123,13 @@ func (s Statement) Switch(
 		Insert(nil)
 	}
 }
-func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
+func (qb QB) SQL(statement Statement) QueryValues {
+	var values []interface{}
 	var sqlList stringQueue
-	if qb.Table == nil && qb.TableRaw == nil {
-		panic(errors.New("qb must have qb.Table or qb.TableRaw"))
+	if statement == statement.Enum().Select && qb.Union.Tables != nil{
+		unionQueryValues := qb.Union.SQLSelect()
+		sqlList.Push(unionQueryValues.Query)
+		values = append(values, unionQueryValues.Values...)
 	}
 	if qb.Table != nil {
 		qb.tableName = "`" + qb.Table.TableName() + "`"
@@ -119,32 +143,33 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 			panic(errors.New("statement can not be " + statement.String()))
 		}
 	}
-	if qb.TableRaw != nil {
-		var subTableValues []interface{}
-		qb.tableName, subTableValues = qb.TableRaw()
-		values = append(values, subTableValues...)
+	if qb.TableRaw.Query != ""{
+		qb.tableName = qb.TableRaw.Query
+		values = append(values, qb.TableRaw.Values...)
 	}
 	statement.Switch(func(_Select int) {
-	  sqlList.Push("SELECT")
-	  if qb.SelectRaw == nil {
-		  if qb.Table != nil && len(qb.Select) == 0 {
-			  qb.Select = TagToColumns(qb.Table)
+	  if qb.Union.Tables == nil {
+		  sqlList.Push("SELECT")
+		  if qb.SelectRaw == nil {
+			  if qb.Table != nil && len(qb.Select) == 0 {
+				  qb.Select = TagToColumns(qb.Table)
+			  }
+			  if len(qb.Select) == 0 {
+				  sqlList.Push("*")
+			  } else {
+				  sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
+			  }
+		  } else{
+			  var rawColumns []string
+			  for _, queryValues := range qb.SelectRaw {
+				  rawColumns = append(rawColumns, queryValues.Query)
+				  values = append(values, queryValues.Values...)
+			  }
+			  sqlList.Push(strings.Join(rawColumns, ", "))
 		  }
-		  if len(qb.Select) == 0 {
-			  sqlList.Push("*")
-		  } else {
-			  sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
-		  }
-	  } else {
-		  var rawColumns []string
-		  for _, queryValues := range qb.SelectRaw {
-			  rawColumns = append(rawColumns, queryValues.Query)
-			  values = append(values, queryValues.Values...)
-		  }
-		  sqlList.Push(strings.Join(rawColumns, ", "))
+		  sqlList.Push("FROM")
+		  sqlList.Push(qb.tableName)
 	  }
-	  sqlList.Push("FROM")
-	  sqlList.Push(qb.tableName)
 	  if qb.Index != "" {
 	  	sqlList.Push(qb.Index)
 		}
@@ -187,7 +212,8 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 		var whereString string
 		if qb.WhereRaw != nil {
 			var whereValues []interface{}
-			whereString, whereValues = qb.WhereRaw()
+			whereQV := qb.WhereRaw()
+			whereString, whereValues = whereQV.Query, whereQV.Values
 			values = append(values, whereValues...)
 		} else {
 			tooMuchWhere := len(qb.Where) != 0 && len(qb.WhereOR) != 0
@@ -197,9 +223,9 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 			}
 			var orList stringQueue
 			for _, whereAndList := range qb.WhereOR {
-				andsQuery, andsValues :=  ToConditions(whereAndList).andsSQL()
-				values = append(values, andsValues...)
-				orList.Push(andsQuery)
+				andsQV := ToConditions(whereAndList).andsSQL()
+				values = append(values, andsQV.Values...)
+				orList.Push(andsQV.Query)
 			}
 			whereString = orList.Join(") OR (")
 			if len(orList.Value) > 1 {
@@ -232,20 +258,20 @@ func (qb QB) SQL(statement Statement) (query string, values []interface{}) {
 		sqlList.Push("LIMIT ?")
 		values = append(values, qb.Limit)
 	}
-	query = sqlList.Join(" ")
+	query := sqlList.Join(" ")
 	defer func() {
 		if qb.Debug {
 			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
 		}
 	}()
-	return
+	return QueryValues{query, values}
 }
-func (qb QB) SQLSelect() (query string, values []interface{}) {
+func (qb QB) SQLSelect() QueryValues {
 	return qb.SQL(Statement("").Enum().Select)
 }
-func (qb QB) SQLInsert() (query string, values []interface{}) {
+func (qb QB) SQLInsert() QueryValues {
 	return qb.SQL(Statement("").Enum().Insert)
 }
-func (qb QB) SQLUpdate() (query string, values []interface{}) {
+func (qb QB) SQLUpdate() QueryValues {
 	return qb.SQL(Statement("").Enum().Update)
 }

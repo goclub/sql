@@ -46,7 +46,8 @@ func Raw(raw string, values ...interface{}) OP {
 	}
 }
 func SubQuery(symbol string, qb QB) OP {
-	query, values := qb.SQLSelect()
+	qv := qb.SQLSelect()
+	query, values := qv.Query, qv.Values
 	return OP {
 		Placeholder: "(" + query + ")",
 		Symbol: symbol,

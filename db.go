@@ -69,7 +69,8 @@ func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (e
 		}
 		qb.Insert = append(qb.Insert, Data{Column(column), fieldValue.Interface()})
 	}
-	query, values := qb.SQLInsert()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	result, err := db.Core.ExecContext(ctx, query, values...) ; if err != nil {
 		return
 	}
@@ -80,7 +81,8 @@ func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (e
 }
 func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
 	qb.Limit = 1
-	query, values := qb.SQLSelect()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	row := db.Core.QueryRowx(query, values...)
 	scanErr := row.Scan(desc...) ; if scanErr != nil {
 		if scanErr == sql.ErrNoRows {
@@ -206,7 +208,8 @@ func ScanUints(uints *[]uint) func(rows *sqlx.Rows) error {
 	}
 }
 func (db *DB) SelectScan(ctx context.Context,qb QB, scan func(rows *sqlx.Rows) error ) (error) {
-	query, values := qb.SQLSelect()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	rows, err := db.Core.Queryx(query, values...) ; if err != nil {
 		return  err
 	}
@@ -223,7 +226,8 @@ func (db *DB) SelectScan(ctx context.Context,qb QB, scan func(rows *sqlx.Rows) e
 }
 func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
 	qb.Limit = 1
-	query, values := qb.SQLSelect()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	row := db.Core.QueryRowx(query, values...)
 	scanErr := row.StructScan(ptr) ; if scanErr != nil {
 		if scanErr == sql.ErrNoRows {
@@ -237,7 +241,8 @@ func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (
 	return
 }
 func (db *DB) Select(ctx context.Context, slicePtr interface{}, qb QB) (err error) {
-	query, values := qb.SQLSelect()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	return db.Core.SelectContext(ctx, slicePtr, query, values...)
 }
 func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
@@ -246,7 +251,8 @@ func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	var has bool
 	has, err = db.QueryRowScan(ctx, qb, &count);if err != nil {return }
 	if has == false {
-		query, _ := qb.SQLSelect()
+		qv := qb.SQLInsert()
+		query := qv.Query
 		panic(errors.New("goclub/sql: Count() " + query + "not found data"))
 	}
 	return
@@ -265,14 +271,16 @@ func (db *DB) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb 
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
 	tablerInterface := reflectItemValue.Interface().(Tabler)
 	qb.Table = tablerInterface
-	query, values := qb.SQLSelect()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	err := db.Core.SelectContext(ctx, modelSlicePtr,query , values...) ; if err != nil {
 		return err
 	}
 	return nil
 }
 func (db *DB) Update(ctx context.Context, qb QB) (err error) {
-	query, values := qb.SQLUpdate()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	_, err = db.Core.ExecContext(ctx, query, values...)
 	if err != nil {return err}
 	return
@@ -334,7 +342,8 @@ func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, che
 		Update: updateData,
 		Where: where,
 	}
-	query, values := qb.SQLUpdate()
+	qv := qb.SQLInsert()
+	query, values := qv.Query, qv.Values
 	_, err = db.Core.ExecContext(ctx, query, values...)
 	if err != nil {return err}
 	return
