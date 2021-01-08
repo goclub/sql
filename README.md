@@ -17,6 +17,107 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 
 [goclub/sql](https://github.com/goclub/sql) 提供介于手写 sql 和 ORM 之间的使用体验。
 
+
+**查询单行单列**
+
+```sql
+SELECT `name` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?
+```
+```go
+var name string
+var hasName bool
+qb := sq.QB{
+  Table: TableUser{},
+  Select: []sq.Column{"name"},
+  Where: sq.And("id", sq.Equal(1)),
+}
+hasName := exampleDB.QueryRowScan(ctx,qb,&name)
+```
+
+**查询单行多列数据(扫描到结构体)**
+
+```sql
+SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `age` = ? AND `deleted_at` IS NULL LIMIT ?
+```
+
+```go
+type UserNameAge struct {
+    Name string `db:"name"`
+    Age int `db:"age"`
+    TableUser // 定义表信息 https://github.com/goclub/sql/blob/main/example_user_test.go
+}
+var userNameAge UserNameAge
+var hasUser bool
+qb := sq.QB{
+    Table: UserNameAge{},
+    Where: sq.
+        And(userCol.Name, sq.Equal("nimo")).
+        And(userCol.Age, sq.Equal(18)),
+}
+hasUser, err := exampleDB.QueryRowStructScan(ctx, &userNameAge, qb) ; if err != nil {
+    panic(err)
+}
+```
+
+**查询多行单列数据**
+
+```sql
+SELECT `id` FROM `user` WHERE `deleted_at` IS NULL
+```
+
+```go
+qb := sq.QB{
+    Table: TableUser{},
+    Select: []sq.Column{"id"},
+}
+var userIDList []string
+err := exampleDB.SelectScan(ctx, qb, sq.ScanStrings(*userIDList)) ; if err != nil {
+    panic(err)
+}
+```
+
+**查询多行多列数据解析结构体切片**
+
+```sql
+SELECT `name`, `age` FROM `user` WHERE `age` = ? AND `deleted_at` IS NULL
+```
+
+```go
+type UserNameAge struct {
+    Name string `db:"name"`
+    Age int `db:"age"`
+    TableUser // https://github.com/goclub/sql/blob/main/example_user_test.go
+}
+userNameAgeList := []UserNameAge{}
+qb := sq.QB{
+    Table: UserNameAge{},
+    Where: sq.And("age", sq.Equal(18)),
+}
+err := exampleDB.Select(ctx, &userNameAgeList, qb) ; if err != nil {
+    panic(err)
+}
+```
+
+
+**基于 Model 查询单行数据**
+
+```sql
+SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = ? AND `age` = ? LIMIT ?
+```
+
+```go
+user := User{} 
+var hasUser bool
+qb := sq.QB{
+    Where: sq.
+        And("name", sq.Equal("nimo")).
+        And("age", sq.Equal(18)),
+}
+hasUser, err := exampleDB.QueryModel(ctx, &user, qb) ; if err != nil {
+    panic(err)
+}
+```
+
 ## 教程
 
 > 推荐不了解 database/sql 的使用者阅读： [Go SQL 数据库教程
