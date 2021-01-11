@@ -19,13 +19,12 @@ func (w conditions) And(column Column, operator OP) conditions {
 	})
 	return w
 }
-func (w conditions) andsSQL() QueryValues {
+func (w conditions) andsSQL() Raw {
 	var andList stringQueue
 	var values []interface{}
 	for _, c :=  range w {
-		andList.Push(c.OP.sql(c.Column))
-		values = append(values, c.OP.Values...)
+		andList.Push(c.OP.sql(c.Column, &values))
 	}
 	query := andList.Join(" AND ")
-	return QueryValues{query, values}
+	return Raw{query, values}
 }

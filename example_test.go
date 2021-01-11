@@ -14,7 +14,7 @@ import (
 func TestExample(t *testing.T) {
 	// ExampleDB_QueryRowScan()
 	// ExampleDB_QueryRowStructScan()
-	ExampleDB_SelectScan()
+	// ExampleDB_SelectScan()
 	// ExampleDB_Select()
 	// ExampleDB_QueryModel()
 	// ExampleDB_Count()
@@ -250,21 +250,6 @@ func ExampleDB_UpdateModel() {
 	}
 }
 
-func ExampleUpdate() {
-	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	userCol := User{}.Column()
-	checkSQL := "UPDATE `user` SET `age` = ? WHERE `name` = ? AND `deleted_at` IS NULL"
-	err := exampleDB.Update(ctx, sq.QB{
-		Table: User{},
-		Where:  sq.And(userCol.Name, sq.Equal("multiUpdate")),
-		Update: []sq.Data{
-			{userCol.Age, 28,},
-		},
-	}.Check(checkSQL))
-	if err != nil {
-		panic(err)
-	}
-}
 func ExampleCreateModel() {
 	log.Print("ExampleCreateModel")
 	ctx := context.TODO()
@@ -328,28 +313,4 @@ func ExampleRelationList() {
 	err := exampleDB.QueryRelationList(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
-}
-func ExamplePaging() {
-	log.Print("ExamplePaging")
-	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
-	var userList []User
-	userCol := User{}.Column()
-	baseQB := sq.QB{
-		Table: User{},
-		Where: sq.And(userCol.Age, sq.GtInt(18)),
-	}
-	page := 1
-	perPage := 10
-	checkSQL := "SELECT `id`, `name`, `age` FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL LIMIT ? OFFSET ?"
-	pagingQB :=  baseQB.Paging(page, perPage)
-	err := exampleDB.QueryModelList(ctx, &userList, pagingQB.Check(checkSQL)) ; if err != nil {
-		panic(err)
-	}
-	log.Print(userList)
-	var count int
-	checkCountSQL := "SELECT COUNT(*) FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL"
-	count, err = exampleDB.Count(ctx, baseQB.Check(checkCountSQL)) ; if err != nil {
-		panic(err)
-	}
-	log.Print(count)
 }

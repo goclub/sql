@@ -3,26 +3,34 @@ package sq
 import (
 	"errors"
 	"reflect"
-	"time"
 )
 
 type OP struct {
+	RawQuery string
 	Symbol string
-	Values []interface{}
-	Raw string
 	Placeholder string
+	Values []interface{}
+	MultipleOP []OP
 }
-func (op OP) sql(column Column) string {
+func (op OP) sql(column Column, values *[]interface{}) string {
 	var and stringQueue
-	if len(op.Raw) != 0 {
-		and.Push(op.Raw)
+	if len(op.MultipleOP) != 0 {
+		for _, subOP := range op.MultipleOP {
+			and.Push(subOP.sql(column, values))
+		}
 	} else {
-		and.Push(column.wrapField())
-		and.Push(op.Symbol)
-		if len(op.Placeholder) != 0 {
-			and.Push(op.Placeholder)
+		if len(op.RawQuery) != 0 {
+			and.Push(op.RawQuery)
+			*values = append(*values, op.Values...)
 		} else {
-			and.Push(sqlPlaceholder)
+			and.Push(column.wrapField())
+			and.Push(op.Symbol)
+			if len(op.Placeholder) != 0 {
+				and.Push(op.Placeholder)
+			} else {
+				and.Push(sqlPlaceholder)
+			}
+			*values = append(*values, op.Values...)
 		}
 	}
 	return and.Join(" ")
@@ -39,15 +47,15 @@ func NotEqual(v interface{}) OP {
 		Values: []interface{}{v},
 	}
 }
-func Raw(raw string, values ...interface{}) OP {
+func OPRaw(raw Raw) OP {
 	return OP {
-		Raw: raw,
-		Values: values,
+		RawQuery: raw.Query,
+		Values: raw.Values,
 	}
 }
 func SubQuery(symbol string, qb QB) OP {
-	qv := qb.SQLSelect()
-	query, values := qv.Query, qv.Values
+	raw := qb.SQLSelect()
+	query, values := raw.Query, raw.Values
 	return OP {
 		Placeholder: "(" + query + ")",
 		Symbol: symbol,
@@ -143,34 +151,39 @@ func LtOrEqualFloat(i float64) OP {
 		Values: []interface{}{i},
 	}
 }
-func GtTime(t time.Time) OP {
-	return OP {
-		Symbol: ">",
-		Values: []interface{}{t},
-	}
-}
-func GtOrEqualTime(t time.Time) OP {
-	return OP {
-		Symbol: ">=",
-		Values: []interface{}{t},
-	}
-}
-func LtTime(t time.Time) OP {
-	return OP {
-		Symbol: "<",
-		Values: []interface{}{t},
-	}
-}
-func LtOrEqualTime(t time.Time) OP {
-	return OP {
-		Symbol: "<=",
-		Values: []interface{}{t},
-	}
-}
+// func GtTime(t time.Time) OP {
+// 	return OP {
+// 		Symbol: ">",
+// 		Values: []interface{}{t},
+// 	}
+// }
+// func GtOrEqualTime(t time.Time) OP {
+// 	return OP {
+// 		Symbol: ">=",
+// 		Values: []interface{}{t},
+// 	}
+// }
+// func LtTime(t time.Time) OP {
+// 	return OP {
+// 		Symbol: "<",
+// 		Values: []interface{}{t},
+// 	}
+// }
+// func LtOrEqualTime(t time.Time) OP {
+// 	return OP {
+// 		Symbol: "<=",
+// 		Values: []interface{}{t},
+// 	}
+// }
 
 func IsNull() OP {
 	return OP{
 		Symbol: "IS NULL",
 		Values: nil,
+	}
+}
+func MultipleOP(ops []OP) OP {
+	return OP{
+		MultipleOP: ops,
 	}
 }

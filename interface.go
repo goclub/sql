@@ -10,21 +10,21 @@ type UpdateModeler interface {
 }
 type Tabler interface {
 	TableName() string
-	SoftDeleteWhere() QueryValues
+	SoftDeleteWhere() Raw
 }
-type QueryValues struct {
+type Raw struct {
 	Query string
 	Values []interface{}
 }
 type table struct {
 	tableName string
-	softDeleteWhere QueryValues
+	softDeleteWhere Raw
 }
 func (t table) TableName() string { return t.tableName }
-func (t table) SoftDeleteWhere() QueryValues {
+func (t table) SoftDeleteWhere() Raw {
 	return t.softDeleteWhere
 }
-func Table(tableName string, softDeleteWhere QueryValues) Tabler {
+func Table(tableName string, softDeleteWhere Raw) Tabler {
 	return table{
 		tableName: tableName,
 		softDeleteWhere: softDeleteWhere,
@@ -32,8 +32,8 @@ func Table(tableName string, softDeleteWhere QueryValues) Tabler {
 }
 type Model interface {
 	TableName() string
-	SoftDeleteWhere() QueryValues
-	SoftDeleteSet() QueryValues
+	SoftDeleteWhere() Raw
+	SoftDeleteSet() Raw
 	BeforeCreate() error
 	AfterCreate(result sql.Result) error
 	BeforeUpdate() error
@@ -41,21 +41,21 @@ type Model interface {
 }
 type Relation interface {
 	TableName() string
-	SoftDeleteWhere() QueryValues
+	SoftDeleteWhere() Raw
 	RelationJoin () []Join
 }
 
 type SoftDeleteDeletedAt struct {}
-func (SoftDeleteDeletedAt) SoftDeleteWhere() QueryValues {return QueryValues{"`deleted_at` IS NULL", nil}}
-func (SoftDeleteDeletedAt) SoftDeleteSet() QueryValues   {return QueryValues{"`deleted_at` = ?" ,[]interface{}{time.Now()}}}
+func (SoftDeleteDeletedAt) SoftDeleteWhere() Raw {return Raw{"`deleted_at` IS NULL", nil}}
+func (SoftDeleteDeletedAt) SoftDeleteSet() Raw   {return Raw{"`deleted_at` = ?" ,[]interface{}{time.Now()}}}
 
 type SoftDeleteDeleteTime struct {}
-func (SoftDeleteDeleteTime) SoftDeleteWhere() QueryValues {return QueryValues{"`delete_time` IS NULL", nil}}
-func (SoftDeleteDeleteTime) SoftDeleteSet() QueryValues   {return QueryValues{"`delete_time` = ?" ,[]interface{}{time.Now()}}}
+func (SoftDeleteDeleteTime) SoftDeleteWhere() Raw {return Raw{"`delete_time` IS NULL", nil}}
+func (SoftDeleteDeleteTime) SoftDeleteSet() Raw   {return Raw{"`delete_time` = ?" ,[]interface{}{time.Now()}}}
 
 type SoftDeleteIsDeleted struct {}
-func (SoftDeleteIsDeleted) SoftDeleteWhere() QueryValues {return QueryValues{"`is_deleted` = 0", nil}}
-func (SoftDeleteIsDeleted) SoftDeleteSet() QueryValues   {return QueryValues{"`is_deleted` = 1" ,nil}}
+func (SoftDeleteIsDeleted) SoftDeleteWhere() Raw {return Raw{"`is_deleted` = 0", nil}}
+func (SoftDeleteIsDeleted) SoftDeleteSet() Raw   {return Raw{"`is_deleted` = 1" ,nil}}
 
 type DefaultLifeCycle struct {
 

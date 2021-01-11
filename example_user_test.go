@@ -60,7 +60,7 @@ type UserWithAddress struct {
 	Age int `db:"user.age"`
 	Address string `db:"user_address.address"`
 }
-func (UserWithAddress) SoftDeleteWhere() (sq.QueryValues) {return sq.QueryValues{"`user`.`is_deleted` = 0 AND `user_address`.`is_deleted` = 0", nil}}
+func (UserWithAddress) SoftDeleteWhere() (sq.Raw) {return sq.Raw{"`user`.`deleted_at` IS NULL AND `user_address`.`deleted_at` IS NULL", nil}}
 func (UserWithAddress) TableName() string {return "user"}
 func (*UserWithAddress) RelationJoin() []sq.Join {
 	return []sq.Join{

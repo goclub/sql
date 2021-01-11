@@ -1,10 +1,8 @@
 package sq_test
 
 import (
-	"context"
 	sq "github.com/goclub/sql"
 	"github.com/stretchr/testify/suite"
-	"log"
 	"testing"
 )
 
@@ -33,26 +31,25 @@ type TestDBSuite struct {
 	suite.Suite
 }
 
-func (suite TestDBSuite) TestCreateModel() {
-	user := User{
-		Name:"nimo",
-	}
-	err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
-		panic(err)
-	}
-	log.Print(user)
-}
-func (suite TestDBSuite) TestRelation() {
-	userWithAddress := UserWithAddress{}
-	userWithAddressCol := userWithAddress.Column()
-	has, err := testDB.QueryRelation(context.TODO(), &userWithAddress, sq.QB{
-		Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
-		Debug: true,
-	}) ; if err != nil {
-		panic(err)
-	}
-	log.Print(has, userWithAddress)
-}
+// func (suite TestDBSuite) TestCreateModel() {
+// 	user := User{
+// 		Name:"nimo",
+// 	}
+// 	err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
+// 		panic(err)
+// 	}
+// 	log.Print(user)
+// }
+// func (suite TestDBSuite) TestRelation() {
+// 	userWithAddress := UserWithAddress{}
+// 	userWithAddressCol := userWithAddress.Column()
+// 	has, err := testDB.QueryRelation(context.TODO(), &userWithAddress, sq.QB{
+// 		Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
+// 	}) ; if err != nil {
+// 		panic(err)
+// 	}
+// 	log.Print(has, userWithAddress)
+// }
 
 func (suite TestDBSuite) TestUpdate() {
 

@@ -12,43 +12,63 @@ type Data struct {
 }
 
 type QB struct {
-	Union Union
 	Table Tabler
 		tableName string
-	TableRaw QueryValues
+	TableRaw TableRaw
 	DisableSoftDelete bool
-		softDelete QueryValues
+		softDelete Raw
+	UnionTable UnionTable
+
 	Select []Column
-	SelectRaw []QueryValues
+	SelectRaw []Raw
 	Index string
-	Where []Condition
-	WhereOR [][]Condition
-	WhereRaw func ()QueryValues
+
 	Update []Data
 	Insert []Data
+
+	Where []Condition
+	WhereOR [][]Condition
+	WhereRaw func ()Raw
+
 	Limit int
 	limitRaw limitRaw
+	Offset int
+
+	Lock SelectLock
+
 	Join []Join
 	Debug bool
 }
-type Union struct {
+
+type TableRaw struct {
+	TableName Raw
+	SoftDeleteWhere Raw
+}
+type SelectLock string
+func (s SelectLock) String() string {
+	return string(s)
+}
+const FORSHARE SelectLock = "FOR SHARE"
+const FORUPDATE SelectLock = "FOR UPDATE"
+
+type UnionTable struct {
 	Tables []QB
 	UnionAll bool
 }
-func (union Union) SQLSelect() (qv QueryValues) {
+func (union UnionTable) SQLSelect() (raw Raw) {
 	var sqlList stringQueue
 	var subQueryList []string
 	for _, table := range union.Tables {
 		subQV := table.SQLSelect()
 		subQueryList = append(subQueryList, "(" + subQV.Query + ")")
-		qv.Values = append(qv.Values, subQV.Values...)
+		raw.Values = append(raw.Values, subQV.Values...)
 	}
 	unionText := "UNION"
 	if union.UnionAll {
 		unionText += " ALL"
 	}
 	sqlList.Push(strings.Join(subQueryList, " "+ unionText+ " "))
-	qv.Query = sqlList.Join(" ")
+	raw.Query = sqlList.Join(" ")
 	return
 }
 type limitRaw struct {
@@ -84,13 +104,6 @@ func (c Column) wrapFieldWithAS() string {
 	}
 	return column
 }
-func (qb QB) Check(checkSQL ...string) QB {
-	return qb
-}
-
-func (qb QB) Paging(page int, perPage int) QB {
-	return qb
-}
 type Statement string
 func (s Statement) String() string { return string(s)}
 func (Statement) Enum() (e struct {
@@ -123,13 +136,13 @@ func (s Statement) Switch(
 		Insert(nil)
 	}
 }
-func (qb QB) SQL(statement Statement) QueryValues {
+func (qb QB) SQL(statement Statement) Raw {
 	var values []interface{}
 	var sqlList stringQueue
-	if statement == statement.Enum().Select && qb.Union.Tables != nil{
-		unionQueryValues := qb.Union.SQLSelect()
-		sqlList.Push(unionQueryValues.Query)
-		values = append(values, unionQueryValues.Values...)
+	if statement == statement.Enum().Select && qb.UnionTable.Tables != nil{
+		unionRaw := qb.UnionTable.SQLSelect()
+		sqlList.Push(unionRaw.Query)
+		values = append(values, unionRaw.Values...)
 	}
 	if qb.Table != nil {
 		qb.tableName = "`" + qb.Table.TableName() + "`"
@@ -143,12 +156,13 @@ func (qb QB) SQL(statement Statement) QueryValues {
 			panic(errors.New("statement can not be " + statement.String()))
 		}
 	}
-	if qb.TableRaw.Query != ""{
-		qb.tableName = qb.TableRaw.Query
-		values = append(values, qb.TableRaw.Values...)
+	if qb.TableRaw.TableName.Query != ""{
+		qb.tableName = qb.TableRaw.TableName.Query
+		values = append(values, qb.TableRaw.TableName.Values...)
+		qb.softDelete = qb.TableRaw.SoftDeleteWhere
 	}
 	statement.Switch(func(_Select int) {
-	  if qb.Union.Tables == nil {
+	  if qb.UnionTable.Tables == nil {
 		  sqlList.Push("SELECT")
 		  if qb.SelectRaw == nil {
 			  if qb.Table != nil && len(qb.Select) == 0 {
@@ -161,9 +175,9 @@ func (qb QB) SQL(statement Statement) QueryValues {
 			  }
 		  } else{
 			  var rawColumns []string
-			  for _, queryValues := range qb.SelectRaw {
-				  rawColumns = append(rawColumns, queryValues.Query)
-				  values = append(values, queryValues.Values...)
+			  for _, raws := range qb.SelectRaw {
+				  rawColumns = append(rawColumns, raws.Query)
+				  values = append(values, raws.Values...)
 			  }
 			  sqlList.Push(strings.Join(rawColumns, ", "))
 		  }
@@ -258,20 +272,30 @@ func (qb QB) SQL(statement Statement) QueryValues {
 		sqlList.Push("LIMIT ?")
 		values = append(values, qb.Limit)
 	}
-	query := sqlList.Join(" ")
+	if qb.Offset != 0 {
+		sqlList.Push("OFFSET ?")
+		values = append(values, qb.Offset)
+	}
+	if len(qb.Lock) != 0 {
+		sqlList.Push(qb.Lock.String())
+	}
+		query := sqlList.Join(" ")
 	defer func() {
 		if qb.Debug {
 			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
 		}
 	}()
-	return QueryValues{query, values}
+	return Raw{query, values}
 }
-func (qb QB) SQLSelect() QueryValues {
+func (qb QB) SQLSelect() Raw {
 	return qb.SQL(Statement("").Enum().Select)
 }
-func (qb QB) SQLInsert() QueryValues {
+func (qb QB) SQLInsert() Raw {
 	return qb.SQL(Statement("").Enum().Insert)
 }
-func (qb QB) SQLUpdate() QueryValues {
+func (qb QB) SQLUpdate() Raw {
 	return qb.SQL(Statement("").Enum().Update)
+}
+func (qb QB) Paging(page int, perPage int) QB {
+	return qb
 }
