@@ -2,6 +2,7 @@ package sq
 
 import (
 	"database/sql"
+	"github.com/jmoiron/sqlx"
 	"time"
 )
 
@@ -64,3 +65,12 @@ func (v *DefaultLifeCycle) BeforeCreate() error {return nil}
 func (v *DefaultLifeCycle) AfterCreate(result sql.Result) error {return nil}
 func (v *DefaultLifeCycle) BeforeUpdate() error {return nil}
 func (v *DefaultLifeCycle) AfterUpdate() error {return nil}
+
+type Storager interface {
+	sqlx.Queryer
+	sqlx.QueryerContext
+	sqlx.Execer
+	sqlx.ExecerContext
+	sqlx.Preparer
+	sqlx.PreparerContext
+}

@@ -31,6 +31,10 @@ type TestDBSuite struct {
 	suite.Suite
 }
 
+func (suite TestDBSuite) TestQueryRowScan() {
+	t := suite.T()
+
+}
 // func (suite TestDBSuite) TestCreateModel() {
 // 	user := User{
 // 		Name:"nimo",

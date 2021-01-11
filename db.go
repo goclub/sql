@@ -7,37 +7,36 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"reflect"
-	"time"
 )
 
-type DB struct {
+type Database struct {
 	Core *sqlx.DB
 }
 var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
 var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdateTime",}
 var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
-func Open(driverName string, dataSourceName string) (db *DB, dbClose func() error, err error) {
-	var coreDB *sqlx.DB
-	coreDB ,err = sqlx.Open(driverName, dataSourceName)
-	db = &DB{Core: coreDB,}
-	if err != nil && coreDB != nil {
-		dbClose = coreDB.Close
+func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
+	var coreDatabase *sqlx.DB
+	coreDatabase ,err = sqlx.Open(driverName, dataSourceName)
+	db = &Database{Core: coreDatabase,}
+	if err != nil && coreDatabase != nil {
+		dbClose = coreDatabase.Close
 	} else {
 		dbClose = func() error { return nil}
 	}
 	return
 }
-func (db *DB) Close() error {
+func (db *Database) Close() error {
 	if db.Core != nil {
 		return db.Core.Close()
 	}
-	log.Print("db is nil,maybe you forget sq.Open()")
+	log.Print("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
-func (db *DB) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
+func (db *Database) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return
 }
-func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+func (db *Database) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
@@ -53,9 +52,9 @@ func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (e
 	for i:=0;i<elemType.NumField();i++ {
 		fieldType := elemType.Field(i)
 		fieldValue := elemValue.Field(i)
-		// `db:"name"`
-		column, hasDBTag := fieldType.Tag.Lookup("db")
-		if !hasDBTag {continue}
+		// `Database:"name"`
+		column, hasDatabaseTag := fieldType.Tag.Lookup("Database")
+		if !hasDatabaseTag {continue}
 		if column == "" {continue}
 
 		// `sq:"ignore"`
@@ -79,12 +78,8 @@ func (db *DB) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (e
 	}
 	return
 }
-func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
-	qb.Limit = 1
-	raw := qb.SQLSelect()
-	query, values := raw.Query, raw.Values
-	row := db.Core.QueryRowx(query, values...)
-	scanErr := row.Scan(desc...) ; if scanErr != nil {
+func CheckRowScanErr(scanErr error) (has bool, err error) {
+	if scanErr != nil {
 		if scanErr == sql.ErrNoRows {
 			return false, nil
 		} else {
@@ -95,119 +90,18 @@ func (db *DB) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has
 	}
 	return
 }
-func ScanBytes(bytes *[][]byte) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item []byte
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*bytes = append(*bytes, item)
-		return nil
+func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
+	qb.Limit = 1
+	raw := qb.SQLSelect()
+	query, values := raw.Query, raw.Values
+	row := db.Core.QueryRowx(query, values...)
+	scanErr := row.Scan(desc...)
+	has, err = CheckRowScanErr(scanErr) ; if err != nil {
+		return
 	}
+	return
 }
-type UintLister interface {
-	Append(i uint)
-}
-func ScanUintIDList(list UintLister) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item uint
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		list.Append(item)
-		return nil
-	}
-}
-type IntLister interface {
-	Append(i int)
-}
-func ScanIntIDList(list IntLister) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item int
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		list.Append(item)
-		return nil
-	}
-}
-type BytesIDLister interface {
-	Append(data []byte)
-}
-func ScanBytesIDList(list BytesIDLister) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item []byte
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		list.Append(item)
-		return nil
-	}
-}
-type StringLister interface {
-	Append(s string)
-}
-func ScanStringIDList(list StringLister) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item string
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		list.Append(item)
-		return nil
-	}
-}
-func ScanStrings(strings *[]string) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item string
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*strings = append(*strings, item)
-		return nil
-	}
-}
-func ScanInts(ints *[]int) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item int
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*ints = append(*ints, item)
-		return nil
-	}
-}
-func ScanBool(bools *[]bool) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item bool
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*bools = append(*bools, item)
-		return nil
-	}
-}
-func ScanTimes(times *[]time.Time) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item time.Time
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*times = append(*times, item)
-		return nil
-	}
-}
-func ScanUints(uints *[]uint) func(rows *sqlx.Rows) error {
-	return func(rows *sqlx.Rows) error {
-		var item uint
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*uints = append(*uints, item)
-		return nil
-	}
-}
-func (db *DB) SelectScan(ctx context.Context,qb QB, scan func(rows *sqlx.Rows) error ) (error) {
+func (db *Database) SelectScan(ctx context.Context,qb QB, scan ScanFunc) (error) {
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
 	rows, err := db.Core.Queryx(query, values...) ; if err != nil {
@@ -224,28 +118,30 @@ func (db *DB) SelectScan(ctx context.Context,qb QB, scan func(rows *sqlx.Rows) e
 	}
 	return nil
 }
-func (db *DB) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
+func (db *Database) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
+	return coreQueryRowStructScan(db.Core, ctx, ptr, qb)
+}
+func (tx *Tx) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
+	return coreQueryRowStructScan(tx.Core, ctx, ptr, qb)
+}
+func coreQueryRowStructScan(core Storager, ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
 	qb.Limit = 1
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
-	row := db.Core.QueryRowx(query, values...)
-	scanErr := row.StructScan(ptr) ; if scanErr != nil {
-		if scanErr == sql.ErrNoRows {
-			return false, nil
-		} else {
-			return false, scanErr
-		}
-	} else {
-		has = true
+	row := core.QueryRowx(query, values...)
+	scanErr := row.StructScan(ptr)
+	has, err = CheckRowScanErr(scanErr) ; if err != nil {
+		return
 	}
 	return
 }
-func (db *DB) Select(ctx context.Context, slicePtr interface{}, qb QB) (err error) {
+
+func (db *Database) Select(ctx context.Context, slicePtr interface{}, qb QB) (err error) {
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
 	return db.Core.SelectContext(ctx, slicePtr, query, values...)
 }
-func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
+func (db *Database) Count(ctx context.Context, qb QB) (count int, err error) {
 	qb.SelectRaw = []Raw{{"COUNT(*)", nil}}
 	qb.limitRaw = limitRaw{Valid: true, Limit: 0}
 	var has bool
@@ -257,12 +153,12 @@ func (db *DB) Count(ctx context.Context, qb QB) (count int, err error) {
 	}
 	return
 }
-func (db *DB) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error) {
+func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error) {
 	qb.Table = ptr
 	qb.Limit = 1
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
-func (db *DB) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
+func (db *Database) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
 	ptrType := reflect.TypeOf(modelSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {
 		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
@@ -278,14 +174,14 @@ func (db *DB) QueryModelList(ctx context.Context, modelSlicePtr interface{}, qb 
 	}
 	return nil
 }
-func (db *DB) Update(ctx context.Context, qb QB) (err error) {
+func (db *Database) Update(ctx context.Context, qb QB) (err error) {
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
 	_, err = db.Core.ExecContext(ctx, query, values...)
 	if err != nil {return err}
 	return
 }
-func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, checkSQL ...string) (err error) {
+func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Data, checkSQL ...string) (err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -300,8 +196,8 @@ func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, che
 	for i:=0;i<elemType.NumField();i++ {
 		fieldType := elemType.Field(i)
 		fieldValue := elemValue.Field(i)
-		column, hasDBTag := fieldType.Tag.Lookup("db")
-		if !hasDBTag {continue}
+		column, hasDatabaseTag := fieldType.Tag.Lookup("Database")
+		if !hasDatabaseTag {continue}
 
 		// find primary id
 		if column == "id" {
@@ -334,7 +230,7 @@ func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, che
 		case UpdateModeler:
 			where = updateModeler.UpdateModelWhere()
 		default:
-			return errors.New(elemType.Name() + " must has method UpdateModelWhere() sq.Condition or struct tag `db:\"id\"`")
+			return errors.New(elemType.Name() + " must has method UpdateModelWhere() sq.Condition or struct tag `Database:\"id\"`")
 		}
 	}
 	qb := QB{
@@ -348,15 +244,15 @@ func (db *DB) UpdateModel(ctx context.Context, ptr Model, updateData []Data, che
 	if err != nil {return err}
 	return
 }
-func (db *DB) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
 	return
 }
-func (db *DB) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
+func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
 	qb.Table = ptr
 	qb.Limit = 1
 	qb.Join = ptr.RelationJoin()
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
-func (db *DB) QueryRelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
+func (db *Database) QueryRelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
 	return
 }

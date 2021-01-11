@@ -38,6 +38,7 @@ type QB struct {
 
 	Join []Join
 	Debug bool
+	Raw Raw
 }
 
 type TableRaw struct {
@@ -137,6 +138,9 @@ func (s Statement) Switch(
 	}
 }
 func (qb QB) SQL(statement Statement) Raw {
+	if len(qb.Raw.Query) != 0 {
+		return qb.Raw
+	}
 	var values []interface{}
 	var sqlList stringQueue
 	if statement == statement.Enum().Select && qb.UnionTable.Tables != nil{
