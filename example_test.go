@@ -21,7 +21,7 @@ func TestExample(t *testing.T) {
 	// ExampleDB_ModelList()
 
 }
-var exampleDB *sq.DB
+var exampleDB *sq.Database
 func init () {
 	db, dbClose, err := sq.Open("mysql", sq.DataSourceName{
 		DriverName: "mysql",
@@ -250,15 +250,6 @@ func ExampleDB_UpdateModel() {
 	}
 }
 
-func ExampleCreateModel() {
-	log.Print("ExampleCreateModel")
-	ctx := context.TODO()
-	var user User
-	checkInsertSQL := "INSERT INTO `user` (`id`, `name`, `age`) VALUES (?, ?, ?)"
-	err := exampleDB.CreateModel(ctx, &user, checkInsertSQL) ; if err != nil {
-		panic(err)
-	}
-}
 // func ExampleMultiCreateModel() {
 // 	log.Print("ExampleMultiCreateModel")
 // 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取

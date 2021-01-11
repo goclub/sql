@@ -33,10 +33,7 @@ func (db *Database) Close() error {
 	log.Print("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
-func (db *Database) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
-	return
-}
-func (db *Database) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+func (db *Database) CreateModel(ctx context.Context, ptr Model) (err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
@@ -91,10 +88,16 @@ func CheckRowScanErr(scanErr error) (has bool, err error) {
 	return
 }
 func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
+	return coreQueryRowScan(db.Core, ctx, qb, desc...)
+}
+func (tx *Tx) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
+	return coreQueryRowScan(tx.Core, ctx, qb, desc...)
+}
+func coreQueryRowScan(storager Storager, ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
 	qb.Limit = 1
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
-	row := db.Core.QueryRowx(query, values...)
+	row := storager.QueryRowx(query, values...)
 	scanErr := row.Scan(desc...)
 	has, err = CheckRowScanErr(scanErr) ; if err != nil {
 		return
@@ -254,5 +257,9 @@ func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, chec
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
 func (db *Database) QueryRelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
+	return
+}
+func (db *Database) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
+
 	return
 }

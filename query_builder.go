@@ -226,7 +226,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			sqlList.Push("(" + strings.Join(placeholders, ",") + ")")
 	})
 	// where
-	if statement == statement.Enum().Select || statement == statement.Enum().Update {
+	{
 		var whereString string
 		if qb.WhereRaw != nil {
 			var whereValues []interface{}

@@ -3,7 +3,6 @@ package sq
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -12,6 +11,11 @@ type Tx struct {
 }
 func newTx(tx *sqlx.Tx) *Tx {
 	return &Tx{tx}
+}
+
+type TxResult struct {
+	isCommit bool
+	withError error
 }
 func (Tx) Commit() TxResult {
 	return TxResult{
@@ -29,16 +33,16 @@ func (Tx) RollbackWithError(err error) TxResult {
 		withError: err,
 	}
 }
-type TxResult struct {
-	isCommit bool
-	withError error
-}
 // 给 TxResult 增加 Error 接口是为了避出现类似  tx.Rollback() 前面没有 return 的错误
 func (result TxResult) Error() string {
 	if result.withError != nil {
 		return result.withError.Error()
 	}
-	return fmt.Sprintf("%+v", result)
+	if result.isCommit {
+		return "goclub/sql: result commit"
+	} else {
+		return "goclub/sql: result rollback"
+	}
 }
 
 func (db *Database) Transaction(ctx context.Context, handle func (tx *Tx) TxResult) (err error) {
