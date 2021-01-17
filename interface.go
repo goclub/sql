@@ -34,7 +34,7 @@ func Table(tableName string, softDeleteWhere Raw) Tabler {
 type Model interface {
 	TableName() string
 	SoftDeleteWhere() Raw
-	SoftDeleteSet() Raw
+	// SoftDeleteSet() Raw // Model 可没有 SoftDeleteSet
 	BeforeCreate() error
 	AfterCreate(result sql.Result) error
 	BeforeUpdate() error
@@ -45,6 +45,8 @@ type Relation interface {
 	SoftDeleteWhere() Raw
 	RelationJoin () []Join
 }
+type WithoutSoftDelete struct {}
+func (WithoutSoftDelete) SoftDeleteWhere() Raw {return Raw{}}
 
 type SoftDeleteDeletedAt struct {}
 func (SoftDeleteDeletedAt) SoftDeleteWhere() Raw {return Raw{"`deleted_at` IS NULL", nil}}
