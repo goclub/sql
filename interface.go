@@ -1,6 +1,7 @@
 package sq
 
 import (
+	"context"
 	"database/sql"
 	"github.com/jmoiron/sqlx"
 	"time"
@@ -75,4 +76,5 @@ type Storager interface {
 	sqlx.ExecerContext
 	sqlx.Preparer
 	sqlx.PreparerContext
+	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }

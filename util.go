@@ -1,6 +1,8 @@
 package sq
 
 import (
+	"database/sql"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -47,6 +49,35 @@ func columnsToStrings (columns []Column) (strings []string) {
 func columnsToStringsWithAS (columns []Column) (strings []string) {
 	for _, column := range columns {
 		strings = append(strings, column.wrapFieldWithAS())
+	}
+	return
+}
+
+type primaryIDInfo struct {
+	HasID bool
+	IDValue interface{}
+}
+func primaryKeyWhere(ptr Model, primaryIDInfo primaryIDInfo, typeName string) ([]Condition, error) {
+	if primaryIDInfo.HasID {
+		return []Condition{{"id", Equal(primaryIDInfo.IDValue)}}, nil
+	} else {
+		switch updateModeler := ptr.(type) {
+		case UpdateModeler:
+			return updateModeler.UpdateModelWherePrimaryKey(), nil
+		default:
+			return nil, errors.New(typeName + " must has method UpdateModelWherePrimaryKey() sq.Condition or struct tag `db:\"id\"`")
+		}
+	}
+}
+func CheckRowScanErr(scanErr error) (has bool, err error) {
+	if scanErr != nil {
+		if scanErr == sql.ErrNoRows {
+			return false, nil
+		} else {
+			return false, scanErr
+		}
+	} else {
+		has = true
 	}
 	return
 }

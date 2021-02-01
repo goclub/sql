@@ -18,7 +18,7 @@ func TestExample(t *testing.T) {
 	// ExampleDB_Select()
 	// ExampleDB_QueryModel()
 	// ExampleDB_Count()
-	// ExampleDB_ModelList()
+	// ExampleDB_ModelSlice()
 	// ExampleDB_UpdateModel()
 }
 var exampleDB *sq.Database
@@ -181,8 +181,8 @@ func ExampleDB_QueryModel() {
 	log.Printf("user: %+v\r\n hasUser: %v", user, hasUser)
 }
 // 基于 Model 查询多行数据
-func ExampleDB_ModelList() {
-	log.Print("ExampleDB_ModelList")
+func ExampleDB_ModelSlice() {
+	log.Print("ExampleDB_ModelSlice")
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	var userList []User
 	userCol := User{}.Column()
@@ -192,7 +192,7 @@ func ExampleDB_ModelList() {
 			And(userCol.Age, sq.GtInt(10)),
 	}
 	// SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `age` > ? AND `deleted_at` IS NULL
-	err := exampleDB.QueryModelList(ctx, &userList, qb) ; if err != nil {
+	err := exampleDB.QueryModelSlice(ctx, &userList, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print(userList)

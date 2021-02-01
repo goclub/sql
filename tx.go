@@ -6,28 +6,28 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type Tx struct {
+type Transaction struct {
 	Core *sqlx.Tx
 }
-func newTx(tx *sqlx.Tx) *Tx {
-	return &Tx{tx}
+func newTx(tx *sqlx.Tx) *Transaction {
+	return &Transaction{tx}
 }
 
 type TxResult struct {
 	isCommit bool
 	withError error
 }
-func (Tx) Commit() TxResult {
+func (Transaction) Commit() TxResult {
 	return TxResult{
 		isCommit: true,
 	}
 }
-func (Tx) Rollback() TxResult {
+func (Transaction) Rollback() TxResult {
 	return TxResult{
 		isCommit: false,
 	}
 }
-func (Tx) RollbackWithError(err error) TxResult {
+func (Transaction) RollbackWithError(err error) TxResult {
 	return TxResult{
 		isCommit: false,
 		withError: err,
@@ -45,10 +45,10 @@ func (result TxResult) Error() string {
 	}
 }
 
-func (db *Database) Transaction(ctx context.Context, handle func (tx *Tx) TxResult) (err error) {
+func (db *Database) Transaction(ctx context.Context, handle func (tx *Transaction) TxResult) (err error) {
 	return db.TransactionOpts(ctx, handle, nil)
 }
-func (db *Database) TransactionOpts(ctx context.Context, handle func (tx *Tx) TxResult, opts *sql.TxOptions) (err error) {
+func (db *Database) TransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (err error) {
 	coreTx, err := db.Core.BeginTxx(ctx, opts) ; if err != nil {
 		return
 	}

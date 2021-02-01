@@ -9,6 +9,7 @@ require (
 	github.com/manifoldco/promptui v0.8.0
 	github.com/og/gofree v0.5.0 // indirect
 	github.com/og/x v0.0.0-20201210141255-dbe8c95570d3
+	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.3.0
 )

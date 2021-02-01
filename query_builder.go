@@ -46,6 +46,13 @@ type QB struct {
 	Raw Raw
 }
 
+func (qb QB) mustInTransaction() error {
+	if len(qb.Lock) == 0 {
+		return nil
+	}
+	return errors.New("goclub/sql: SELECT " + qb.Lock.String() + " must exec in transaction")
+}
+
 type TableRaw struct {
 	TableName Raw
 	SoftDeleteWhere Raw
@@ -218,7 +225,8 @@ func (qb QB) SQL(statement Statement) Raw {
 		}
 		sqlList.Push(strings.Join(sets, ","))
 	}, func(_Delete string) {
-
+		sqlList.Push("DELETE FROM")
+		sqlList.Push(qb.tableName)
 	}, func(_Insert []int) {
 			sqlList.Push("INSERT INTO")
 			sqlList.Push(qb.tableName)
@@ -309,6 +317,9 @@ func (qb QB) SQLInsert() Raw {
 }
 func (qb QB) SQLUpdate() Raw {
 	return qb.SQL(Statement("").Enum().Update)
+}
+func (qb QB) SQLDelete() Raw {
+	return qb.SQL(Statement("").Enum().Delete)
 }
 func (qb QB) Paging(page int, perPage int) QB {
 	return qb
