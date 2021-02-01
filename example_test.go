@@ -258,26 +258,21 @@ func ExampleDB_UpdateModel() {
 		err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
 			panic(err)
 		}
-		subtract := 1
-		result, err := testDB.UpdateModel(context.TODO(), &user,  []sq.Data{
-			{Column: userCol.Name, Value: "nimo"},
-			{
-				Raw: sq.Raw{"`age` = `age` - ?",[]interface{}{subtract}},
-				OnUpdated: func() error {
-					user.Age++
-					return nil
-				},
+		var subtract uint = 1
+		// UPDATE user SET age = age + ? WHERE id = ? AND age + ? <= stock
+		affected, err := testDB.IncrementIntModel(context.TODO(), &user, sq.IncrementInt{
+			Column: userCol.Age,
+			Value:subtract,
+			AfterIncrementLessThanOrEqual: userCol.Stock,
+			OnUpdated: func(value uint) error {
+				user.Age+=int(value)
+				return nil
 			},
-		}, sq.And("", sq.OPRaw(sq.Raw{
-			Query: "`age` > ?",
-			Values: []interface{}{subtract},
-		}))) ; if err != nil {
+
+		}) ; if err != nil {
 			panic(err)
 		}
-		affected, err := result.RowsAffected() ; if err != nil {
-			panic(err)
-		}
-		if affected == 0 {
+		if affected == false {
 			log.Print("修改失败")
 		}
 	}

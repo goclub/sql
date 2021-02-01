@@ -234,7 +234,7 @@ func (suite TestQBSuite) TestWhereOPRaw() {
 		qb := sq.QB{
 			Table: User{},
 			Where: []sq.Condition{
-				{"", sq.OPRaw(sq.Raw{"`name` = `cname`", nil})},
+				sq.ConditionRaw("`name` = `cname`", nil),
 			},
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
@@ -245,7 +245,7 @@ func (suite TestQBSuite) TestWhereOPRaw() {
 		qb := sq.QB{
 			Table: User{},
 			Where: []sq.Condition{
-				{"", sq.OPRaw(sq.Raw{"`name` = ?", []interface{}{"nimo"}})},
+				sq.ConditionRaw("`name` = ?", []interface{}{"nimo"}),
 			},
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values

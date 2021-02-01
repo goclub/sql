@@ -187,6 +187,42 @@ func (db *Database) Update(ctx context.Context, qb QB) (result sql.Result, err e
 	if err != nil {return result, err}
 	return
 }
+
+type IncrementInt struct {
+	Column Column
+	Value uint
+	AfterIncrementLessThanOrEqual Column
+	OnUpdated func(value uint) error
+}
+func (db *Database) IncrementIntModel(ctx context.Context, ptr Model, props IncrementInt) (affected bool, err error) {
+	field := props.Column.wrapField()
+	result, err := db.UpdateModel(ctx, ptr, []Data{
+		{
+			// SET age = age + ?
+			Raw: Raw{
+				Query: field + " = " + field + " + ?",
+				Values: []interface{}{props.Value},
+			},
+			OnUpdated: func() error {
+				return props.OnUpdated(props.Value)
+			},
+		},
+	}, []Condition{
+		ConditionRaw(
+			// WHERE age + ? <= stock
+			field + " + ? <= " + props.AfterIncrementLessThanOrEqual.wrapField(),
+			[]interface{}{props.Value},
+		),
+	})
+	if err != nil {
+		return
+	}
+	rowsAffected, err := result.RowsAffected() ; if err != nil {
+		return
+	}
+	affected = rowsAffected !=0
+	return
+}
 func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Data, where []Condition, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
@@ -269,7 +305,7 @@ func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Dat
 	return
 }
 func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
-	
+
 	return
 }
 func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {

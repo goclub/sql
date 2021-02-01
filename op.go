@@ -47,12 +47,6 @@ func NotEqual(v interface{}) OP {
 		Values: []interface{}{v},
 	}
 }
-func OPRaw(raw Raw) OP {
-	return OP {
-		RawQuery: raw.Query,
-		Values: raw.Values,
-	}
-}
 func SubQuery(symbol string, qb QB) OP {
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values

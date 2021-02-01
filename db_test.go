@@ -94,3 +94,4 @@ func (suite TestDBSuite) TestRelation() {
 	}
 	log.Print(has, userWithAddress)
 }
+
