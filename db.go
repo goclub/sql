@@ -17,12 +17,15 @@ var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdateTime",}
 var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
 func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
 	var coreDatabase *sqlx.DB
-	coreDatabase ,err = sqlx.Open(driverName, dataSourceName)
+	coreDatabase, err = sqlx.Open(driverName, dataSourceName)
 	db = &Database{Core: coreDatabase,}
 	if err != nil && coreDatabase != nil {
 		dbClose = coreDatabase.Close
 	} else {
 		dbClose = func() error { return nil}
+	}
+	if err != nil {
+		return
 	}
 	return
 }

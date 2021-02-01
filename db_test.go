@@ -96,6 +96,13 @@ func (suite TestDBSuite) TestRelation() {
 }
 
 func (suite TestDBSuite) TestUpdate() {
-
+	// user := User{
+	// 	Name: "nimo",
+	// 	Age: 18,
+	// }
+	// err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
+	// 	panic(err)
+	// }
+	// testDB.UpdateModel(context.TODO(), &user, )
 }
 
