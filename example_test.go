@@ -19,7 +19,7 @@ func TestExample(t *testing.T) {
 	// ExampleDB_QueryModel()
 	// ExampleDB_Count()
 	// ExampleDB_ModelList()
-
+	// ExampleDB_UpdateModel()
 }
 var exampleDB *sq.Database
 func init () {
@@ -235,19 +235,53 @@ func ExampleDB_UpdateModel() {
 	// 若 user 不存在 user.ID 则以包含结构体标签 `sq:"PRI"` 的字段作为 WHERE 条件
 	// 存在多个 `sq:"PRI"`则以多个条件查询
 	checkSQL := "UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"
-	err := exampleDB.UpdateModel(ctx, &user, []sq.Data{
-		{userCol.Name, "newUpdate"},
-	}, checkSQL) ; if err != nil {
+	_, err := exampleDB.UpdateModel(ctx, &user, []sq.Data{
+		sq.Set(userCol.Name, "newUpdate"),
+	}, nil, checkSQL) ; if err != nil {
 		panic(err)
 	}
 	log.Print(user.Name) // newUpdate ( db.UpdateModel() 会自动给 user 对应字段赋值)
 	// 在已知主键字段的情况下可以不读取 Model
 	someID := IDUser("290f187c-3de0-11eb-b378-0242ac130002")
-	err = exampleDB.UpdateModel(ctx, &User{
+	_, err = exampleDB.UpdateModel(ctx, &User{
 		ID: someID,
-	}, []sq.Data{{userCol.Name, "newUpdate",},}, checkSQL) ; if err != nil {
+	}, []sq.Data{sq.Set(userCol.Name, "newUpdate"),},nil, checkSQL) ; if err != nil {
 		panic(err)
 	}
+	// 乐观锁更新
+	{
+		user := User{
+			Name: "nimo",
+			Age: 0,
+		}
+		userCol := user.Column()
+		err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
+			panic(err)
+		}
+		subtract := 1
+		result, err := testDB.UpdateModel(context.TODO(), &user,  []sq.Data{
+			{Column: userCol.Name, Value: "nimo"},
+			{
+				Raw: sq.Raw{"`age` = `age` - ?",[]interface{}{subtract}},
+				OnUpdated: func() error {
+					user.Age++
+					return nil
+				},
+			},
+		}, sq.And("", sq.OPRaw(sq.Raw{
+			Query: "`age` > ?",
+			Values: []interface{}{subtract},
+		}))) ; if err != nil {
+			panic(err)
+		}
+		affected, err := result.RowsAffected() ; if err != nil {
+			panic(err)
+		}
+		if affected == 0 {
+			log.Print("修改失败")
+		}
+	}
+
 }
 
 // func ExampleMultiCreateModel() {

@@ -7,7 +7,7 @@ import (
 )
 
 type UpdateModeler interface {
-	UpdateModelWhere() []Condition
+	UpdateModelWherePrimaryKey() []Condition
 }
 type Tabler interface {
 	TableName() string

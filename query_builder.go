@@ -9,6 +9,11 @@ import (
 type Data struct {
 	Column Column
 	Value interface{}
+	Raw Raw
+	OnUpdated func() error
+}
+func Set(column Column, value interface{}) Data {
+	return Data{Column: column, Value: value}
 }
 
 type QB struct {
@@ -203,8 +208,13 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push("SET")
 		var sets  []string
 		for _, data := range qb.Update {
-			sets = append(sets, data.Column.wrapField()+"=?")
-			values = append(values, data.Value)
+			if len(data.Raw.Query) !=0  {
+				sets = append(sets, data.Raw.Query)
+				values = append(values, data.Raw.Values...)
+			} else {
+				sets = append(sets, data.Column.wrapField()+"=?")
+				values = append(values, data.Value)
+			}
 		}
 		sqlList.Push(strings.Join(sets, ","))
 	}, func(_Delete string) {

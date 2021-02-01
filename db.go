@@ -52,9 +52,9 @@ func (db *Database) CreateModel(ctx context.Context, ptr Model) (err error) {
 	for i:=0;i<elemType.NumField();i++ {
 		fieldType := elemType.Field(i)
 		fieldValue := elemValue.Field(i)
-		// `Database:"name"`
-		column, hasDatabaseTag := fieldType.Tag.Lookup("Database")
-		if !hasDatabaseTag {continue}
+		// `db:"name"`
+		column, hasDBTag := fieldType.Tag.Lookup("db")
+		if !hasDBTag {continue}
 		if column == "" {continue}
 
 		// `sq:"ignore"`
@@ -66,9 +66,9 @@ func (db *Database) CreateModel(ctx context.Context, ptr Model) (err error) {
 				setTimeNow(fieldValue, fieldType)
 			}
 		}
-		qb.Insert = append(qb.Insert, Data{Column(column), fieldValue.Interface()})
+		qb.Insert = append(qb.Insert, Data{Column: Column(column), Value: fieldValue.Interface()})
 	}
-	raw := qb.SQLSelect()
+	raw := qb.SQLInsert()
 	query, values := raw.Query, raw.Values
 	result, err := db.Core.ExecContext(ctx, query, values...) ; if err != nil {
 		return
@@ -180,14 +180,14 @@ func (db *Database) QueryModelList(ctx context.Context, modelSlicePtr interface{
 	}
 	return nil
 }
-func (db *Database) Update(ctx context.Context, qb QB) (err error) {
+func (db *Database) Update(ctx context.Context, qb QB) (result sql.Result, err error) {
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
-	_, err = db.Core.ExecContext(ctx, query, values...)
-	if err != nil {return err}
+	result, err = db.Core.ExecContext(ctx, query, values...)
+	if err != nil {return result, err}
 	return
 }
-func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Data, checkSQL ...string) (err error) {
+func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Data, where []Condition, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -202,8 +202,8 @@ func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Dat
 	for i:=0;i<elemType.NumField();i++ {
 		fieldType := elemType.Field(i)
 		fieldValue := elemValue.Field(i)
-		column, hasDatabaseTag := fieldType.Tag.Lookup("Database")
-		if !hasDatabaseTag {continue}
+		column, hasDBTag := fieldType.Tag.Lookup("db")
+		if !hasDBTag {continue}
 
 		// find primary id
 		if column == "id" {
@@ -218,39 +218,58 @@ func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Dat
 				// UpdatedAt time.Time `sq:"ignore"`
 				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
 				if !shouldIgnore {
-					updateData = append(updateData, Data{Column(column), fieldValue.Interface()})
+					updateData = append(updateData, Data{
+						Column: Column(column),
+						Value: fieldValue.Interface(),
+					})
 				}
 			}
 		}
 		for _, data := range updateData {
-			if column == data.Column.String() {
-				elemValue.Field(i).Set(reflect.ValueOf(data.Value))
+			if len(data.Raw.Query) != 0 {
+				if column == data.Column.String() {
+					if data.OnUpdated == nil {
+						data.OnUpdated = func() error {
+							elemValue.Field(i).Set(reflect.ValueOf(data.Value))
+							return nil
+						}
+					}
+				}
 			}
 		}
 	}
-	var where []Condition
+	var primaryKeyWhere []Condition
 	if idData.HasID {
-		where = []Condition{{"id", Equal(idData.IDValue)}}
+		primaryKeyWhere = []Condition{{"id", Equal(idData.IDValue)}}
 	} else {
 		switch updateModeler := ptr.(type) {
 		case UpdateModeler:
-			where = updateModeler.UpdateModelWhere()
+			primaryKeyWhere = updateModeler.UpdateModelWherePrimaryKey()
 		default:
-			return errors.New(elemType.Name() + " must has method UpdateModelWhere() sq.Condition or struct tag `Database:\"id\"`")
+			return result, errors.New(elemType.Name() + " must has method UpdateModelWherePrimaryKey() sq.Condition or struct tag `db:\"id\"`")
 		}
 	}
+	wheres := append(primaryKeyWhere, where...)
 	qb := QB{
 		Table: ptr,
 		Update: updateData,
-		Where: where,
+		Where: wheres,
 	}
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
-	_, err = db.Core.ExecContext(ctx, query, values...)
-	if err != nil {return err}
+	result, err = db.Core.ExecContext(ctx, query, values...)
+	if err != nil {return result, err}
+	for _, data := range updateData {
+		if data.OnUpdated != nil {
+			updatedErr := data.OnUpdated() ; if updatedErr != nil {
+				return result, updatedErr
+			}
+		}
+	}
 	return
 }
 func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+	
 	return
 }
 func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
@@ -260,9 +279,6 @@ func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, chec
 	return db.QueryRowStructScan(ctx, ptr, qb)
 }
 func (db *Database) QueryRelationList(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
-	return
-}
-func (db *Database) Exec(ctx context.Context, qb QB) (result sql.Result, err error) {
 
 	return
 }
