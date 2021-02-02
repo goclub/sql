@@ -213,6 +213,19 @@ func coreExist(ctx context.Context, storager Storager, qb QB) (existed bool, err
 	existed, err = coreQueryRowScan(ctx, storager, qb, nil);if err != nil {return }
 	return
 }
+func (db *Database) Sum(ctx context.Context, column Column ,qb QB) (value sql.NullInt64, err error) {
+	return coreSum(ctx, db.Core, column, qb)
+}
+func (tx *Transaction) Sum(ctx context.Context, column Column ,qb QB) (value sql.NullInt64, err error) {
+	return coreSum(ctx, tx.Core, column, qb)
+}
+func coreSum(ctx context.Context, storager Storager,column Column ,qb QB) (value sql.NullInt64, err error) {
+	qb.SelectRaw = []Raw{{"SUM(" + column.wrapField() + ")", nil}}
+	_, err = coreQueryRowScan(ctx, storager, qb, &value) ; if err != nil {
+		return
+	}
+	return
+}
 func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreQueryModel(ctx, db.Core, ptr, qb)
