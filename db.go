@@ -36,6 +36,17 @@ func (db *Database) Close() error {
 	log.Print("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
+
+func (db *Database) Insert(ctx context.Context, qb QB) (result sql.Result, err error){
+	return coreInsert(ctx, db.Core, qb)
+}
+func (tx *Transaction) Insert(ctx context.Context, qb QB) (result sql.Result, err error){
+	return coreInsert(ctx, tx.Core, qb)
+}
+func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+	raw := qb.SQLInsert()
+	return coreExec(ctx, storager, raw)
+}
 // CreateModel
 func (db *Database) CreateModel(ctx context.Context, ptr Model) (err error) {
 	return coreCreateModel(ctx, db.Core, ptr)
@@ -325,161 +336,13 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 	}
 	return
 }
-
-func (db *Database) DecrementIntModel(ctx context.Context, ptr Model, props IncrementInt, checkSQL ...string) (affected bool, err error) {
-	return coreDecrementIntModel(ctx, db.Core, ptr, props, checkSQL...)
+func (db *Database) HardDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreHardDelete(ctx,db.Core, ptr, checkSQL...)
 }
-func (tx *Transaction) DecrementIntModel(ctx context.Context, ptr Model, props IncrementInt, checkSQL ...string) (affected bool, err error) {
-	return coreDecrementIntModel(ctx, tx.Core, ptr, props, checkSQL...)
+func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreHardDelete(ctx,tx.Core, ptr, checkSQL...)
 }
-func coreDecrementIntModel(ctx context.Context, storager Storager, ptr Model, props IncrementInt, checkSQL ...string) (affected bool, err error) {
-	field := props.Column.wrapField()
-	result, err := coreUpdateModel(ctx, storager, ptr, []Data{
-		{
-			// SET age = age - ?
-			Raw: Raw{
-				Query: field + " = " + field + " - ?",
-				Values: []interface{}{props.Value},
-			},
-			OnUpdated: func() error {
-				return props.OnUpdated(props.Value)
-			},
-		},
-	}, []Condition{
-		ConditionRaw(
-			// WHERE age  >= stock
-			field + " >= " + props.AfterIncrementLessThanOrEqual.wrapField(),
-			[]interface{}{props.Value},
-		),
-	})
-	if err != nil {
-		return
-	}
-	rowsAffected, err := result.RowsAffected() ; if err != nil {
-		return
-	}
-	affected = rowsAffected !=0
-	return
-}
-type DecrementFloat struct {
-	Column Column
-	Value float64
-	AfterDecrementGreaterThanOrEqual Column
-	OnUpdated func(value float64) error
-}
-func (db *Database) DecrementFloatModel(ctx context.Context, ptr Model, props IncrementFloat, checkSQL ...string) (affected bool, err error) {
-	return coreDecrementFloatModel(ctx, db.Core, ptr, props, checkSQL...)
-}
-func (tx *Transaction) DecrementFloatModel(ctx context.Context, ptr Model, props IncrementFloat, checkSQL ...string) (affected bool, err error) {
-	return coreDecrementFloatModel(ctx, tx.Core, ptr, props, checkSQL...)
-}
-func coreDecrementFloatModel(ctx context.Context, storager Storager, ptr Model, props IncrementFloat, checkSQL ...string) (affected bool, err error) {
-	field := props.Column.wrapField()
-	result, err := coreUpdateModel(ctx, storager, ptr, []Data{
-		{
-			// SET age = age - ?
-			Raw: Raw{
-				Query: field + " = " + field + " - ?",
-				Values: []interface{}{props.Value},
-			},
-			OnUpdated: func() error {
-				return props.OnUpdated(props.Value)
-			},
-		},
-	}, []Condition{
-		ConditionRaw(
-			// WHERE age  >= stock
-			field + " >= " + props.AfterIncrementLessThanOrEqual.wrapField(),
-			[]interface{}{props.Value},
-		),
-	})
-	if err != nil {
-		return
-	}
-	rowsAffected, err := result.RowsAffected() ; if err != nil {
-		return
-	}
-	affected = rowsAffected !=0
-	return
-}
-type DecrementInt struct {
-	Column Column
-	Value uint
-	AfterDecrementGreaterThanOrEqual Column
-	OnUpdated func(value uint) error
-}
-type IncrementInt struct {
-	Column Column
-	Value uint
-	AfterIncrementLessThanOrEqual Column
-	OnUpdated func(value uint) error
-}
-// @TODO 继续加 db 和 tx 的方法
-func (db *Database) IncrementIntModel(ctx context.Context, ptr Model, props IncrementInt) (affected bool, err error) {
-	field := props.Column.wrapField()
-	result, err := db.UpdateModel(ctx, ptr, []Data{
-		{
-			// SET age = age + ?
-			Raw: Raw{
-				Query: field + " = " + field + " + ?",
-				Values: []interface{}{props.Value},
-			},
-			OnUpdated: func() error {
-				return props.OnUpdated(props.Value)
-			},
-		},
-	}, []Condition{
-		ConditionRaw(
-			// WHERE age + ? <= stock
-			field + " + ? <= " + props.AfterIncrementLessThanOrEqual.wrapField(),
-			[]interface{}{props.Value},
-		),
-	})
-	if err != nil {
-		return
-	}
-	rowsAffected, err := result.RowsAffected() ; if err != nil {
-		return
-	}
-	affected = rowsAffected !=0
-	return
-}
-type IncrementFloat struct {
-	Column Column
-	Value float64
-	AfterIncrementLessThanOrEqual Column
-	OnUpdated func(value float64) error
-}
-func (db *Database) IncrementFloatModel(ctx context.Context, ptr Model, props IncrementFloat) (affected bool, err error) {
-	field := props.Column.wrapField()
-	result, err := db.UpdateModel(ctx, ptr, []Data{
-		{
-			// SET age = age + ?
-			Raw: Raw{
-				Query: field + " = " + field + " + ?",
-				Values: []interface{}{props.Value},
-			},
-			OnUpdated: func() error {
-				return props.OnUpdated(props.Value)
-			},
-		},
-	}, []Condition{
-		ConditionRaw(
-			// WHERE age + ? <= stock
-			field + " + ? <= " + props.AfterIncrementLessThanOrEqual.wrapField(),
-			[]interface{}{props.Value},
-		),
-	})
-	if err != nil {
-		return
-	}
-	rowsAffected, err := result.RowsAffected() ; if err != nil {
-		return
-	}
-	affected = rowsAffected !=0
-	return
-}
-func (db *Database) HardDelete(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func coreHardDelete(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -512,9 +375,13 @@ func (db *Database) HardDelete(ctx context.Context, ptr Model, checkSQL ...strin
 		Where: primaryKeyWhere,
 		Limit: 1,
 	}.SQLDelete()
-	return db.Core.ExecContext(ctx, raw.Query, raw.Values...)
+	return storager.ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreSoftDeleteModel(ctx, db.Core, ptr, checkSQL...)
+}
+func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){}
+func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -548,16 +415,30 @@ func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...
 		Update: []Data{{Raw:ptr.SoftDeleteWhere(),}},
 		Limit: 1,
 	}.SQLUpdate()
-	return db.Core.ExecContext(ctx, raw.Query, raw.Values...)
+	return storager.ExecContext(ctx, raw.Query, raw.Values...)
 
 }
-func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
+func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error){
+	err = qb.mustInTransaction() ; if err != nil {return}
+	return coreQueryRelation(ctx, db.Core, ptr, qb, checkSQL...)
+}
+func (tx *Transaction) QueryRelation(ctx context.Context, ptr Relation, qb QB, checkSQL ...string) (has bool, err error){
+	return coreQueryRelation(ctx, tx.Core, ptr, qb, checkSQL...)
+}
+func coreQueryRelation(ctx context.Context, storager Storager, ptr Relation, qb QB, checkSQL ...string) (has bool, err error) {
 	qb.Table = ptr
 	qb.Limit = 1
 	qb.Join = ptr.RelationJoin()
-	return db.QueryRowStructScan(ctx, ptr, qb)
+	return coreQueryRowStructScan(ctx, storager, ptr, qb)
 }
 func (db *Database) QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
+	err = qb.mustInTransaction() ; if err != nil {return}
+	return coreQueryRelationSlice(ctx, db.Core, relationSlicePtr, qb, checkSQL...)
+}
+func (tx *Transaction) QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
+	return coreQueryRelationSlice(ctx, tx.Core, relationSlicePtr, qb, checkSQL...)
+}
+func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlicePtr interface{}, qb QB, checkSQL ...string) (err error) {
 	ptrType := reflect.TypeOf(relationSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {
 		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
@@ -569,15 +450,19 @@ func (db *Database) QueryRelationSlice(ctx context.Context, relationSlicePtr int
 	qb.Join = tablerInterface.RelationJoin()
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
-	err = db.Core.SelectContext(ctx, relationSlicePtr,query , values...) ; if err != nil {
+	err = storager.SelectContext(ctx, relationSlicePtr,query , values...) ; if err != nil {
 		return err
 	}
 	return
 }
-
-func (db *Database) Exec(ctx context.Context, qb QB, statement Statement) (result sql.Result, err error) {
-	raw := qb.SQL(statement)
-	result, err = db.Core.ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
+func (db *Database) Exec(ctx context.Context, raw Raw) (result sql.Result, err error){
+	return coreExec(ctx, db.Core, raw)
+}
+func (tx *Transaction) Exec(ctx context.Context, raw Raw) (result sql.Result, err error){
+	return coreExec(ctx, tx.Core, raw)
+}
+func coreExec(ctx context.Context, storager Storager, raw Raw) (result sql.Result, err error) {
+	result, err = storager.ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
 		return
 	}
 	return
