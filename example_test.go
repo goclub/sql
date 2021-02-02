@@ -156,7 +156,7 @@ func ExampleDB_Select() {
 			And(userCol.Age, sq.Equal(18)),
 	}
 	// SELECT `name`, `age` FROM `user` WHERE `age` = ? AND `deleted_at` IS NULL
-	err := exampleDB.Select(ctx, &userNameAgeList, qb) ; if err != nil {
+	err := exampleDB.SelectSlice(ctx, &userNameAgeList, qb) ; if err != nil {
 		panic(err)
 	}
 	log.Print("userNameAgeList:", userNameAgeList)
@@ -248,35 +248,6 @@ func ExampleDB_UpdateModel() {
 	}, []sq.Data{sq.Set(userCol.Name, "newUpdate"),},nil, checkSQL) ; if err != nil {
 		panic(err)
 	}
-	// 乐观锁更新
-	{
-		user := User{
-			Name: "nimo",
-			Age: 0,
-		}
-		userCol := user.Column()
-		err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
-			panic(err)
-		}
-		var subtract uint = 1
-		// UPDATE user SET age = age + ? WHERE id = ? AND age + ? <= stock
-		affected, err := testDB.IncrementIntModel(context.TODO(), &user, sq.IncrementInt{
-			Column: userCol.Age,
-			Value:subtract,
-			AfterIncrementLessThanOrEqual: userCol.Stock,
-			OnUpdated: func(value uint) error {
-				user.Age+=int(value)
-				return nil
-			},
-
-		}) ; if err != nil {
-			panic(err)
-		}
-		if affected == false {
-			log.Print("修改失败")
-		}
-	}
-
 }
 
 // func ExampleMultiCreateModel() {
@@ -295,7 +266,7 @@ func ExampleSoftDeleteModel() {
 	ctx := context.TODO() // 一般由 http.Request{}.Context() 获取
 	user := someUser()
 	softDeletedCheckSQL := "UPDATE `user` SET `deleted_at` = NULL"
-	err := exampleDB.SoftDeleteModel(ctx, &user, softDeletedCheckSQL) ; if err != nil {
+	_, err := exampleDB.SoftDeleteModel(ctx, &user, softDeletedCheckSQL) ; if err != nil {
 		panic(err)
 	}
 }
@@ -328,9 +299,9 @@ func ExampleRelationList() {
 		"LEFT JOIN `user_address` " +
 		"ON `user.id` = `user_address.id " +
 		"WHERE `user.age` > ? " +
-		"AND `user.deleted_at` IS NULL " +
+		"AND `user.deleted_at` IS NULgoL " +
 		"AND `user_address.deleted_at` IS NULL"
-	err := exampleDB.QueryRelationList(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
+	err := exampleDB.QueryRelationSlice(ctx, &userWithAddressList, sq.QB{Where: sq.And(userWithAddressCol.Age, sq.GtInt(18))}, checkSQL) ; if err != nil {
 		panic(err)
 	}
 }

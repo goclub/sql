@@ -11,14 +11,18 @@ import (
 
 type Database struct {
 	Core *sqlx.DB
+	sqlChecker SQLChecker
 }
-var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
-var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdateTime",}
-var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
+func (db *Database) SetSQLChecker(sqlChecker SQLChecker) {
+	db.sqlChecker = sqlChecker
+}
 func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
 	var coreDatabase *sqlx.DB
 	coreDatabase, err = sqlx.Open(driverName, dataSourceName)
-	db = &Database{Core: coreDatabase,}
+	db = &Database{
+		Core: coreDatabase,
+		sqlChecker: DefaultSQLCheck{},
+	}
 	if err != nil && coreDatabase != nil {
 		dbClose = coreDatabase.Close
 	} else {
@@ -36,7 +40,9 @@ func (db *Database) Close() error {
 	log.Print("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
-
+var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
+var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdateTime",}
+var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
 func (db *Database) Insert(ctx context.Context, qb QB) (result sql.Result, err error){
 	return coreInsert(ctx, db.Core, qb)
 }
@@ -48,10 +54,10 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return coreExec(ctx, storager, raw)
 }
 // CreateModel
-func (db *Database) CreateModel(ctx context.Context, ptr Model) (err error) {
+func (db *Database) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
 	return coreCreateModel(ctx, db.Core, ptr)
 }
-func (tx *Transaction) CreateModel(ctx context.Context, ptr Model) (err error) {
+func (tx *Transaction) CreateModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
 	return coreCreateModel(ctx, tx.Core, ptr)
 }
 
@@ -59,7 +65,6 @@ func coreCreateModel(ctx context.Context, storager Storager, ptr Model) (err err
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
-		Debug:true,
 	}
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
@@ -164,11 +169,11 @@ func coreQueryRowStructScan(ctx context.Context, core Storager, ptr interface{},
 	return
 }
 
-func (db *Database) Select(ctx context.Context, slicePtr interface{}, qb QB) (err error){
+func (db *Database) SelectSlice(ctx context.Context, slicePtr interface{}, qb QB) (err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreSelect(ctx, db.Core, slicePtr, qb)
 }
-func (tx *Transaction) Select(ctx context.Context, slicePtr interface{}, qb QB) (err error){
+func (tx *Transaction) SelectSlice(ctx context.Context, slicePtr interface{}, qb QB) (err error){
 	return coreSelect(ctx, tx.Core, slicePtr, qb)
 }
 func coreSelect(ctx context.Context, storager Storager, slicePtr interface{}, qb QB) (err error) {
@@ -380,7 +385,9 @@ func coreHardDelete(ctx context.Context, storager Storager, ptr Model, checkSQL 
 func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
 	return coreSoftDeleteModel(ctx, db.Core, ptr, checkSQL...)
 }
-func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){}
+func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreSoftDeleteModel(ctx, tx.Core, ptr, checkSQL...)
+}
 func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()

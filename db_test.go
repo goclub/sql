@@ -5,7 +5,6 @@ import (
 	sq "github.com/goclub/sql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"log"
 	"testing"
 )
 
@@ -26,7 +25,9 @@ func init () {
 	err = testDB.Core.Ping() ; if err != nil {
 		panic(err)
 	}
+	sq.ExecMigrate(db, &Migrate{})
 }
+
 func TestDB(t *testing.T) {
 	suite.Run(t, new(TestDBSuite))
 }
@@ -60,7 +61,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 	{
 		var name string
 		var age int
-		err := testDB.Transaction(context.TODO(), func(tx *sq.Tx) sq.TxResult {
+		err := testDB.Transaction(context.TODO(), func(tx *sq.Transaction) sq.TxResult {
 			has ,err := tx.QueryRowScan(context.TODO(), sq.QB{
 				Table: User{},
 				Select: []sq.Column{userCol.Name, userCol.Age},
@@ -82,16 +83,16 @@ func (suite TestDBSuite) TestCreateModel() {
 	err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
 		panic(err)
 	}
-	log.Print(user)
 }
 func (suite TestDBSuite) TestRelation() {
-	userWithAddress := UserWithAddress{}
-	userWithAddressCol := userWithAddress.Column()
-	has, err := testDB.QueryRelation(context.TODO(), &userWithAddress, sq.QB{
-		Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
-	}) ; if err != nil {
-		panic(err)
-	}
-	log.Print(has, userWithAddress)
+	// userWithAddress := UserWithAddress{}
+	// userWithAddressCol := userWithAddress.Column()
+	// has, err := testDB.QueryRelation(context.TODO(), &userWithAddress, sq.QB{
+	// 	Debug:true,
+	// 	Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
+	// }) ; if err != nil {
+	// 	panic(err)
+	// }
+	// log.Print(has, userWithAddress)
 }
 

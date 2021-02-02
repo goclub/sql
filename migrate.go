@@ -32,9 +32,10 @@ func ExecMigrate(db *Database, ptr interface{}) {
 	}
 	rValue := rPtrValue.Elem()
 	rType := rValue.Type()
-	if rType.PkgPath() == "main" {
-		panic(errors.New("ExecMigrate(db, ptr) ptr can not belong to package main"))
-	}
+	// 暂时取消 main 限制 2021年02月02日19:58:54 @nimoc
+	// if rType.PkgPath() == "main" {
+	// 	panic(errors.New("ExecMigrate(db, ptr) ptr can not belong to package main"))
+	// }
 	mi := NewMigrate(db)
 	mi.Init()
 	miValue := reflect.ValueOf(mi)

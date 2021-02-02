@@ -44,6 +44,8 @@ type QB struct {
 	Join []Join
 	Debug bool
 	Raw Raw
+	CheckSQL []string
+	sqlChecker SQLChecker
 }
 
 func (qb QB) mustInTransaction() error {
@@ -305,6 +307,12 @@ func (qb QB) SQL(statement Statement) Raw {
 	defer func() {
 		if qb.Debug {
 			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
+		}
+		if len(qb.CheckSQL) != 0 {
+			matched, diff := qb.sqlChecker.Check(qb.CheckSQL, query)
+			if matched == false {
+				qb.sqlChecker.Log(diff)
+			}
 		}
 	}()
 	return Raw{query, values}
