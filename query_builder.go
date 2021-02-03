@@ -6,14 +6,21 @@ import (
 	"strings"
 )
 
-type Data struct {
+type Update struct {
 	Column Column
 	Value interface{}
 	Raw Raw
 	OnUpdated func() error
 }
-func Set(column Column, value interface{}) Data {
-	return Data{Column: column, Value: value}
+func Set(column Column, value interface{}) Update {
+	return Update{Column: column, Value: value}
+}
+type Insert struct {
+	Column Column
+	Value interface{}
+}
+func Value(column Column, value interface{}) Insert {
+	return Insert{Column: column, Value: value}
 }
 
 type QB struct {
@@ -28,8 +35,8 @@ type QB struct {
 	SelectRaw []Raw
 	Index string
 
-	Update []Data
-	Insert []Data
+	Update []Update
+	Insert []Insert
 
 	Where []Condition
 	WhereOR [][]Condition
@@ -45,9 +52,8 @@ type QB struct {
 	Debug bool
 	Raw Raw
 	CheckSQL []string
-	sqlChecker SQLChecker
+	SQLChecker SQLChecker
 }
-
 func (qb QB) mustInTransaction() error {
 	if len(qb.Lock) == 0 {
 		return nil
@@ -261,14 +267,19 @@ func (qb QB) SQL(statement Statement) Raw {
 			}
 			var orList stringQueue
 			for _, whereAndList := range qb.WhereOR {
-				andsQV := ToConditions(whereAndList).andsSQL()
-				values = append(values, andsQV.Values...)
-				orList.Push(andsQV.Query)
+				andsQV := ToConditions(whereAndList).sql("AND")
+				if len(andsQV.Query) != 0 {
+					orList.Push(andsQV.Query)
+					values = append(values, andsQV.Values...)
+				}
 			}
 			whereString = orList.Join(") OR (")
 			if len(orList.Value) > 1 {
 				whereString = "(" + whereString + ")"
 			}
+		}
+		if statement == statement.Enum().Delete && len(strings.TrimSpace(whereString)) == 0 {
+			return Raw{"ERROR: DELETE WHERE can not empty", nil}
 		}
 		if !qb.DisableSoftDelete {
 			needSoftDelete := qb.softDelete.Query != ""
@@ -308,10 +319,10 @@ func (qb QB) SQL(statement Statement) Raw {
 		if qb.Debug {
 			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
 		}
-		if len(qb.CheckSQL) != 0 {
-			matched, diff := qb.sqlChecker.Check(qb.CheckSQL, query)
+		if len(qb.CheckSQL) != 0 && qb.SQLChecker != nil {
+			matched, diff, stack := qb.SQLChecker.Check(qb.CheckSQL, query)
 			if matched == false {
-				qb.sqlChecker.Log(diff)
+				qb.SQLChecker.Log(diff, stack)
 			}
 		}
 	}()

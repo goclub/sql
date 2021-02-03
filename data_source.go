@@ -35,6 +35,13 @@ func (config DataSourceName) String() (dataSourceName string) {
 		"?",
 	}
 	configList = append(configList)
+	if config.Query == nil {
+		config.Query = map[string]string{
+				"charset": "utf8",
+				"parseTime": "True",
+				"loc": "Local",
+			}
+	}
 	values := url.Values{}
 	for key, value := range config.Query {
 		values.Set(key, value)

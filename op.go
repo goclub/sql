@@ -6,21 +6,31 @@ import (
 )
 
 type OP struct {
-	RawQuery string
+	Query string
+	Values []interface{}
 	Symbol string
 	Placeholder string
-	Values []interface{}
-	MultipleOP []OP
+	Multiple []OP
+	OrGroup []Condition
+	Ignore bool
 }
 func (op OP) sql(column Column, values *[]interface{}) string {
 	var and stringQueue
-	if len(op.MultipleOP) != 0 {
-		for _, subOP := range op.MultipleOP {
+	if len(op.OrGroup) != 0 {
+		raw := conditions(op.OrGroup).sql("OR")
+		if raw.Query == "" {
+			return ""
+		}
+		raw.Query = "(" + raw.Query + ")"
+		*values = append(*values, raw.Values...)
+		return raw.Query
+	} else if len(op.Multiple) != 0 {
+		for _, subOP := range op.Multiple {
 			and.Push(subOP.sql(column, values))
 		}
 	} else {
-		if len(op.RawQuery) != 0 {
-			and.Push(op.RawQuery)
+		if len(op.Query) != 0 {
+			and.Push(op.Query)
 			*values = append(*values, op.Values...)
 		} else {
 			and.Push(column.wrapField())
@@ -176,8 +186,14 @@ func IsNull() OP {
 		Values: nil,
 	}
 }
-func MultipleOP(ops []OP) OP {
+func Multiple(ops []OP) OP {
 	return OP{
-		MultipleOP: ops,
+		Multiple: ops,
 	}
+}
+func Ignore(shouldIgnore bool, op OP) OP {
+	if shouldIgnore {
+		op.Ignore = true
+	}
+	return op
 }

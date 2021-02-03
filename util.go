@@ -62,8 +62,8 @@ func primaryKeyWhere(ptr Model, primaryIDInfo primaryIDInfo, typeName string) ([
 		return []Condition{{"id", Equal(primaryIDInfo.IDValue)}}, nil
 	} else {
 		switch updateModeler := ptr.(type) {
-		case UpdateModeler:
-			return updateModeler.UpdateModelWherePrimaryKey(), nil
+		case WherePrimaryKeyer:
+			return updateModeler.WherePrimaryKey(), nil
 		default:
 			return nil, errors.New(typeName + " must has method UpdateModelWherePrimaryKey() sq.Condition or struct tag `db:\"id\"`")
 		}

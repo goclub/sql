@@ -212,6 +212,82 @@ func (suite TestQBSuite) TestWhereOR() {
 		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE (`name` = ?) OR (`name` = ?) AND `deleted_at` IS NULL", query)
 		assert.Equal(t, []interface{}{"nimo", "nico"}, values)
 	}
+	{
+		qb := sq.QB{
+			Table: User{},
+			Select: []sq.Column{"id"},
+			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
+			Where: sq.
+				OrGroup(
+					sq.Condition{"name", sq.Like("nimo")},
+					sq.Condition{"mobile", sq.Like("13611112222")},
+				).
+				And("role_id", sq.Equal("1")),
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		ands := []sq.Condition{
+			{
+				"", sq.OP{
+				OrGroup: []sq.Condition{
+					{"name", sq.Like("nimo")},
+					{"mobile", sq.Like("13611112222")},
+				},
+			},
+			},
+			{"role_id", sq.Equal("1")},
+		}
+		assert.Equal(t, ands, qb.Where)
+		assert.Equal(t, "SELECT `id` FROM `user` WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ? AND `deleted_at` IS NULL", query)
+		assert.Equal(t, []interface{}{"%nimo%", "%13611112222%", "1",}, values)
+	}
+	{
+		qb := sq.QB{
+			Table: User{},
+			Select: []sq.Column{"id"},
+			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
+			Where: sq.
+				OrGroup(
+					sq.Condition{"name", sq.Ignore(false, sq.Like("nimo"))},
+					sq.Condition{"mobile", sq.Ignore(true, sq.Like("13611112222"))},
+			).
+			And("role_id", sq.Equal("1")),
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		assert.Equal(t, "SELECT `id` FROM `user` WHERE (`name` LIKE ?) AND `role_id` = ? AND `deleted_at` IS NULL", query)
+		assert.Equal(t, []interface{}{"%nimo%", "1",}, values)
+	}
+	{
+		qb := sq.QB{
+			Table: User{},
+			Select: []sq.Column{"id"},
+			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
+			Where: sq.
+				OrGroup(
+					sq.Condition{"name", sq.Ignore(true, sq.Like("nimo"))},
+					sq.Condition{"mobile", sq.Ignore(false, sq.Like("13611112222"))},
+				).
+				And("role_id", sq.Equal("1")),
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		assert.Equal(t, "SELECT `id` FROM `user` WHERE (`mobile` LIKE ?) AND `role_id` = ? AND `deleted_at` IS NULL", query)
+		assert.Equal(t, []interface{}{"%13611112222%", "1",}, values)
+	}
+	{
+		qb := sq.QB{
+			Table: User{},
+			Select: []sq.Column{"id"},
+			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
+			Where: sq.
+				OrGroup(
+					sq.Condition{"name", sq.Ignore(true, sq.Like("nimo"))},
+					sq.Condition{"mobile", sq.Ignore(true, sq.Like("13611112222"))},
+				).
+				And("role_id", sq.Equal("1")),
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		assert.Equal(t, "SELECT `id` FROM `user` WHERE `role_id` = ? AND `deleted_at` IS NULL", query)
+		assert.Equal(t, []interface{}{"1",}, values)
+	}
 }
 
 func (suite TestQBSuite) TestWhereRaw() {
@@ -227,6 +303,7 @@ func (suite TestQBSuite) TestWhereRaw() {
 		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = ? AND `age` = ? AND `deleted_at` IS NULL", query)
 		assert.Equal(t, []interface{}{"nimo", 1}, values)
 	}
+	{}
 }
 func (suite TestQBSuite) TestWhereOPRaw() {
 	t := suite.T()
@@ -235,11 +312,13 @@ func (suite TestQBSuite) TestWhereOPRaw() {
 			Table: User{},
 			Where: []sq.Condition{
 				sq.ConditionRaw("`name` = `cname`", nil),
+				sq.ConditionRaw("`age` = ?", []interface{}{1}),
 			},
 		}
+		assert.Equal(t, qb.Where, []sq.Condition(sq.AndRaw("`name` = `cname`", nil).AndRaw("`age` = ?", []interface{}{1})))
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = `cname` AND `deleted_at` IS NULL", query)
-		assert.Equal(t, []interface{}(nil), values)
+		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = `cname` AND `age` = ? AND `deleted_at` IS NULL", query)
+		assert.Equal(t, []interface{}{1}, values)
 	}
 	{
 		qb := sq.QB{
@@ -416,7 +495,7 @@ func (suite TestQBSuite) TestWhereEqualAndNotEqual() {
 	assert.Equal(t, []interface{}{"nimo", "abc"}, values)
 }
 
-func (suite TestQBSuite) TestLike() {
+func (suite TestQBSuite) TestWhereLike() {
 	t := suite.T()
 	qb := sq.QB{
 		Table: User{},
@@ -433,7 +512,7 @@ func (suite TestQBSuite) TestLike() {
 	assert.Equal(t, []interface{}{"%nimo%"}, values)
 }
 
-func (suite TestQBSuite) TestLikeLeft() {
+func (suite TestQBSuite) TestWhereLikeLeft() {
 	t := suite.T()
 	qb := sq.QB{
 		Table: User{},
@@ -449,7 +528,7 @@ func (suite TestQBSuite) TestLikeLeft() {
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL", query)
 	assert.Equal(t, []interface{}{"nimo%"}, values)
 }
-func (suite TestQBSuite) TestLikeRight() {
+func (suite TestQBSuite) TestWhereLikeRight() {
 	t := suite.T()
 	qb := sq.QB{
 		Table: User{},
@@ -467,7 +546,7 @@ func (suite TestQBSuite) TestLikeRight() {
 }
 
 
-func (suite TestQBSuite) TestIn() {
+func (suite TestQBSuite) TestWhereIn() {
 	t := suite.T()
 	qb := sq.QB{
 		Table: User{},
@@ -482,6 +561,27 @@ func (suite TestQBSuite) TestIn() {
 	assert.Equal(t, qb.Where, ands)
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` IN (?, ?) AND `deleted_at` IS NULL", query)
 	assert.Equal(t, []interface{}{"a","b"}, values)
+}
+func (suite TestQBSuite) TestWhereIgnore() {
+	t := suite.T()
+	test := func (searchName string, query string, values []interface{}) {
+		qb := sq.QB{
+			Table: User{},
+			Select: []sq.Column{"id"},
+			Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
+			CheckSQL: []string{
+				"SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL",
+				"SELECT `id` FROM `user` WHERE `deleted_at` IS NULL",
+			},
+			SQLChecker: sq.DefaultSQLCheck,
+		}
+		raw := qb.SQLSelect()
+		assert.Equal(t, query, raw.Query)
+		assert.Equal(t, values, raw.Values)
+	}
+	test("", "SELECT `id` FROM `user` WHERE `deleted_at` IS NULL", []interface{}(nil))
+	test("nimo", "SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL", []interface{}{"nimo"})
+
 }
 func (suite TestQBSuite) TestInPanic() {
 	t := suite.T()
@@ -607,3 +707,4 @@ func (suite TestQBSuite) TestStatement() {
 	assert.Equal(t, sq.Statement("").Enum().Select.String(), "SELECT")
 	assert.Equal(t, sq.Statement("").Enum().Select.String(), string(sq.Statement("").Enum().Select))
 }
+

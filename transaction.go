@@ -8,9 +8,16 @@ import (
 
 type Transaction struct {
 	Core *sqlx.Tx
+	sqlChecker SQLChecker
 }
-func newTx(tx *sqlx.Tx) *Transaction {
-	return &Transaction{tx}
+func (tx *Transaction) getCore() (core StoragerCore) {
+	return tx.Core
+}
+func (tx *Transaction) getSQLChecker() (sqlChecker SQLChecker) {
+	return tx.sqlChecker
+}
+func newTx(tx *sqlx.Tx, sqlChecker SQLChecker) *Transaction {
+	return &Transaction{tx, sqlChecker}
 }
 
 type TxResult struct {
@@ -52,7 +59,7 @@ func (db *Database) TransactionOpts(ctx context.Context, handle func (tx *Transa
 	coreTx, err := db.Core.BeginTxx(ctx, opts) ; if err != nil {
 		return
 	}
-	tx := newTx(coreTx)
+	tx := newTx(coreTx, db.sqlChecker)
 	txResult := handle(tx)
 	if txResult.isCommit {
 		err = tx.Core.Commit() ; if err != nil {

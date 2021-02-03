@@ -3,36 +3,37 @@ package sq
 import (
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"log"
-	"regexp"
+	"runtime/debug"
 	"strings"
 )
 
 type SQLChecker interface {
-	Check(checkSQL []string, actual string) (matched bool, diff []string)
-	Log(diff []string)
+	Check(checkSQL []string, actual string) (matched bool, diff []string, stack []byte)
+	Log(diff []string,stack []byte)
 }
 
-type DefaultSQLCheck struct {
+var DefaultSQLCheck = &defaultSQLCheck{}
+type defaultSQLCheck struct {
 	dmp *diffmatchpatch.DiffMatchPatch
 }
 
-func (check DefaultSQLCheck) Check(checkSQL []string, actual string) (matched bool, diff []string){
+func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bool, diff []string, stack []byte){
 	if check.dmp == nil {
 		check.dmp = diffmatchpatch.New()
 	}
 	for _, s := range checkSQL {
 		if s == actual {
-			return true, nil
+			return true, nil, nil
 		}
-
-		if strings.HasPrefix(s, "/") && strings.HasSuffix(s, "/") {
-			reg, err := regexp.Compile(s) ; if err != nil {
-				return false, []string{err.Error()}
-			}
-			if reg.MatchString(actual) {
-				return true, nil
-			}
-		}
+		// if strings.HasPrefix(s, "|") && strings.HasSuffix(s, "|") {
+		// 	regexpString := strings.TrimSuffix(strings.TrimPrefix(s, "|"), "|")
+		// 	reg, err := regexp.Compile(regexpString) ; if err != nil {
+		// 		return false, []string{err.Error()}
+		// 	}
+		// 	if reg.MatchString(actual) {
+		// 		return true, nil
+		// 	}
+		// }
 	}
 	diff = []string{
 		"expected:" + strings.Join(checkSQL, " "),
@@ -43,8 +44,9 @@ func (check DefaultSQLCheck) Check(checkSQL []string, actual string) (matched bo
 		result := check.dmp.DiffMain(s, actual, false)
 		diff = append(diff, check.dmp.DiffPrettyText(result))
 	}
-	return false, diff
+	return false, diff, debug.Stack()
 }
-func (check DefaultSQLCheck) Log(diff []string)  {
+func (check defaultSQLCheck) Log(diff []string, stack []byte)  {
+	log.Print(string(stack))
 	log.Print(strings.Join(diff, "\n"))
 }

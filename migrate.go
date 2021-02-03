@@ -88,7 +88,7 @@ type CreateTableQB struct {
 	Charset MigrateCharset
 	Collate MigrateCollate
 }
-func (qb CreateTableQB) TostringQueueL() string {
+func (qb CreateTableQB) ToSql() string {
 	stringQueue := stringQueue{}
 	if qb.TableName == "" {
 		panic(errors.New("TableName can not be empty string"))
@@ -320,7 +320,7 @@ func (mi Migrate) CheckError(err error, stringQueuel string) {
 	}
 }
 func (mi Migrate) CreateTable(qb CreateTableQB) {
-	stringQueuel := qb.TostringQueueL()
+	stringQueuel := qb.ToSql()
 	_, err := mi.DB.Core.DB.Exec(stringQueuel) ; mi.CheckError(err, stringQueuel)
 }
 type Alter struct {

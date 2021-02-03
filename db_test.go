@@ -2,10 +2,14 @@ package sq_test
 
 import (
 	"context"
+	_ "github.com/go-sql-driver/mysql"
 	sq "github.com/goclub/sql"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"log"
 	"testing"
+	"time"
 )
 
 var testDB *sq.Database
@@ -34,65 +38,285 @@ func TestDB(t *testing.T) {
 type TestDBSuite struct {
 	suite.Suite
 }
-func insertUser(id IDUser, name string, age int) {
-	_, err := testDB.Core.Exec("INSERT INTO `user` (`id`, `name`, `age`) VALUES (?,?,?)", id, name, age)
-	if err != nil {
-		panic(err)
-	}
-}
-func (suite TestDBSuite) TestQueryRowScan() {
+
+func (suite TestDBSuite) TestInsert() {
 	t := suite.T()
-	id := sq.UUID()
-	insertUser(IDUser(id), "DB_QueryRowScan", 1)
 	userCol := User{}.Column()
+	newID := sq.UUID()
 	{
-		var name string
-		var age int
-		has ,err := testDB.QueryRowScan(context.TODO(), sq.QB{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
-			Select: []sq.Column{userCol.Name, userCol.Age},
-			Where: sq.And(userCol.ID , sq.Equal(id)),
-		}, &name, &age)
-		assert.Equal(t, has, true)
-		assert.Equal(t, err , nil)
-		assert.Equal(t, name, "DB_QueryRowScan")
-		assert.Equal(t, age, 1)
+			Where: sq.And(userCol.Name, sq.Equal("TestInsert")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+		})
+		assert.NoError(t, err)
+		result, err := testDB.Insert(context.TODO(), sq.QB{
+			Table: TableUser{},
+			Insert: []sq.Insert{
+				sq.Value(userCol.ID, newID),
+				sq.Value(userCol.Name, "TestInsert"),
+				sq.Value(userCol.Age, 18),
+			},
+			CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
+		})
+		assert.NoError(t, err)
+		affected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, affected, int64(1))
 	}
 	{
-		var name string
-		var age int
-		err := testDB.Transaction(context.TODO(), func(tx *sq.Transaction) sq.TxResult {
-			has ,err := tx.QueryRowScan(context.TODO(), sq.QB{
-				Table: User{},
-				Select: []sq.Column{userCol.Name, userCol.Age},
-				Where: sq.And(userCol.ID , sq.Equal(id)),
-			}, &name, &age)
-			assert.Equal(t, has, true)
-			assert.Equal(t, err , nil)
-			assert.Equal(t, name, "DB_QueryRowScan")
-			assert.Equal(t, age, 1)
-			return tx.Commit()
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})
-		assert.Equal(t, err , nil)
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, IDUser(newID))
+		assert.Equal(t, user.Name, "TestInsert")
+		assert.Equal(t, user.Age, 18)
+		log.Print(user.CreatedAt.String())
+		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
 	}
-}
-func (suite TestDBSuite) TestCreateModel() {
-	user := User{
-		Name:"nimo",
-	}
-	err := testDB.CreateModel(context.TODO(), &user) ; if err != nil {
-		panic(err)
-	}
-}
-func (suite TestDBSuite) TestRelation() {
-	// userWithAddress := UserWithAddress{}
-	// userWithAddressCol := userWithAddress.Column()
-	// has, err := testDB.QueryRelation(context.TODO(), &userWithAddress, sq.QB{
-	// 	Debug:true,
-	// 	Where: sq.And(userWithAddressCol.Name, sq.Equal("nimo")),
-	// }) ; if err != nil {
-	// 	panic(err)
-	// }
-	// log.Print(has, userWithAddress)
 }
 
+func (suite TestDBSuite) TestCreateModel() {
+	t := suite.T()
+	userCol := User{}.Column()
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Equal("TestCreateModel")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+		})
+		assert.NoError(t, err)
+	}
+	var userID IDUser
+	{
+		user := User{
+			Name: "TestCreateModel",
+			Age: 18,
+		}
+		err := testDB.CreateModel(
+			context.TODO(),
+			&user,
+			"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)",
+		)
+		userID = user.ID
+		assert.NoError(t, err)
+		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+	{
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(userID)),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, userID)
+		assert.Equal(t, user.Name, "TestCreateModel")
+		assert.Equal(t, user.Age, 18)
+		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+}
+
+
+
+
+func (suite TestDBSuite) TestQueryRowScan() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+		})
+		assert.NoError(t, err)
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestQueryRowScan", Age: 20,}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		var name string
+		var age uint64
+		has, err := testDB.QueryRowScan(context.TODO(), sq.QB{
+			Table: User{},
+			Select: []sq.Column{userCol.Name, userCol.Age},
+			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
+		}, &name, &age)
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, name, "TestQueryRowScan")
+		assert.Equal(t, age, uint64(20))
+	}
+	{
+		var name string
+		var age uint64
+		has, err := testDB.QueryRowScan(context.TODO(), sq.QB{
+			Table: User{},
+			Select: []sq.Column{userCol.Name, userCol.Age},
+			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScanNotExist")),
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
+		}, &name, &age)
+		assert.NoError(t, err)
+		assert.Equal(t, has, false)
+		assert.Equal(t, name, "")
+		assert.Equal(t, age, uint64(0))
+	}
+}
+
+
+
+func (suite TestDBSuite) QueryRowStructScan() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Equal("QueryRowStructScan")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+		})
+		assert.NoError(t, err)
+	}
+	// 插入数据
+	{
+		user := User{Name:"QueryRowStructScan", Age: 20,}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		type Data struct {
+			Name string `db:"name"`
+			Age int `db:"age"`
+		}
+		var data Data
+		has, err := testDB.QueryRowStructScan(context.TODO(), &data, sq.QB{
+			Table: User{},
+			Select: []sq.Column{userCol.Name, userCol.Age},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, data, Data{"QueryRowStructScan", 20})
+	}
+	{
+		type Data struct {
+			Name string `db:"name"`
+			Age int `db:"age"`
+		}
+		var data Data
+		has, err := testDB.QueryRowStructScan(context.TODO(), &data, sq.QB{
+			Table: User{},
+			Select: []sq.Column{userCol.Name, userCol.Age},
+			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScanNotExist")),
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, false)
+		assert.Equal(t, data, Data{})
+	}
+}
+func (suite TestDBSuite) TestSelectScan() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSelectScan")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+		})
+		assert.NoError(t, err)
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestSelectScan_1", Age: 20,}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		user := User{Name:"TestSelectScan_2", Age: 21,}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		type Data struct {
+			Name string `db:"name"`
+			Age int `db:"age"`
+		}
+		var list []Data
+		err := testDB.SelectScan(context.TODO(), sq.QB{
+			Table: User{},
+			Select: []sq.Column{userCol.Name, userCol.Age},
+			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
+		}, func(rows *sqlx.Rows) error {
+			data := Data{}
+			err := rows.StructScan(&data) ; if err != nil {
+				return err
+			}
+			list = append(list, data)
+			return nil
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, list, []Data{
+			{"TestSelectScan_1", 20},
+			{"TestSelectScan_2", 21},
+		})
+	}
+}
+
+func (suite TestDBSuite) TestSelectSlice() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Equal("TestSelectSlice")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+		})
+		assert.NoError(t, err)
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestSelectSlice_1", Age: 20,}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		user := User{Name:"TestSelectSlice_1", Age: 21,}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		type Data struct {
+			Name string `db:"name"`
+			Age int `db:"age"`
+		}
+		var list []Data
+		err := testDB.SelectSlice(context.TODO(), &list, sq.QB{
+			Table: User{},
+			Select: []sq.Column{userCol.Name, userCol.Age},
+			Where: sq.And(userCol.Name, sq.Equal("TestSelectSlice")),
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		},)
+		assert.NoError(t, err)
+		assert.Equal(t, list, []Data{
+			{"TestSelectSlice_1", 20},
+			{"TestSelectSlice_2", 21},
+		})
+	}
+}

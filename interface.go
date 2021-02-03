@@ -7,8 +7,9 @@ import (
 	"time"
 )
 
-type UpdateModeler interface {
-	UpdateModelWherePrimaryKey() []Condition
+
+type WherePrimaryKeyer interface {
+	WherePrimaryKey() []Condition
 }
 type Tabler interface {
 	TableName() string
@@ -70,6 +71,10 @@ func (v *DefaultLifeCycle) BeforeUpdate() error {return nil}
 func (v *DefaultLifeCycle) AfterUpdate() error {return nil}
 
 type Storager interface {
+	getCore() StoragerCore
+	getSQLChecker () SQLChecker
+}
+type StoragerCore interface {
 	sqlx.Queryer
 	sqlx.QueryerContext
 	sqlx.Execer

@@ -6,6 +6,13 @@ import (
 	"time"
 )
 
+type ColumnBeforeCreate interface {
+	ColumnBeforeCreate()
+}
+type ColumnBeforeUpdate interface {
+	ColumnBeforeUpdate()
+}
+
 type CreatedAtUpdatedAt struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`

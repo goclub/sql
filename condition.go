@@ -8,7 +8,7 @@ type Condition struct {
 func ConditionRaw(query string, values []interface{}) Condition {
 	return Condition{
 		OP: OP{
-			RawQuery: query,
+			Query: query,
 			Values: values,
 		},
 	}
@@ -16,11 +16,16 @@ func ConditionRaw(query string, values []interface{}) Condition {
 func And(column Column, operator OP) conditions{
 	return conditions{}.And(column, operator)
 }
-func AndRaw(query string, values []interface{}) (column Column, operator OP) {
-	return "", OP{
-		RawQuery: query,
+func AndRaw(query string, values []interface{}) conditions {
+	return And("", OP{
+		Query: query,
 		Values: values,
-	}
+	})
+}
+func OrGroup(conditions ...Condition) conditions {
+	op := OP{OrGroup: conditions,}
+	item :=  Condition{OP:op}
+	return []Condition{item}
 }
 func ToConditions(c []Condition) conditions {
 	return conditions(c)
@@ -33,12 +38,34 @@ func (w conditions) And(column Column, operator OP) conditions {
 	})
 	return w
 }
-func (w conditions) andsSQL() Raw {
+func (w conditions) AndRaw(query string, values []interface{}) conditions {
+	w = append(w, Condition{
+		Column: "",
+		OP: OP{
+			Query: query,
+			Values: values,
+		},
+	})
+	return w
+}
+func (w conditions) OrGroup(conditions []Condition) conditions {
+	op := OP{OrGroup: conditions}
+	item := Condition{OP:op}
+	w = append(w, item)
+	return w
+}
+func (w conditions) sql(split string) Raw {
 	var andList stringQueue
 	var values []interface{}
 	for _, c :=  range w {
-		andList.Push(c.OP.sql(c.Column, &values))
+		if c.OP.Ignore {
+			continue
+		}
+		sql := c.OP.sql(c.Column, &values)
+		if len(sql) != 0 {
+			andList.Push(sql)
+		}
 	}
-	query := andList.Join(" AND ")
+	query := andList.Join(" "+ split + " ")
 	return Raw{query, values}
 }
