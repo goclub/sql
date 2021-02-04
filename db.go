@@ -342,7 +342,7 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 			}
 		}
 		for dataIndex, data := range updateData {
-			if len(data.Column) == 0  && column == data.Column.String() {
+			if len(data.Column) != 0  && column == data.Column.String() {
 					if data.OnUpdated == nil {
 						updateData[dataIndex].OnUpdated = func() error {
 							fieldValue.Set(reflect.ValueOf(data.Value))
