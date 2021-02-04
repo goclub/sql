@@ -18,6 +18,9 @@ type defaultSQLCheck struct {
 }
 
 func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bool, diff []string, stack []byte){
+	if len(checkSQL) == 0 {
+		return true, nil, nil
+	}
 	if check.dmp == nil {
 		check.dmp = diffmatchpatch.New()
 	}
@@ -25,15 +28,6 @@ func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bo
 		if s == actual {
 			return true, nil, nil
 		}
-		// if strings.HasPrefix(s, "|") && strings.HasSuffix(s, "|") {
-		// 	regexpString := strings.TrimSuffix(strings.TrimPrefix(s, "|"), "|")
-		// 	reg, err := regexp.Compile(regexpString) ; if err != nil {
-		// 		return false, []string{err.Error()}
-		// 	}
-		// 	if reg.MatchString(actual) {
-		// 		return true, nil
-		// 	}
-		// }
 	}
 	diff = []string{
 		"expected:" + strings.Join(checkSQL, " "),
@@ -47,5 +41,5 @@ func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bo
 	return false, diff, debug.Stack()
 }
 func (check defaultSQLCheck) Log(diff []string, stack []byte)  {
-	log.Print("goclub/sql:(SQLChecker)", strings.Join(diff, "\n"), string(stack))
+	log.Print("goclub/sql:(SQLChecker)\n", strings.Join(diff, "\n"), "\n", string(stack))
 }

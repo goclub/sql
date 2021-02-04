@@ -295,9 +295,7 @@ func (suite TestQBSuite) TestWhereRaw() {
 	{
 		qb := sq.QB{
 			Table: User{},
-			WhereRaw: func() sq.Raw {
-				return sq.Raw{"`name` = ? AND `age` = ?", []interface{}{"nimo", 1}}
-			},
+			WhereRaw: sq.Raw{"`name` = ? AND `age` = ?", []interface{}{"nimo", 1}},
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = ? AND `age` = ? AND `deleted_at` IS NULL", query)
@@ -708,3 +706,65 @@ func (suite TestQBSuite) TestStatement() {
 	assert.Equal(t, sq.Statement("").Enum().Select.String(), string(sq.Statement("").Enum().Select))
 }
 
+
+
+func (suite TestQBSuite) TestOrderBy() {
+	t := suite.T()
+	{
+		qb := sq.QB{
+			Table: User{},
+			Limit: 2,
+			Offset:10,
+			OrderBy: []sq.OrderBy{{Column: "name"}},
+		}
+		raw := qb.SQLSelect()
+		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL ORDER BY `name` ASC LIMIT ? OFFSET ?")
+		assert.Equal(t, []interface{}{2,10}, raw.Values)
+	}
+	{
+		qb := sq.QB{
+			Table: User{},
+			Limit: 2,
+			Offset:10,
+			OrderBy: []sq.OrderBy{{"name", sq.DESC}},
+		}
+		raw := qb.SQLSelect()
+		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL ORDER BY `name` DESC LIMIT ? OFFSET ?")
+		assert.Equal(t, []interface{}{2,10}, raw.Values)
+	}
+	{
+		qb := sq.QB{
+			Table: User{},
+			Limit: 2,
+			Offset:10,
+			OrderBy: []sq.OrderBy{{"name", sq.DESC,}, {"age", sq.ASC}},
+		}
+		raw := qb.SQLSelect()
+		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL ORDER BY `name` DESC, `age` ASC LIMIT ? OFFSET ?")
+		assert.Equal(t, []interface{}{2,10}, raw.Values)
+	}
+}
+func (suite TestQBSuite) TestUnsafeDelete() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: User{},
+	}
+	raw := qb.SQLDelete()
+	assert.Equal(t, "ERROR: DELETE WHERE can not empty", raw.Query)
+	assert.Equal(t, []interface{}(nil), raw.Values)
+}
+func (suite TestQBSuite) TestHaving() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: User{},
+		SelectRaw: []sq.Raw{
+			{"`name`", nil},
+			{"count(*) AS count", nil},
+		},
+		GroupBy: []sq.Column{"name"},
+		Having: sq.And("count", sq.GtInt(1)),
+	}
+	raw := qb.SQLSelect()
+	assert.Equal(t, "SELECT `name`, count(*) AS count FROM `user` WHERE `deleted_at` IS NULL GROUP BY `name` HAVING `count` > ?", raw.Query)
+	assert.Equal(t, []interface{}{1}, raw.Values)
+}

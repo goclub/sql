@@ -341,16 +341,14 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 				}
 			}
 		}
-		for _, data := range updateData {
-			if len(data.Raw.Query) != 0 {
-				if column == data.Column.String() {
+		for dataIndex, data := range updateData {
+			if len(data.Column) == 0  && column == data.Column.String() {
 					if data.OnUpdated == nil {
-						data.OnUpdated = func() error {
-							elemValue.Field(i).Set(reflect.ValueOf(data.Value))
+						updateData[dataIndex].OnUpdated = func() error {
+							fieldValue.Set(reflect.ValueOf(data.Value))
 							return nil
 						}
 					}
-				}
 			}
 		}
 	}

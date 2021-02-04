@@ -54,7 +54,22 @@ func (w conditions) OrGroup(conditions []Condition) conditions {
 	w = append(w, item)
 	return w
 }
-func (w conditions) sql(split string) Raw {
+func ConditionsSQL(w [][]Condition) (raw Raw) {
+	var orList stringQueue
+	for _, whereAndList := range w {
+		andsQV := ToConditions(whereAndList).coreSQL("AND")
+		if len(andsQV.Query) != 0 {
+			orList.Push(andsQV.Query)
+			raw.Values = append(raw.Values, andsQV.Values...)
+		}
+	}
+	raw.Query = orList.Join(") OR (")
+	if len(orList.Value) > 1 {
+		raw.Query = "(" + raw.Query + ")"
+	}
+	return
+}
+func (w conditions) coreSQL(split string) Raw {
 	var andList stringQueue
 	var values []interface{}
 	for _, c :=  range w {

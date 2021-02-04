@@ -27,12 +27,15 @@ type QB struct {
 	Table Tabler
 		tableName string
 	TableRaw TableRaw
+
 	DisableSoftDelete bool
 		softDelete Raw
+
 	UnionTable UnionTable
 
 	Select []Column
 	SelectRaw []Raw
+
 	Index string
 
 	Update []Update
@@ -40,13 +43,21 @@ type QB struct {
 
 	Where []Condition
 	WhereOR [][]Condition
-	WhereRaw func ()Raw
+	WhereRaw Raw
+
+	OrderBy []OrderBy
+	OrderByRaw Raw
+
+	GroupBy []Column
+	GroupByRaw Raw
+
+	Having []Condition
+	HavingRaw Raw
 
 	Limit int
 	limitRaw limitRaw
 	Offset int
-	OrderBy []OrderBy
-	GroupBy []Column
+
 	Lock SelectLock
 
 	Join []Join
@@ -265,30 +276,20 @@ func (qb QB) SQL(statement Statement) Raw {
 	// where
 	{
 		var whereString string
-		if qb.WhereRaw != nil {
-			var whereValues []interface{}
-			whereQV := qb.WhereRaw()
-			whereString, whereValues = whereQV.Query, whereQV.Values
-			values = append(values, whereValues...)
+		var whereRaw Raw
+		if qb.WhereRaw.Query != "" {
+			whereRaw = qb.WhereRaw
 		} else {
 			tooMuchWhere := len(qb.Where) != 0 && len(qb.WhereOR) != 0
 			if tooMuchWhere { panic(errors.New("if qb.WhereOR not empty, then qb.Where must be nil")) }
 			if len(qb.Where) != 0 && len(qb.WhereOR) == 0 {
 				qb.WhereOR = append(qb.WhereOR, qb.Where)
 			}
-			var orList stringQueue
-			for _, whereAndList := range qb.WhereOR {
-				andsQV := ToConditions(whereAndList).sql("AND")
-				if len(andsQV.Query) != 0 {
-					orList.Push(andsQV.Query)
-					values = append(values, andsQV.Values...)
-				}
-			}
-			whereString = orList.Join(") OR (")
-			if len(orList.Value) > 1 {
-				whereString = "(" + whereString + ")"
-			}
+			whereRaw = ConditionsSQL(qb.WhereOR)
 		}
+		var whereValues []interface{}
+		whereString, whereValues = whereRaw.Query, whereRaw.Values
+		values = append(values, whereValues...)
 		if statement == statement.Enum().Delete && len(strings.TrimSpace(whereString)) == 0 {
 			return Raw{"ERROR: DELETE WHERE can not empty", nil}
 		}
@@ -309,21 +310,12 @@ func (qb QB) SQL(statement Statement) Raw {
 			sqlList.Push(whereString)
 		}
 	}
-	limit := qb.Limit
-	// 优先使用 qb.limitRaw, 因为 db.Count 需要用到
-	if qb.limitRaw.Valid {
-		limit = qb.limitRaw.Limit
-	}
-	if limit != 0 {
-		sqlList.Push("LIMIT ?")
-		values = append(values, qb.Limit)
-	}
-	if qb.Offset != 0 {
-		sqlList.Push("OFFSET ?")
-		values = append(values, qb.Offset)
-	}
 	// order by
-	if len(qb.OrderBy) != 0 {
+	if qb.OrderByRaw.Query != "" {
+		sqlList.Push("ORDER BY")
+		sqlList.Push(qb.OrderByRaw.Query)
+		values = append(values, qb.OrderByRaw.Values...)
+	} else if len(qb.OrderBy) != 0 {
 		sqlList.Push("ORDER BY")
 		var orderList stringQueue
 		for _, order := range qb.OrderBy {
@@ -337,19 +329,49 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push(orderList.Join(", "))
 	}
 	// group by
-	if len(qb.GroupBy) != 0 {
+	if qb.GroupByRaw.Query != "" {
+		sqlList.Push("GROUP BY")
+		sqlList.Push(qb.GroupByRaw.Query)
+		values = append(values, qb.GroupByRaw.Values...)
+	} else if len(qb.GroupBy) != 0 {
 		sqlList.Push("GROUP BY")
 		sqlList.Push(strings.Join(columnsToStrings(qb.GroupBy), ", "))
 	}
 	if len(qb.Lock) != 0 {
 		sqlList.Push(qb.Lock.String())
 	}
-		query := sqlList.Join(" ")
+	// havaing
+	if qb.HavingRaw.Query != ""{
+		sqlList.Push("HAVING")
+		sqlList.Push(qb.HavingRaw.Query)
+		values = append(values, qb.HavingRaw.Values...)
+	} else if len(qb.Having) != 0 {
+		sqlList.Push("HAVING")
+		havaingRaw := ConditionsSQL([][]Condition{qb.Having})
+		sqlList.Push(havaingRaw.Query)
+		values = append(values, havaingRaw.Values...)
+	}
+	// limit
+	limit := qb.Limit
+	// 优先使用 qb.limitRaw, 因为 db.Count 需要用到
+	if qb.limitRaw.Valid {
+		limit = qb.limitRaw.Limit
+	}
+	if limit != 0 {
+		sqlList.Push("LIMIT ?")
+		values = append(values, qb.Limit)
+	}
+	// offset
+	if qb.Offset != 0 {
+		sqlList.Push("OFFSET ?")
+		values = append(values, qb.Offset)
+	}
+	query := sqlList.Join(" ")
 	defer func() {
 		if qb.Debug {
 			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
 		}
-		if len(qb.CheckSQL) != 0 && qb.SQLChecker != nil {
+		if qb.SQLChecker != nil {
 			matched, diff, stack := qb.SQLChecker.Check(qb.CheckSQL, query)
 			if matched == false {
 				qb.SQLChecker.Log(diff, stack)

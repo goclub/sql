@@ -17,7 +17,7 @@ type OP struct {
 func (op OP) sql(column Column, values *[]interface{}) string {
 	var and stringQueue
 	if len(op.OrGroup) != 0 {
-		raw := conditions(op.OrGroup).sql("OR")
+		raw := conditions(op.OrGroup).coreSQL("OR")
 		if raw.Query == "" {
 			return ""
 		}

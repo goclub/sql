@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -488,4 +489,252 @@ func (suite TestDBSuite) TestSum() {
 		})
 	}
 }
+
+
+func (suite TestDBSuite) TestQueryModel() {
+	t := suite.T()
+	userCol := User{}.Column()
+	newID := sq.UUID()
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Like("TestQueryModel")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+		result, err := testDB.Insert(context.TODO(), sq.QB{
+			Table: TableUser{},
+			Insert: []sq.Insert{
+				sq.Value(userCol.ID, newID),
+				sq.Value(userCol.Name, "TestQueryModel"),
+				sq.Value(userCol.Age, 18),
+			},
+			CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
+		})
+		assert.NoError(t, err)
+		affected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, affected, int64(1))
+	}
+	{
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(newID)),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, IDUser(newID))
+		assert.Equal(t, user.Name, "TestQueryModel")
+		assert.Equal(t, user.Age, 18)
+		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+}
+
+
+func (suite TestDBSuite) TestQueryModelSlice() {
+	t := suite.T()
+	userCol := User{}.Column()
+
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table:    User{},
+			Where:    sq.And(userCol.Name, sq.Like("TestQueryModelSlice")),
+			CheckSQL: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+	}
+	{
+		var users  []User
+		err := testDB.QueryModelSlice(context.TODO(), &users, sq.QB{
+			Where: sq.And(userCol.Name, sq.Like("TestQueryModelSlice")),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, len(users), 0)
+	}
+	{
+		for i:=0;i<10;i++ {
+			result, err := testDB.Insert(context.TODO(), sq.QB{
+				Table: TableUser{},
+				Insert: []sq.Insert{
+					sq.Value(userCol.ID, sq.UUID()),
+					sq.Value(userCol.Name, "TestQueryModelSlice_" + strconv.Itoa(i)),
+					sq.Value(userCol.Age, i),
+				},
+				CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
+			})
+			assert.NoError(t, err)
+			affected, err := result.RowsAffected()
+			assert.NoError(t, err)
+			assert.Equal(t, affected, int64(1))
+		}
+	}
+	{
+		 users := []User{}
+		 err := testDB.QueryModelSlice(context.TODO(), &users, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL ORDER BY `name` ASC"},
+			Where: sq.And(userCol.Name, sq.Like("TestQueryModelSlice")),
+			OrderBy: []sq.OrderBy{{userCol.Name, sq.ASC}},
+		})
+		assert.NoError(t, err)
+		 for i:=0;i<10;i++ {
+		 	user := users[i]
+			 assert.NoError(t, err)
+			 assert.Equal(t, len(user.ID), 36)
+			 assert.Equal(t, user.Name, "TestQueryModelSlice_" + strconv.Itoa(i))
+			 assert.Equal(t, user.Age, i)
+			 assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+			 assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+		 }
+	}
+}
+
+
+func (suite TestDBSuite) TestUpdate() {
+	t := suite.T()
+	userCol := User{}.Column()
+	newID := sq.UUID()
+	createTime := time.Now()
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Like("TestUpdate")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+		result, err := testDB.Insert(context.TODO(), sq.QB{
+			Table: TableUser{},
+			Insert: []sq.Insert{
+				sq.Value(userCol.ID, newID),
+				sq.Value(userCol.Name, "TestUpdate"),
+				sq.Value(userCol.Age, 18),
+			},
+			CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
+		})
+		assert.NoError(t, err)
+		affected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, affected, int64(1))
+	}
+	{
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(newID)),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, IDUser(newID))
+		assert.Equal(t, user.Name, "TestUpdate")
+		assert.Equal(t, user.Age, 18)
+		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+	time.Sleep(time.Second)
+	{
+		result, err := testDB.Update(context.TODO(), sq.QB{
+				Table: User{},
+				Where: sq.And(userCol.ID, sq.Equal(newID)),
+				Update: []sq.Update{
+					sq.Set(userCol.Name, "TestUpdate_changed"),
+				},
+				CheckSQL: []string{"UPDATE `user` SET `name`=? WHERE `id` = ? AND `deleted_at` IS NULL"},
+		})
+		assert.NoError(t, err)
+		affected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, affected, int64(1))
+	}
+	{
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(newID)),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, IDUser(newID))
+		assert.Equal(t, user.Name, "TestUpdate_changed")
+		assert.Equal(t, user.Age, 18)
+		assert.True(t, createTime.Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+}
+
+
+func (suite TestDBSuite) TestUpdateModel() {
+	t := suite.T()
+	userCol := User{}.Column()
+	newID := sq.UUID()
+	createTime := time.Now()
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.Like("TestUpdateModel")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+		result, err := testDB.Insert(context.TODO(), sq.QB{
+			Table: TableUser{},
+			Insert: []sq.Insert{
+				sq.Value(userCol.ID, newID),
+				sq.Value(userCol.Name, "TestUpdateModel"),
+				sq.Value(userCol.Age, 18),
+			},
+			CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
+		})
+		assert.NoError(t, err)
+		affected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, affected, int64(1))
+	}
+	{
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(newID)),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, IDUser(newID))
+		assert.Equal(t, user.Name, "TestUpdateModel")
+		assert.Equal(t, user.Age, 18)
+		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+	time.Sleep(time.Second)
+	{
+		user := User{
+			ID: IDUser(newID),
+			Name: "",
+		}
+		result, err := testDB.UpdateModel(context.TODO(), &user, []sq.Update{
+			sq.Set(userCol.Name, "TestUpdateModel_changed"),
+		}, nil, "UPDATE `user` SET `name`=? WHERE `id` = ? AND `deleted_at` IS NULL",
+		)
+		assert.NoError(t, err)
+		affected, err := result.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, affected, int64(1))
+		assert.Equal(t, user.Name, "TestUpdateModel_changed")
+	}
+	{
+		user := User{}
+		has, err := testDB.QueryModel(context.TODO(), &user, sq.QB{
+			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.ID, sq.Equal(newID)),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+		assert.Equal(t, user.ID, IDUser(newID))
+		assert.Equal(t, user.Name, "TestUpdateModel_changed")
+		assert.Equal(t, user.Age, 18)
+		assert.True(t, createTime.Sub(user.CreatedAt) < time.Second)
+		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+	}
+}
+
+
+
 

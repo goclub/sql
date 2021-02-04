@@ -12,7 +12,7 @@ func (Migrate) Migrate20201004160444CreateUserTable(mi sq.Migrate) {
 		PrimaryKey: []string{"id"},
 		Fields: append([]sq.MigrateField{
 			mi.Field("id").Char(36).DefaultString(""),
-			mi.Field("name").Varchar(20).DefaultString(""),
+			mi.Field("name").Varchar(255).DefaultString(""),
 			mi.Field("age").Int(11).DefaultInt(0),
 		}, mi.CUDTimestamp()...),
 		Key: map[string][]string{
