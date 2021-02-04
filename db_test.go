@@ -2,12 +2,12 @@ package sq_test
 
 import (
 	"context"
+	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 	sq "github.com/goclub/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"log"
 	"testing"
 	"time"
 )
@@ -46,8 +46,8 @@ func (suite TestDBSuite) TestInsert() {
 	{
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
-			Where: sq.And(userCol.Name, sq.Equal("TestInsert")),
-			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+			Where: sq.And(userCol.Name, sq.Like("TestInsert")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 		result, err := testDB.Insert(context.TODO(), sq.QB{
@@ -75,7 +75,6 @@ func (suite TestDBSuite) TestInsert() {
 		assert.Equal(t, user.ID, IDUser(newID))
 		assert.Equal(t, user.Name, "TestInsert")
 		assert.Equal(t, user.Age, 18)
-		log.Print(user.CreatedAt.String())
 		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
 		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
 	}
@@ -87,8 +86,8 @@ func (suite TestDBSuite) TestCreateModel() {
 	{
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
-			Where: sq.And(userCol.Name, sq.Equal("TestCreateModel")),
-			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestCreateModel")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 	}
@@ -134,8 +133,8 @@ func (suite TestDBSuite) TestQueryRowScan() {
 	{
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
-			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
-			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 	}
@@ -184,8 +183,8 @@ func (suite TestDBSuite) QueryRowStructScan() {
 	{
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
-			Where: sq.And(userCol.Name, sq.Equal("QueryRowStructScan")),
-			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+			Where: sq.And(userCol.Name, sq.LikeLeft("QueryRowStructScan")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 	}
@@ -236,7 +235,7 @@ func (suite TestDBSuite) TestSelectScan() {
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSelectScan")),
-			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 	}
@@ -260,8 +259,9 @@ func (suite TestDBSuite) TestSelectScan() {
 		err := testDB.SelectScan(context.TODO(), sq.QB{
 			Table: User{},
 			Select: []sq.Column{userCol.Name, userCol.Age},
-			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
-			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSelectScan")),
+			OrderBy: []sq.OrderBy{{userCol.Name, sq.ASC}},
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL ORDER BY `name` ASC"},
 		}, func(rows *sqlx.Rows) error {
 			data := Data{}
 			err := rows.StructScan(&data) ; if err != nil {
@@ -285,8 +285,8 @@ func (suite TestDBSuite) TestSelectSlice() {
 	{
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table: User{},
-			Where: sq.And(userCol.Name, sq.Equal("TestSelectSlice")),
-			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` = ?"},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSelectSlice")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 	}
@@ -297,7 +297,7 @@ func (suite TestDBSuite) TestSelectSlice() {
 		assert.NoError(t, err)
 	}
 	{
-		user := User{Name:"TestSelectSlice_1", Age: 21,}
+		user := User{Name:"TestSelectSlice_2", Age: 21,}
 		err := testDB.CreateModel(context.TODO(), &user)
 		assert.NoError(t, err)
 	}
@@ -310,8 +310,9 @@ func (suite TestDBSuite) TestSelectSlice() {
 		err := testDB.SelectSlice(context.TODO(), &list, sq.QB{
 			Table: User{},
 			Select: []sq.Column{userCol.Name, userCol.Age},
-			Where: sq.And(userCol.Name, sq.Equal("TestSelectSlice")),
-			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSelectSlice")),
+			OrderBy: []sq.OrderBy{{userCol.Name, sq.ASC}},
+			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL ORDER BY `name` ASC"},
 		},)
 		assert.NoError(t, err)
 		assert.Equal(t, list, []Data{
@@ -320,3 +321,171 @@ func (suite TestDBSuite) TestSelectSlice() {
 		})
 	}
 }
+func (suite TestDBSuite) TestCount() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+	}
+	{
+		count, err := testDB.Count(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, count, 0)
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestCount_1"}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		count, err := testDB.Count(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, count, 1)
+	}
+	{
+		user := User{Name:"TestCount_2"}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		count, err := testDB.Count(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, count, 2)
+	}
+}
+
+func (suite TestDBSuite) TestHas() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+	}
+	{
+		has, err := testDB.Has(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
+			CheckSQL: []string{"SELECT 1 FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, false)
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestHas_1"}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		has, err := testDB.Has(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, has, true)
+	}
+}
+
+
+
+func (suite TestDBSuite) TestSum() {
+	t := suite.T()
+	userCol := User{}.Column()
+	// 清空数据
+	{
+		_, err := testDB.HardDelete(context.TODO(), sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
+			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+		})
+		assert.NoError(t, err)
+	}
+	{
+		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
+			CheckSQL: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, value, sql.NullInt64{
+			Int64: 0,
+			Valid: false,
+		})
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestSum_1"}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
+			CheckSQL: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, value, sql.NullInt64{
+			Int64: 0,
+			Valid: true,
+		})
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestSum_2", Age: 20}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
+			CheckSQL: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, value, sql.NullInt64{
+			Int64: 20,
+			Valid: true,
+		})
+	}
+	// 插入数据
+	{
+		user := User{Name:"TestSum_3", Age: 20}
+		err := testDB.CreateModel(context.TODO(), &user)
+		assert.NoError(t, err)
+	}
+	{
+		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+			Table: User{},
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
+			CheckSQL: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, value, sql.NullInt64{
+			Int64: 40,
+			Valid: true,
+		})
+	}
+}
+

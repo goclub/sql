@@ -219,18 +219,18 @@ func coreCount(ctx context.Context, storager Storager, qb QB) (count int, err er
 	}
 	return
 }
-// if you need query data exited SELECT "exist" FROM user WHERE id = ? better than SELECT count(*) FROM user where id = ?
-func (db *Database) Exist(ctx context.Context, qb QB) (existed bool, err error){
+// if you need query data exited SELECT "has" FROM user WHERE id = ? better than SELECT count(*) FROM user where id = ?
+func (db *Database) Has(ctx context.Context, qb QB) (has bool, err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreExist(ctx, db, qb)
+	return coreHas(ctx, db, qb)
 }
-func (tx *Transaction) Exist(ctx context.Context, qb QB) (existed bool, err error){
-	return coreExist(ctx, tx, qb)
+func (tx *Transaction) Has(ctx context.Context, qb QB) (has bool, err error){
+	return coreHas(ctx, tx, qb)
 }
-func coreExist(ctx context.Context, storager Storager, qb QB) (existed bool, err error) {
-	qb.SelectRaw = []Raw{{`"exist"`, nil}}
-	existed, err = coreQueryRowScan(ctx, storager, qb, nil);if err != nil {return }
-	return
+func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error) {
+	qb.SelectRaw = []Raw{{`1`, nil}}
+	var i int
+	return coreQueryRowScan(ctx, storager, qb, &i)
 }
 func (db *Database) Sum(ctx context.Context, column Column ,qb QB) (value sql.NullInt64, err error) {
 	return coreSum(ctx, db, column, qb)

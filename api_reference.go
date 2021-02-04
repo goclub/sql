@@ -24,7 +24,7 @@ type APIDatabase interface {
 	// count
 	Count(ctx context.Context, qb QB) (count int, err error)
 	// 查询数据是否存在(单条数据是否存在不建议使用 count 而是使用 Exist)
-	Exist(ctx context.Context, qb QB) (existed bool, err error)
+	Has(ctx context.Context, qb QB) (has bool, err error)
 	// sum
 	Sum(ctx context.Context, column Column ,qb QB) (value sql.NullInt64, err error)
 	// 查询单条数据并转换为 Model

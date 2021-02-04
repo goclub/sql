@@ -47,6 +47,5 @@ func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bo
 	return false, diff, debug.Stack()
 }
 func (check defaultSQLCheck) Log(diff []string, stack []byte)  {
-	log.Print(string(stack))
-	log.Print(strings.Join(diff, "\n"))
+	log.Print("goclub/sql:(SQLChecker)", strings.Join(diff, "\n"), string(stack))
 }

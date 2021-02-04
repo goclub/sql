@@ -45,7 +45,8 @@ type QB struct {
 	Limit int
 	limitRaw limitRaw
 	Offset int
-
+	OrderBy []OrderBy
+	GroupBy []Column
 	Lock SelectLock
 
 	Join []Join
@@ -65,6 +66,16 @@ type TableRaw struct {
 	TableName Raw
 	SoftDeleteWhere Raw
 }
+type OrderBy struct {
+	Column Column
+	Type orderByType
+}
+type orderByType uint8
+const (
+	// 默认降序
+	ASC orderByType = iota
+	DESC
+)
 type SelectLock string
 func (s SelectLock) String() string {
 	return string(s)
@@ -310,6 +321,25 @@ func (qb QB) SQL(statement Statement) Raw {
 	if qb.Offset != 0 {
 		sqlList.Push("OFFSET ?")
 		values = append(values, qb.Offset)
+	}
+	// order by
+	if len(qb.OrderBy) != 0 {
+		sqlList.Push("ORDER BY")
+		var orderList stringQueue
+		for _, order := range qb.OrderBy {
+			switch order.Type {
+			case ASC:
+				orderList.Push(order.Column.wrapField() + " ASC")
+			case DESC:
+				orderList.Push(order.Column.wrapField() + " DESC")
+			}
+		}
+		sqlList.Push(orderList.Join(", "))
+	}
+	// group by
+	if len(qb.GroupBy) != 0 {
+		sqlList.Push("GROUP BY")
+		sqlList.Push(strings.Join(columnsToStrings(qb.GroupBy), ", "))
 	}
 	if len(qb.Lock) != 0 {
 		sqlList.Push(qb.Lock.String())
