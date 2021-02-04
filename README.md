@@ -71,7 +71,7 @@ qb := sq.QB{
     Select: []sq.Column{"id"},
 }
 var userIDList []string
-err := exampleDB.SelectScan(ctx, qb, sq.ScanStrings(*userIDList)) ; if err != nil {
+err := exampleDB.QueryScan(ctx, qb, sq.ScanStrings(*userIDList)) ; if err != nil {
     panic(err)
 }
 ```
@@ -113,7 +113,7 @@ qb := sq.QB{
         And("name", sq.Equal("nimo")).
         And("age", sq.Equal(18)),
 }
-hasUser, err := exampleDB.QueryModel(ctx, &user, qb) ; if err != nil {
+hasUser, err := exampleDB.ModelQueryRow(ctx, &user, qb) ; if err != nil {
     panic(err)
 }
 ```
@@ -135,23 +135,23 @@ hasUser, err := exampleDB.QueryModel(ctx, &user, qb) ; if err != nil {
 
 [查询单行数据并解析到结构体](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryRowStructScan)
 
-### SelectScan
+### QueryScan
 
-[查询多行单列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.SelectScan)
+[查询多行单列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryScan)
 
 ### Select
  
 [查询多行多列数据解析结构体切片](https://pkg.go.dev/github.com/goclub/sql/#example-DB.Select)
 
-### QueryModel
+### ModelQueryRow
 
-[基于 Model 查询单行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModel)
+[基于 Model 查询单行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.ModelQueryRow)
 
 若无需查询全部字段可考虑使用 QueryRowStructScan 查询
 
-### QueryModelList
+### ModelQueryRowList
 
-[基于 Model 查询多行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModelList)
+[基于 Model 查询多行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.ModelQueryRowList)
 
 ### Count
 

@@ -14,29 +14,32 @@ type WherePrimaryKeyer interface {
 type Tabler interface {
 	TableName() string
 	SoftDeleteWhere() Raw
+	SoftDeleteSet() Raw
 }
+// 供 relation 使用
+type table struct {
+	tableName string
+	softDeleteWhere func() Raw
+	softDeleteSet func() Raw
+}
+func (t table) TableName() string {
+	return t.tableName
+}
+func (t table) SoftDeleteWhere() Raw {
+	return t.softDeleteWhere()
+}
+func (t table) SoftDeleteSet() Raw {
+	return t.softDeleteSet()
+}
+
 type Raw struct {
 	Query string
 	Values []interface{}
 }
-type table struct {
-	tableName string
-	softDeleteWhere Raw
-}
-func (t table) TableName() string { return t.tableName }
-func (t table) SoftDeleteWhere() Raw {
-	return t.softDeleteWhere
-}
-func Table(tableName string, softDeleteWhere Raw) Tabler {
-	return table{
-		tableName: tableName,
-		softDeleteWhere: softDeleteWhere,
-	}
-}
 type Model interface {
 	TableName() string
 	SoftDeleteWhere() Raw
-	// SoftDeleteSet() Raw // Model 可没有 SoftDeleteSet
+	SoftDeleteSet() Raw
 	BeforeCreate() error
 	AfterCreate(result sql.Result) error
 	BeforeUpdate() error
@@ -47,6 +50,8 @@ type Relation interface {
 	SoftDeleteWhere() Raw
 	RelationJoin () []Join
 }
+
+
 type WithoutSoftDelete struct {}
 func (WithoutSoftDelete) SoftDeleteWhere() Raw {return Raw{}}
 

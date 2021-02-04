@@ -52,10 +52,10 @@ func (result TxResult) Error() string {
 	}
 }
 
-func (db *Database) Transaction(ctx context.Context, handle func (tx *Transaction) TxResult) (err error) {
+func (db *Database) Transaction(ctx context.Context, handle func (tx *Transaction) TxResult) (isRollback bool, err error) {
 	return db.TransactionOpts(ctx, handle, nil)
 }
-func (db *Database) TransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (err error) {
+func (db *Database) TransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (isRollback bool, err error) {
 	coreTx, err := db.Core.BeginTxx(ctx, opts) ; if err != nil {
 		return
 	}
@@ -65,13 +65,14 @@ func (db *Database) TransactionOpts(ctx context.Context, handle func (tx *Transa
 		err = tx.Core.Commit() ; if err != nil {
 			return
 		}
+		return
 	} else {
 		err = tx.Core.Rollback() ; if err != nil {
-			return
+			return true, err
 		}
 		if txResult.withError != nil {
-			return txResult.withError
+			return true, txResult.withError
 		}
+		return true, nil
 	}
-	return
 }

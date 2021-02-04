@@ -4,7 +4,7 @@ package sq
 // // 递减可能存在并发问题，所以只在事务中处理
 // func (tx *Transaction) DecrementIntModel(ctx context.Context, ptr Model, props IncrementInt, checkSQL ...string) (affected bool, err error) {
 // 	field := props.Column.wrapField()
-// 	result, err := coreUpdateModel(ctx, tx.Core, ptr, []Data{
+// 	result, err := coreModelUpdate(ctx, tx.Core, ptr, []Data{
 // 		{
 // 			// SET age = age - ?
 // 			Raw: Raw{
@@ -40,7 +40,7 @@ package sq
 // // 递减可能存在并发问题，所以只在事务中处理
 // func (tx *Transaction) DecrementFloatModel(ctx context.Context, ptr Model, props IncrementFloat, checkSQL ...string) (affected bool, err error) {
 // 	field := props.Column.wrapField()
-// 	result, err := coreUpdateModel(ctx, tx.Core, ptr, []Data{
+// 	result, err := coreModelUpdate(ctx, tx.Core, ptr, []Data{
 // 		{
 // 			// SET age = age - ?
 // 			Raw: Raw{
@@ -82,7 +82,7 @@ package sq
 // // 递增可能存在并发问题，所以只在事务中处理
 // func (tx *Transaction) IncrementIntModel(ctx context.Context, ptr Model, props IncrementInt) (affected bool, err error) {
 // 	field := props.Column.wrapField()
-// 	result, err := db.UpdateModel(ctx, ptr, []Data{
+// 	result, err := db.ModelUpdate(ctx, ptr, []Data{
 // 		{
 // 			// SET age = age + ?
 // 			Raw: Raw{
@@ -117,7 +117,7 @@ package sq
 // }
 // func (tx *Transaction) IncrementFloatModel(ctx context.Context, ptr Model, props IncrementFloat) (affected bool, err error) {
 // 	field := props.Column.wrapField()
-// 	result, err := tx.UpdateModel(ctx, ptr, []Data{
+// 	result, err := tx.ModelUpdate(ctx, ptr, []Data{
 // 		{
 // 			// SET age = age + ?
 // 			Raw: Raw{

@@ -1,6 +1,7 @@
 package sq_test
 
 import (
+	"database/sql"
 	sq "github.com/goclub/sql"
 )
 
@@ -53,16 +54,15 @@ func (User) Column () (col struct{
 
 
 
-
 type UserWithAddress struct {
 	UserID IDUser `db:"user.id"`
 	Name string `db:"user.name"`
 	Age int `db:"user.age"`
-	Address string `db:"user_address.address"`
+	Address sql.NullString `db:"user_address.address"`
 }
 func (UserWithAddress) SoftDeleteWhere() (sq.Raw) {return sq.Raw{"`user`.`deleted_at` IS NULL AND `user_address`.`deleted_at` IS NULL", nil}}
 func (UserWithAddress) TableName() string {return "user"}
-func (*UserWithAddress) RelationJoin() []sq.Join {
+func (UserWithAddress) RelationJoin() []sq.Join {
 	return []sq.Join{
 		{
 			Type: 	  	   sq.LeftJoin,
@@ -70,6 +70,26 @@ func (*UserWithAddress) RelationJoin() []sq.Join {
 			On:"`user`.`id` = `user_address`.`user_id`",
 		},
 	}
+}
+
+type TableUserAddress struct {
+	// 通过 goclub/sql 提供的 SoftDeleteDeletedAt 表明该表存在软删字段，还可以使用 sq.SoftDeleteIsDeleted  sq.SoftDeleteDeleteTime
+	// 它们的功能是让 TableUser 支持 SoftDeleteWhere() SoftDeleteSet() 方法
+	sq.SoftDeleteDeletedAt
+}
+type UserAddress struct {
+	UserID IDUser `db:"user_id"`
+	Address string `db:"address"`
+	// CreatedAtUpdatedAt 表明表是支持 created_at 和 updated_at 字段的，还可以使用 sq.CreateTimeUpdateTime sq.GMTCreateGMTUpdate
+	sq.CreatedAtUpdatedAt
+	// 通过组合 TableUser 让 User 支持 TableName() SoftDeleteWhere() SoftDeleteSet() 等方法
+	TableUserAddress
+	// 每个 Model 都应该具有生命周期触发函数 BeforeCreate() AfterCreate() BeforeUpdate() AfterUpdate() 方法
+	// 通过 sq.DefaultLifeCycle 可配置默认的生命周期触发函数
+	sq.DefaultLifeCycle
+}
+func (UserAddress) TableName() string {
+	return "user_address"
 }
 func (UserWithAddress) Column () (col struct{
 	UserID sq.Column

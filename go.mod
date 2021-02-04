@@ -7,7 +7,6 @@ require (
 	github.com/google/uuid v1.1.4
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/manifoldco/promptui v0.8.0
-	github.com/og/gofree v0.5.0 // indirect
 	github.com/og/x v0.0.0-20201210141255-dbe8c95570d3
 	github.com/pkg/errors v0.9.1
 	github.com/sergi/go-diff v1.1.0

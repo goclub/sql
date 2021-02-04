@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// sq.Set(column, value)
 type Update struct {
 	Column Column
 	Value interface{}
@@ -15,6 +16,7 @@ type Update struct {
 func Set(column Column, value interface{}) Update {
 	return Update{Column: column, Value: value}
 }
+// sq.Value(column, value)
 type Insert struct {
 	Column Column
 	Value interface{}
@@ -61,8 +63,9 @@ type QB struct {
 	Lock SelectLock
 
 	Join []Join
-	Debug bool
 	Raw Raw
+
+	Debug bool
 	CheckSQL []string
 	SQLChecker SQLChecker
 }
@@ -143,7 +146,7 @@ func (c Column) wrapFieldWithAS() string {
 	s := c.String()
 	column := c.wrapField()
 	if strings.Contains(s, ".") {
-		column += ` AS "` + s + `"`
+		column += ` AS '` + s + `'`
 	}
 	return column
 }
@@ -290,8 +293,12 @@ func (qb QB) SQL(statement Statement) Raw {
 		var whereValues []interface{}
 		whereString, whereValues = whereRaw.Query, whereRaw.Values
 		values = append(values, whereValues...)
-		if statement == statement.Enum().Delete && len(strings.TrimSpace(whereString)) == 0 {
-			return Raw{"ERROR: DELETE WHERE can not empty", nil}
+		var disableWhereIsEmpty bool
+		if statement == statement.Enum().Delete || statement == statement.Enum().Update {
+			disableWhereIsEmpty = true
+		}
+		if disableWhereIsEmpty && len(strings.TrimSpace(whereString)) == 0 {
+			return Raw{"goclub/sql:(MAYBE_FORGET_WHERE)", nil}
 		}
 		if !qb.DisableSoftDelete {
 			needSoftDelete := qb.softDelete.Query != ""
@@ -393,5 +400,14 @@ func (qb QB) SQLDelete() Raw {
 	return qb.SQL(Statement("").Enum().Delete)
 }
 func (qb QB) Paging(page int, perPage int) QB {
+	if page == 0 {
+		page = 1
+	}
+	if perPage == 0 {
+		perPage = 10
+		log.Print("goclub/sql: Paging(page, perPage) alert perPage is 0 ,perPage can't be 0 . gofree will set perPage 10. but you need check your code.")
+	}
+	qb.Offset = (page - 1) * perPage
+	qb.Limit = perPage
 	return qb
 }

@@ -38,20 +38,20 @@ func (suite TestQBSuite) TestDisableSoftDelete() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: sq.Table("user", sq.Raw{"`is_deleted = 0", nil}),
+			Table: User{},
 			DisableSoftDelete: true,
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-		assert.Equal(t, "SELECT * FROM `user`", query)
+		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user`", query)
 		assert.Equal(t, []interface{}(nil), values)
 	}
 	{
 		qb := sq.QB{
-			Table: sq.Table("user", sq.Raw{"`is_deleted = 0", nil}),
+			Table: User{},
 			DisableSoftDelete: false,
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-		assert.Equal(t, "SELECT * FROM `user` WHERE `is_deleted = 0", query)
+		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL", query)
 		assert.Equal(t, []interface{}(nil), values)
 	}
 }
@@ -169,7 +169,7 @@ func (suite TestQBSuite) TestSelectColumnHasDot() {
 		},
 	}
 	raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-	assert.Equal(t, "SELECT `u`.`name` AS \"u.name\" FROM user as u WHERE `id` = ?", query)
+	assert.Equal(t, "SELECT `u`.`name` AS 'u.name' FROM user as u WHERE `id` = ?", query)
 	assert.Equal(t, []interface{}{1}, values)
 }
 func (suite TestQBSuite) TestIndex() {
@@ -198,6 +198,7 @@ func (suite TestQBSuite) TestWhere() {
 		assert.Equal(t, []interface{}{"nimo"}, values)
 	}
 }
+
 func (suite TestQBSuite) TestWhereOR() {
 	t := suite.T()
 	{
@@ -579,6 +580,24 @@ func (suite TestQBSuite) TestWhereIgnore() {
 	}
 	test("", "SELECT `id` FROM `user` WHERE `deleted_at` IS NULL", []interface{}(nil))
 	test("nimo", "SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL", []interface{}{"nimo"})
+	{
+		raw := sq.QB{
+			Table: User{},
+			Where: sq.And("name", sq.Ignore(true, sq.Equal("nimo"))),
+			DisableSoftDelete: true,
+		}.SQLSelect()
+		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user`", raw.Query)
+		assert.Equal(t, []interface{}(nil), raw.Values)
+	}
+	{
+		raw := sq.QB{
+			Table: User{},
+			Where: sq.And("name", sq.Ignore(true, sq.Equal("nimo"))).And("age", sq.Ignore(true, sq.Equal(1))),
+			DisableSoftDelete: true,
+		}.SQLSelect()
+		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user`", raw.Query)
+		assert.Equal(t, []interface{}(nil), raw.Values)
+	}
 
 }
 func (suite TestQBSuite) TestInPanic() {
@@ -692,7 +711,7 @@ func (suite TestQBSuite) TestJoin() {
 		},
 	}
 	raw := qb.SQLSelect()
-	assert.Equal(t, raw.Query, "SELECT `user`.`id` AS \"user.id\", `user_address`.`address` AS \"user_address.address\" FROM user LEFT JOIN ``user_address`` ON `user`.`id` = `user_address`.`user_id` WHERE `user`.`id` = ? AND `user`.`deleted_at` is NULL AND user_address`.`deleted_at` is NULL")
+	assert.Equal(t, raw.Query, "SELECT `user`.`id` AS 'user.id', `user_address`.`address` AS 'user_address.address' FROM user LEFT JOIN ``user_address`` ON `user`.`id` = `user_address`.`user_id` WHERE `user`.`id` = ? AND `user`.`deleted_at` is NULL AND user_address`.`deleted_at` is NULL")
 	assert.Equal(t, []interface{}{1}, raw.Values)
 }
 func (suite TestQBSuite) TestJoinType() {
@@ -750,7 +769,7 @@ func (suite TestQBSuite) TestUnsafeDelete() {
 		Table: User{},
 	}
 	raw := qb.SQLDelete()
-	assert.Equal(t, "ERROR: DELETE WHERE can not empty", raw.Query)
+	assert.Equal(t, "goclub/sql:(MAYBE_FORGET_WHERE)", raw.Query)
 	assert.Equal(t, []interface{}(nil), raw.Values)
 }
 func (suite TestQBSuite) TestHaving() {

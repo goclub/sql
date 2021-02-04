@@ -40,8 +40,6 @@ github.com/mattn/go-isatty v0.0.4 h1:bnP0vzxcAdeI1zdubAl5PjU6zsERjGZb7raWodagDYs
 github.com/mattn/go-isatty v0.0.4/go.mod h1:M+lRXTBqGeGNdLjl/ufCoiOlB5xdOkqRJdNxMWT7Zi4=
 github.com/mattn/go-sqlite3 v1.9.0 h1:pDRiWfl+++eC2FEFRy6jXmQlvp4Yh3z1MJKg4UeYM/4=
 github.com/mattn/go-sqlite3 v1.9.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
-github.com/og/gofree v0.5.0 h1:s11wdCDWXdOZHZ/ghCnDkuGU4DINghIYJxoOkLt2VbE=
-github.com/og/gofree v0.5.0/go.mod h1:PKrw8zE+3HGMGqWP27/0nzHGhSvmDLexnY7I+vl+boU=
 github.com/og/json v0.0.0-20200911082324-b2ef83a1c151/go.mod h1:AiKvpoV0+CvBNgclCC8XS/9uwy/ZC01qITbGxduIlrU=
 github.com/og/json v0.0.0-20201001152020-90ef00c7e681 h1:zyHVhWO0AALwr9VldjkDgrA9KFeKlJVvr+1lgKMQh2c=
 github.com/og/json v0.0.0-20201001152020-90ef00c7e681/go.mod h1:/eY2/ZrnKtytZqk39Jl4lXSdZ/nYpGmmqOafR0v9/tM=
