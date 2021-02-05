@@ -54,7 +54,7 @@ qb := sq.QB{
         And(userCol.Name, sq.Equal("nimo")).
         And(userCol.Age, sq.Equal(18)),
 }
-hasUser, err := exampleDB.QueryRowStructScan(ctx, &userNameAge, qb) ; if err != nil {
+hasUser, err := exampleDB.QueryStruct(ctx, &userNameAge, qb) ; if err != nil {
     panic(err)
 }
 ```
@@ -71,7 +71,7 @@ qb := sq.QB{
     Select: []sq.Column{"id"},
 }
 var userIDList []string
-err := exampleDB.QueryScan(ctx, qb, sq.ScanStrings(*userIDList)) ; if err != nil {
+err := exampleDB.QuerySliceScaner(ctx, qb, sq.ScanStrings(*userIDList)) ; if err != nil {
     panic(err)
 }
 ```
@@ -113,7 +113,7 @@ qb := sq.QB{
         And("name", sq.Equal("nimo")).
         And("age", sq.Equal(18)),
 }
-hasUser, err := exampleDB.ModelQueryRow(ctx, &user, qb) ; if err != nil {
+hasUser, err := exampleDB.QueryModel(ctx, &user, qb) ; if err != nil {
     panic(err)
 }
 ```
@@ -131,27 +131,27 @@ hasUser, err := exampleDB.ModelQueryRow(ctx, &user, qb) ; if err != nil {
  
 [查询单行多列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryRowScan)
 
-### QueryRowStructScan
+### QueryStruct
 
-[查询单行数据并解析到结构体](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryRowStructScan)
+[查询单行数据并解析到结构体](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryStruct)
 
-### QueryScan
+### QuerySliceScaner
 
-[查询多行单列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryScan)
+[查询多行单列数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QuerySliceScaner)
 
 ### Select
  
 [查询多行多列数据解析结构体切片](https://pkg.go.dev/github.com/goclub/sql/#example-DB.Select)
 
-### ModelQueryRow
+### QueryModel
 
-[基于 Model 查询单行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.ModelQueryRow)
+[基于 Model 查询单行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModel)
 
-若无需查询全部字段可考虑使用 QueryRowStructScan 查询
+若无需查询全部字段可考虑使用 QueryStruct 查询
 
-### ModelQueryRowList
+### QueryModelList
 
-[基于 Model 查询多行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.ModelQueryRowList)
+[基于 Model 查询多行数据](https://pkg.go.dev/github.com/goclub/sql/#example-DB.QueryModelList)
 
 ### Count
 

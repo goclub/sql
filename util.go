@@ -61,11 +61,11 @@ func primaryKeyWhere(ptr Model, primaryIDInfo primaryIDInfo, typeName string) ([
 	if primaryIDInfo.HasID {
 		return []Condition{{"id", Equal(primaryIDInfo.IDValue)}}, nil
 	} else {
-		switch ModelUpdateer := ptr.(type) {
+		switch UpdateModeler := ptr.(type) {
 		case WherePrimaryKeyer:
-			return ModelUpdateer.WherePrimaryKey(), nil
+			return UpdateModeler.WherePrimaryKey(), nil
 		default:
-			return nil, errors.New(typeName + " must has method ModelUpdateWherePrimaryKey() sq.Condition or struct tag `db:\"id\"`")
+			return nil, errors.New(typeName + " must has method UpdateModelWherePrimaryKey() sq.Condition or struct tag `db:\"id\"`")
 		}
 	}
 }

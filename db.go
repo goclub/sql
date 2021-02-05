@@ -59,15 +59,15 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	qb.SQLChecker = storager.getSQLChecker()
 	return coreExecQB(ctx, storager, qb, Statement("").Enum().Insert)
 }
-// ModelInsert
-func (db *Database) ModelInsert(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
-	return coreModelInsert(ctx, db, ptr)
+// InsertModel
+func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+	return coreInsertModel(ctx, db, ptr)
 }
-func (tx *Transaction) ModelInsert(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
-	return coreModelInsert(ctx, tx, ptr)
+func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+	return coreInsertModel(ctx, tx, ptr)
 }
 
-func coreModelInsert(ctx context.Context, storager Storager, ptr Model) (err error) {
+func coreInsertModel(ctx context.Context, storager Storager, ptr Model) (err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
@@ -76,7 +76,7 @@ func coreModelInsert(ctx context.Context, storager Storager, ptr Model) (err err
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("ModelInsert(ctx, ptr) " + rType.String() + " must be ptr"))
+		panic(errors.New("InsertModel(ctx, ptr) " + rType.String() + " must be ptr"))
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -137,14 +137,14 @@ func coreQueryRowScan(ctx context.Context, storager Storager, qb QB, desc ...int
 	}
 	return
 }
-func (db *Database) QueryScan(ctx context.Context, qb QB, scan ScanFunc) (err error){
+func (db *Database) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) (err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreQueryScan(ctx, db, qb, scan)
+	return coreQuerySliceScaner(ctx, db, qb, scan)
 }
-func (tx *Transaction) QueryScan(ctx context.Context, qb QB, scan ScanFunc) (error){
-	return coreQueryScan(ctx, tx, qb, scan)
+func (tx *Transaction) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) (error){
+	return coreQuerySliceScaner(ctx, tx, qb, scan)
 }
-func coreQueryScan(ctx context.Context, storager Storager, qb QB, scan ScanFunc) (error) {
+func coreQuerySliceScaner(ctx context.Context, storager Storager, qb QB, scan Scaner) (error) {
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
@@ -167,16 +167,17 @@ func coreQueryScan(ctx context.Context, storager Storager, qb QB, scan ScanFunc)
 	}
 	return nil
 }
-func (db *Database) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
+func (db *Database) QueryStruct(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreQueryRowStructScan(ctx, db,ptr, qb)
+	return coreQueryStruct(ctx, db,ptr, qb)
 }
-func (tx *Transaction) QueryRowStructScan(ctx context.Context, ptr interface{}, qb QB)  (has bool, err error) {
-	return coreQueryRowStructScan(ctx, tx, ptr, qb)
+func (tx *Transaction) QueryStruct(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
+	return coreQueryStruct(ctx, tx, ptr, qb)
 }
-func coreQueryRowStructScan(ctx context.Context, storager Storager, ptr interface{}, qb QB)  (has bool, err error) {
+func coreQueryStruct(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has bool, err error) {
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
+	qb.Table = ptr
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
 	row := storager.getCore().QueryRowxContext(ctx, query, values...)
@@ -189,13 +190,23 @@ func coreQueryRowStructScan(ctx context.Context, storager Storager, ptr interfac
 
 func (db *Database) QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreSelect(ctx, db, slicePtr, qb)
+	return coreQuerySlice(ctx, db, slicePtr, qb)
 }
 func (tx *Transaction) QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error){
-	return coreSelect(ctx, tx, slicePtr, qb)
+	return coreQuerySlice(ctx, tx, slicePtr, qb)
 }
-func coreSelect(ctx context.Context, storager Storager, slicePtr interface{}, qb QB) (err error) {
+func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}, qb QB) (err error) {
 	qb.SQLChecker = storager.getSQLChecker()
+	ptrType := reflect.TypeOf(slicePtr)
+	if ptrType.Kind() != reflect.Ptr {
+		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
+	}
+	elemType := ptrType.Elem()
+	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
+	tablerInterface := reflectItemValue.Interface().(Tabler)
+	if qb.Table == nil {
+		qb.Table = tablerInterface
+	}
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
 	return storager.getCore().SelectContext(ctx, slicePtr, query, values...)
@@ -245,43 +256,43 @@ func coreSum(ctx context.Context, storager Storager,column Column ,qb QB) (value
 	}
 	return
 }
-func (db *Database) ModelQueryRow(ctx context.Context, ptr Model, qb QB) (has bool , err error){
-	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreModelQueryRow(ctx, db, ptr, qb)
-}
-func (tx *Transaction) ModelQueryRow(ctx context.Context, ptr Model, qb QB) (has bool , err error){
-	return coreModelQueryRow(ctx, tx, ptr, qb)
-}
-func coreModelQueryRow(ctx context.Context, storager Storager,ptr Model, qb QB) (has bool , err error) {
-	qb.SQLChecker = storager.getSQLChecker()
-	qb.Table = ptr
-	qb.Limit = 1
-	return coreQueryRowStructScan(ctx, storager, ptr, qb)
-}
-func (db *Database) ModelQuerySlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error) {
-	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreModelQuerySlice(ctx, db, modelSlicePtr, qb)
-}
-func (tx *Transaction) ModelQuerySlice(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
-	return coreModelQuerySlice(ctx, tx, modelSlicePtr, qb)
-}
-func coreModelQuerySlice(ctx context.Context, storager Storager, modelSlicePtr interface{}, qb QB) error {
-	qb.SQLChecker = storager.getSQLChecker()
-	ptrType := reflect.TypeOf(modelSlicePtr)
-	if ptrType.Kind() != reflect.Ptr {
-		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
-	}
-	elemType := ptrType.Elem()
-	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
-	tablerInterface := reflectItemValue.Interface().(Tabler)
-	qb.Table = tablerInterface
-	raw := qb.SQLSelect()
-	query, values := raw.Query, raw.Values
-	err := storager.getCore().SelectContext(ctx, modelSlicePtr,query , values...) ; if err != nil {
-		return err
-	}
-	return nil
-}
+// func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error){
+// 	err = qb.mustInTransaction() ; if err != nil {return}
+// 	return coreQueryModel(ctx, db, ptr, qb)
+// }
+// func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error){
+// 	return coreQueryModel(ctx, tx, ptr, qb)
+// }
+// func coreQueryModel(ctx context.Context, storager Storager,ptr Model, qb QB) (has bool , err error) {
+// 	qb.SQLChecker = storager.getSQLChecker()
+// 	qb.Table = ptr
+// 	qb.Limit = 1
+// 	return coreQueryStruct(ctx, storager, ptr, qb)
+// }
+// func (db *Database) QueryModelSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error) {
+// 	err = qb.mustInTransaction() ; if err != nil {return}
+// 	return coreQueryModelSlice(ctx, db, modelSlicePtr, qb)
+// }
+// func (tx *Transaction) QueryModelSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
+// 	return coreQueryModelSlice(ctx, tx, modelSlicePtr, qb)
+// }
+// func coreQueryModelSlice(ctx context.Context, storager Storager, modelSlicePtr interface{}, qb QB) error {
+// 	qb.SQLChecker = storager.getSQLChecker()
+// 	ptrType := reflect.TypeOf(modelSlicePtr)
+// 	if ptrType.Kind() != reflect.Ptr {
+// 		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
+// 	}
+// 	elemType := ptrType.Elem()
+// 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
+// 	tablerInterface := reflectItemValue.Interface().(Tabler)
+// 	qb.Table = tablerInterface
+// 	raw := qb.SQLSelect()
+// 	query, values := raw.Query, raw.Values
+// 	err := storager.getCore().SelectContext(ctx, modelSlicePtr,query , values...) ; if err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 func (db *Database) Update(ctx context.Context, qb QB) (result sql.Result, err error){
 	return coreUpdate(ctx, db, qb)
 }
@@ -297,17 +308,17 @@ func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return
 }
 
-func (db *Database) ModelUpdate(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreModelUpdate(ctx, db, ptr, updateData, where, checkSQL...)
+func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
+	return coreUpdateModel(ctx, db, ptr, updateData, where, checkSQL...)
 }
-func (tx *Transaction) ModelUpdate(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreModelUpdate(ctx, tx, ptr, updateData, where, checkSQL...)
+func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
+	return coreUpdateModel(ctx, tx, ptr, updateData, where, checkSQL...)
 }
-func coreModelUpdate(ctx context.Context, storager Storager, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error) {
+func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("ModelUpdate(ctx, ptr) " + rType.String() + " must be ptr"))
+		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -386,17 +397,17 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLDelete()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) ModelHardDelete(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreModelHardDelete(ctx,db, ptr, checkSQL...)
+func (db *Database) HardDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreHardDeleteModel(ctx,db, ptr, checkSQL...)
 }
-func (tx *Transaction) ModelHardDelete(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreModelHardDelete(ctx, tx, ptr, checkSQL...)
+func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreHardDeleteModel(ctx, tx, ptr, checkSQL...)
 }
-func coreModelHardDelete(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("ModelUpdate(ctx, ptr) " + rType.String() + " must be ptr"))
+		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -443,17 +454,17 @@ func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLUpdate()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) ModelSoftDelete(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreModelSoftDelete(ctx, db, ptr, checkSQL...)
+func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreSoftDeleteModel(ctx, db, ptr, checkSQL...)
 }
-func (tx *Transaction) ModelSoftDelete(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreModelSoftDelete(ctx, tx, ptr, checkSQL...)
+func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
+	return coreSoftDeleteModel(ctx, tx, ptr, checkSQL...)
 }
-func coreModelSoftDelete(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("ModelUpdate(ctx, ptr) " + rType.String() + " must be ptr"))
+		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -489,34 +500,46 @@ func coreModelSoftDelete(ctx context.Context, storager Storager, ptr Model, chec
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 
 }
-func (db *Database) RelationQueryRow(ctx context.Context, ptr Relation, qb QB) (has bool, err error){
+func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has bool, err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreRelationQueryRow(ctx, db, ptr, qb)
+	return coreQueryRelation(ctx, db, ptr, qb)
 }
-func (tx *Transaction) RelationQueryRow(ctx context.Context, ptr Relation, qb QB) (has bool, err error){
-	return coreRelationQueryRow(ctx, tx, ptr, qb)
+func (tx *Transaction) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has bool, err error){
+	return coreQueryRelation(ctx, tx, ptr, qb)
 }
-func coreRelationQueryRow(ctx context.Context, storager Storager, ptr Relation, qb QB) (has bool, err error) {
+func coreQueryRelation(ctx context.Context, storager Storager, ptr Relation, qb QB) (has bool, err error) {
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Select = TagToColumns(ptr)
-	qb.Table = table {
+	table := table {
 		tableName: ptr.TableName(),
 		softDeleteWhere: ptr.SoftDeleteWhere,
 		// Relation 不需要 update
 		softDeleteSet: func() Raw {return Raw{}},
 	}
+	qb.Table = table
 	qb.Limit = 1
 	qb.Join = ptr.RelationJoin()
-	return coreQueryRowStructScan(ctx, storager, ptr, qb)
+
+	qb.SQLChecker = storager.getSQLChecker()
+	qb.Limit = 1
+
+	raw := qb.SQLSelect()
+	query, values := raw.Query, raw.Values
+	row := storager.getCore().QueryRowxContext(ctx, query, values...)
+	scanErr := row.StructScan(ptr)
+	has, err = CheckRowScanErr(scanErr) ; if err != nil {
+		return
+	}
+	return
 }
-func (db *Database) RelationQuerySlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error) {
+func (db *Database) QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error) {
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreRelationQuerySlice(ctx, db, relationSlicePtr, qb)
+	return coreQueryRelationSlice(ctx, db, relationSlicePtr, qb)
 }
-func (tx *Transaction) RelationQuerySlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error) {
-	return coreRelationQuerySlice(ctx, tx, relationSlicePtr, qb)
+func (tx *Transaction) QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error) {
+	return coreQueryRelationSlice(ctx, tx, relationSlicePtr, qb)
 }
-func coreRelationQuerySlice(ctx context.Context, storager Storager, relationSlicePtr interface{}, qb QB) (err error) {
+func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlicePtr interface{}, qb QB) (err error) {
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(relationSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {

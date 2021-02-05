@@ -4,12 +4,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"time"
 )
-type ScanFunc func(rows *sqlx.Rows) error
+type Scaner func(rows *sqlx.Rows) error
 
 type UintLister interface {
 	Append(i uint)
 }
-func ScanUintLister(list UintLister) ScanFunc {
+func ScanUintLister(list UintLister) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item uint
 		err := rows.Scan(&item) ; if err != nil {
@@ -22,7 +22,7 @@ func ScanUintLister(list UintLister) ScanFunc {
 type IntLister interface {
 	Append(i int)
 }
-func ScanIntLister(list IntLister) ScanFunc {
+func ScanIntLister(list IntLister) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item int
 		err := rows.Scan(&item) ; if err != nil {
@@ -35,7 +35,7 @@ func ScanIntLister(list IntLister) ScanFunc {
 type BytesIDLister interface {
 	Append(data []byte)
 }
-func ScanBytesLister(list BytesIDLister) ScanFunc {
+func ScanBytesLister(list BytesIDLister) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item []byte
 		err := rows.Scan(&item) ; if err != nil {
@@ -48,7 +48,7 @@ func ScanBytesLister(list BytesIDLister) ScanFunc {
 type StringLister interface {
 	Append(s string)
 }
-func ScanStringLister(list StringLister) ScanFunc {
+func ScanStringLister(list StringLister) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item string
 		err := rows.Scan(&item) ; if err != nil {
@@ -58,7 +58,7 @@ func ScanStringLister(list StringLister) ScanFunc {
 		return nil
 	}
 }
-func ScanBytes(bytes *[][]byte) ScanFunc {
+func ScanBytes(bytes *[][]byte) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item []byte
 		err := rows.Scan(&item) ; if err != nil {
@@ -68,7 +68,7 @@ func ScanBytes(bytes *[][]byte) ScanFunc {
 		return nil
 	}
 }
-func ScanStrings(strings *[]string) ScanFunc {
+func ScanStrings(strings *[]string) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item string
 		err := rows.Scan(&item) ; if err != nil {
@@ -78,7 +78,7 @@ func ScanStrings(strings *[]string) ScanFunc {
 		return nil
 	}
 }
-func ScanInts(ints *[]int) ScanFunc {
+func ScanInts(ints *[]int) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item int
 		err := rows.Scan(&item) ; if err != nil {
@@ -88,7 +88,7 @@ func ScanInts(ints *[]int) ScanFunc {
 		return nil
 	}
 }
-func ScanBool(bools *[]bool) ScanFunc {
+func ScanBool(bools *[]bool) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item bool
 		err := rows.Scan(&item) ; if err != nil {
@@ -98,7 +98,7 @@ func ScanBool(bools *[]bool) ScanFunc {
 		return nil
 	}
 }
-func ScanTimes(times *[]time.Time) ScanFunc {
+func ScanTimes(times *[]time.Time) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item time.Time
 		err := rows.Scan(&item) ; if err != nil {
@@ -108,7 +108,7 @@ func ScanTimes(times *[]time.Time) ScanFunc {
 		return nil
 	}
 }
-func ScanUints(uints *[]uint) ScanFunc {
+func ScanUints(uints *[]uint) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item uint
 		err := rows.Scan(&item) ; if err != nil {
