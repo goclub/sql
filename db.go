@@ -258,14 +258,14 @@ func coreModelQueryRow(ctx context.Context, storager Storager,ptr Model, qb QB) 
 	qb.Limit = 1
 	return coreQueryRowStructScan(ctx, storager, ptr, qb)
 }
-func (db *Database) ModelQueryRowSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error) {
+func (db *Database) ModelQuerySlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error) {
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreModelQueryRowSlice(ctx, db, modelSlicePtr, qb)
+	return coreModelQuerySlice(ctx, db, modelSlicePtr, qb)
 }
-func (tx *Transaction) ModelQueryRowSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
-	return coreModelQueryRowSlice(ctx, tx, modelSlicePtr, qb)
+func (tx *Transaction) ModelQuerySlice(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
+	return coreModelQuerySlice(ctx, tx, modelSlicePtr, qb)
 }
-func coreModelQueryRowSlice(ctx context.Context, storager Storager, modelSlicePtr interface{}, qb QB) error {
+func coreModelQuerySlice(ctx context.Context, storager Storager, modelSlicePtr interface{}, qb QB) error {
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(modelSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {

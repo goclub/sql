@@ -539,22 +539,22 @@ func (suite TestDBSuite) TestModelQueryRow() {
 }
 
 
-func (suite TestDBSuite) TestModelQueryRowSlice() {
+func (suite TestDBSuite) TestModelQuerySlice() {
 	t := suite.T()
 	userCol := User{}.Column()
 
 	{
 		_, err := testDB.HardDelete(context.TODO(), sq.QB{
 			Table:    User{},
-			Where:    sq.And(userCol.Name, sq.Like("TestModelQueryRowSlice")),
+			Where:    sq.And(userCol.Name, sq.Like("TestModelQuerySlice")),
 			CheckSQL: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 	}
 	{
 		var users  []User
-		err := testDB.ModelQueryRowSlice(context.TODO(), &users, sq.QB{
-			Where: sq.And(userCol.Name, sq.Like("TestModelQueryRowSlice")),
+		err := testDB.ModelQuerySlice(context.TODO(), &users, sq.QB{
+			Where: sq.And(userCol.Name, sq.Like("TestModelQuerySlice")),
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, len(users), 0)
@@ -565,7 +565,7 @@ func (suite TestDBSuite) TestModelQueryRowSlice() {
 				Table: TableUser{},
 				Insert: []sq.Insert{
 					sq.Value(userCol.ID, sq.UUID()),
-					sq.Value(userCol.Name, "TestModelQueryRowSlice_" + strconv.Itoa(i)),
+					sq.Value(userCol.Name, "TestModelQuerySlice_" + strconv.Itoa(i)),
 					sq.Value(userCol.Age, i),
 				},
 				CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
@@ -578,9 +578,9 @@ func (suite TestDBSuite) TestModelQueryRowSlice() {
 	}
 	{
 		 users := []User{}
-		 err := testDB.ModelQueryRowSlice(context.TODO(), &users, sq.QB{
+		 err := testDB.ModelQuerySlice(context.TODO(), &users, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL ORDER BY `name` ASC"},
-			Where: sq.And(userCol.Name, sq.Like("TestModelQueryRowSlice")),
+			Where: sq.And(userCol.Name, sq.Like("TestModelQuerySlice")),
 			OrderBy: []sq.OrderBy{{userCol.Name, sq.ASC}},
 		})
 		assert.NoError(t, err)
@@ -588,7 +588,7 @@ func (suite TestDBSuite) TestModelQueryRowSlice() {
 		 	user := users[i]
 			 assert.NoError(t, err)
 			 assert.Equal(t, len(user.ID), 36)
-			 assert.Equal(t, user.Name, "TestModelQueryRowSlice_" + strconv.Itoa(i))
+			 assert.Equal(t, user.Name, "TestModelQuerySlice_" + strconv.Itoa(i))
 			 assert.Equal(t, user.Age, i)
 			 assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
 			 assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)

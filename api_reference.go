@@ -25,9 +25,10 @@ type APIDatabase interface {
 	QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error)
 
 	// 查询单条数据并转换为 Model slice
-	ModelQueryRow(ctx context.Context, ptr Model, qb QB) (has bool , err error)
+
+	(ctx context.Context, ptr Model, qb QB) (has bool , err error)
 	// 查询多条数据并转换为 Model slice
-	ModelQueryRowSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error)
+	ModelQuerySlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error)
 	// 查询单条数据并转换为 Relation
 	RelationQueryRow(ctx context.Context, ptr Relation, qb QB) (has bool, err error)
 	// 查询多条数据并转换为 Relation slice
