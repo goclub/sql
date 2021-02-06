@@ -59,19 +59,20 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	qb.SQLChecker = storager.getSQLChecker()
 	return coreExecQB(ctx, storager, qb, Statement("").Enum().Insert)
 }
-// InsertModel
+
 func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
-	return coreInsertModel(ctx, db, ptr)
+	return coreInsertModel(ctx, db, ptr, checkSQL...)
 }
 func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
-	return coreInsertModel(ctx, tx, ptr)
+	return coreInsertModel(ctx, tx, ptr, checkSQL...)
 }
 
-func coreInsertModel(ctx context.Context, storager Storager, ptr Model) (err error) {
+func coreInsertModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
 	}
+	qb.CheckSQL = checkSQL
 	qb.SQLChecker = storager.getSQLChecker()
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
