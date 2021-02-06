@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"log"
 	"reflect"
+	"strings"
 )
 
 type Database struct {
@@ -386,6 +387,28 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 		}
 	}
 	return
+}
+func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
+	var databaseName string
+	_, err = db.QueryRowScan(ctx, QB{Raw: Raw{"SELECT DATABASE()", nil}}, &databaseName) ; if err != nil {
+		return
+	}
+	if strings.HasPrefix(databaseName, "test_") == false {
+		return errors.New("ClearTestData only support delete test database")
+	}
+	return
+}
+func (db *Database) ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error) {
+	err = db.checkIsTestDatabase(ctx) ; if err != nil {
+		return
+	}
+	return db.HardDelete(ctx, qb)
+}
+func (db *Database) ClearTestModel(ctx context.Context, model Model, checkSQL ...string) (result sql.Result, err error) {
+	err = db.checkIsTestDatabase(ctx) ; if err != nil {
+		return
+	}
+	return db.HardDeleteModel(ctx, model, checkSQL...)
 }
 func (db *Database) HardDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return coreHardDelete(ctx, db, qb)
