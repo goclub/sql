@@ -14,6 +14,9 @@ type Database struct {
 	Core *sqlx.DB
 	sqlChecker SQLChecker
 }
+func (db *Database) Ping() error {
+	return db.Core.Ping()
+}
 func (db *Database) getCore() (core StoragerCore) {
 	return db.Core
 }

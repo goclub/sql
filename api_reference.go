@@ -6,6 +6,8 @@ import (
 )
 
 type APIDatabase interface {
+	// 检查连通性
+	Ping() error
 	// 配置 SQL 验证器
 	SetSQLChecker(sqlChecker SQLChecker)
 	// 关闭数据库连接
