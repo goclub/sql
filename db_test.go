@@ -18,8 +18,7 @@ import (
 var testDB *sq.Database
 func init () {
 
-	db, dbClose, err := sq.Open("mysql", sq.DataSourceName{
-		DriverName: "mysql",
+	db, dbClose, err := sq.Open("mysql", sq.DataSource{
 		User: "root",
 		Password:"somepass",
 		Host: "127.0.0.1",

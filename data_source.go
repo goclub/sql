@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-type DataSourceName struct {
-	DriverName string
-	User string
-	Password string
-	Host string
-	Port string
-	DB string
+type DataSource struct {
+	User string `yaml:"user"`
+	Password string `yaml:"password"`
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+	DB string `yaml:"db"`
+	// DefaultQuery
 	// 	map[string]string{
 	// 	"charset": "utf8",
 	// 	"parseTime": "True",
@@ -19,7 +19,7 @@ type DataSourceName struct {
 	// }
 	Query map[string]string
 }
-func (config DataSourceName) String() (dataSourceName string) {
+func (config DataSource) String() (dataSourceName string) {
 	configList := []string{
 		config.User,
 		":",
