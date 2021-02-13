@@ -64,9 +64,9 @@ type APIDatabase interface {
 	Exec(ctx context.Context, query string, values []interface{}) (result sql.Result, err error)
 
 	// 开启事务
-	Transaction(ctx context.Context, handle func (tx *Transaction) TxResult) (isRollback bool, err error)
+	BeginTransaction(ctx context.Context, handle func (tx *Transaction) TxResult) (isRollback bool, err error)
 	// 开启自定义级别的事务
-	TransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (isRollback bool, err error)
+	BeginTransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (isRollback bool, err error)
 }
 func verifyDoc() {
 	db := &Database{}
