@@ -3,10 +3,10 @@ package sq_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
 	sq "github.com/goclub/sql"
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"strconv"
@@ -1086,7 +1086,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		isRollback, err := testDB.BeginTransaction(context.TODO(), func(tx *sq.Transaction) sq.TxResult {
+		isRollback, err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
 			execed = true
 			err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_1"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
 			assert.NoError(t, err)
@@ -1114,7 +1114,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		isRollback, err := testDB.BeginTransaction(context.TODO(), func(tx *sq.Transaction) sq.TxResult {
+		isRollback, err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
 			execed = true
 			err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_2"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
 			assert.NoError(t, err)
@@ -1143,7 +1143,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		isRollback, err := testDB.BeginTransaction(context.TODO(), func(tx *sq.Transaction) sq.TxResult {
+		isRollback, err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
 			execed = true
 			err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_3"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
 			assert.NoError(t, err)
