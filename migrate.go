@@ -2,7 +2,6 @@ package sq
 
 import (
 	"errors"
-	ge "github.com/og/x/error"
 	"log"
 	"reflect"
 	"strconv"
@@ -54,7 +53,9 @@ func ExecMigrate(db *Database, ptr interface{}) {
 		}
 		count := 0
 		row.Next()
-		ge.Check(row.Scan(&count))
+		err = row.Scan(&count) ; if err != nil {
+			panic(err)
+		}
 		if count == 0 {} else if count == 1 {
 			continue
 		} else {
@@ -62,7 +63,9 @@ func ExecMigrate(db *Database, ptr interface{}) {
 		}
 		log.Print("[goclub_sql migrate]exec: " +methodName)
 		rValue.MethodByName(methodName).Call([]reflect.Value{miValue})
-		_, err = db.Core.Exec("INSERT INTO goclub_sql_migrations (name) VALUES(?)", methodName) ; ge.Check(err)
+		_, err = db.Core.Exec("INSERT INTO goclub_sql_migrations (name) VALUES(?)", methodName)  ; if err != nil {
+			panic(err)
+		}
 		log.Printf("[goclub_sql migrate]done: " +methodName)
 	}
 }

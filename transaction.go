@@ -53,12 +53,15 @@ func (result TxResult) Error() string {
 	}
 }
 
-func (db *Database) BeginTransaction(ctx context.Context, handle func (tx *Transaction) TxResult) (err error) {
-	return db.BeginTransactionOpts(ctx, handle, nil)
-}
 var ErrTransActionIsRollback = errors.New("goclub/sql: transaction rollback")
-func (db *Database) BeginTransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (err error) {
-	coreTx, err := db.Core.BeginTxx(ctx, opts) ; if err != nil {
+func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
+	return db.BeginTransactionOpt(ctx, sql.TxOptions{
+		Isolation: level,
+		ReadOnly: false,
+	}, handle)
+}
+func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) ( err error) {
+	coreTx, err := db.Core.BeginTxx(ctx, &opt) ; if err != nil {
 		return
 	}
 	tx := newTx(coreTx, db.sqlChecker)
