@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 type Transaction struct {
@@ -52,10 +53,11 @@ func (result TxResult) Error() string {
 	}
 }
 
-func (db *Database) BeginTransaction(ctx context.Context, handle func (tx *Transaction) TxResult) (isRollback bool, err error) {
+func (db *Database) BeginTransaction(ctx context.Context, handle func (tx *Transaction) TxResult) (err error) {
 	return db.BeginTransactionOpts(ctx, handle, nil)
 }
-func (db *Database) BeginTransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (isRollback bool, err error) {
+var ErrTransActionIsRollback = errors.New("goclub/sql: transaction rollback")
+func (db *Database) BeginTransactionOpts(ctx context.Context, handle func (tx *Transaction) TxResult, opts *sql.TxOptions) (err error) {
 	coreTx, err := db.Core.BeginTxx(ctx, opts) ; if err != nil {
 		return
 	}
@@ -68,11 +70,11 @@ func (db *Database) BeginTransactionOpts(ctx context.Context, handle func (tx *T
 		return
 	} else {
 		err = tx.Core.Rollback() ; if err != nil {
-			return true, err
+			return err
 		}
 		if txResult.withError != nil {
-			return true, txResult.withError
+			return txResult.withError
 		}
-		return true, nil
+		return ErrTransActionIsRollback
 	}
 }
