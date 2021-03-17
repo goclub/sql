@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 )
 
 type Transaction struct {
@@ -52,13 +53,14 @@ func (result TxResult) Error() string {
 	}
 }
 
-func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (isRollback bool, err error) {
+var ErrTransActionIsRollback = errors.New("goclub/sql: transaction rollback")
+func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
 	return db.BeginTransactionOpt(ctx, sql.TxOptions{
 		Isolation: level,
 		ReadOnly: false,
 	}, handle)
 }
-func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (isRollback bool, err error) {
+func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) ( err error) {
 	coreTx, err := db.Core.BeginTxx(ctx, &opt) ; if err != nil {
 		return
 	}
@@ -71,11 +73,11 @@ func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, 
 		return
 	} else {
 		err = tx.Core.Rollback() ; if err != nil {
-			return true, err
+			return err
 		}
 		if txResult.withError != nil {
-			return true, txResult.withError
+			return txResult.withError
 		}
-		return true, nil
+		return ErrTransActionIsRollback
 	}
 }

@@ -252,7 +252,7 @@ func (qb QB) SQL(statement Statement) Raw {
 				sets = append(sets, data.Raw.Query)
 				values = append(values, data.Raw.Values...)
 			} else {
-				sets = append(sets, data.Column.wrapField()+"=?")
+				sets = append(sets, data.Column.wrapField()+"= ?")
 				values = append(values, data.Value)
 			}
 		}

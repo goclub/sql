@@ -655,7 +655,7 @@ func (suite TestDBSuite) TestUpdate() {
 				Update: []sq.Update{
 					sq.Set(userCol.Name, "TestUpdate_changed"),
 				},
-				CheckSQL: []string{"UPDATE `user` SET `name`=? WHERE `id` = ? AND `deleted_at` IS NULL"},
+				CheckSQL: []string{"UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
 		affected, err := result.RowsAffected()
@@ -727,7 +727,7 @@ func (suite TestDBSuite) TestUpdateModel() {
 		}
 		result, err := testDB.UpdateModel(context.TODO(), &user, []sq.Update{
 			sq.Set(userCol.Name, "TestUpdateModel_changed"),
-		}, nil, "UPDATE `user` SET `name`=? WHERE `id` = ? AND `deleted_at` IS NULL",
+		}, nil, "UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL",
 		)
 		assert.NoError(t, err)
 		affected, err := result.RowsAffected()
@@ -1086,14 +1086,14 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		isRollback, err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		 err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted,func(tx *sq.Transaction) sq.TxResult {
 			execed = true
 			err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_1"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
 			assert.NoError(t, err)
 			return tx.Commit()
 		})
 		assert.True(t, execed)
-		assert.False(t, isRollback)
+		assert.False(t, errors.Is(err, sq.ErrTransActionIsRollback))
 		assert.NoError(t, err)
 	}
 	{
@@ -1114,15 +1114,15 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		isRollback, err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted,func(tx *sq.Transaction) sq.TxResult {
 			execed = true
 			err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_2"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
 			assert.NoError(t, err)
 			return tx.Rollback()
 		})
 		assert.True(t, execed)
-		assert.True(t, isRollback)
-		assert.NoError(t, err)
+		assert.True(t, errors.Is(err, sq.ErrTransActionIsRollback))
+
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
@@ -1143,14 +1143,13 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		isRollback, err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		 err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
 			execed = true
 			err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_3"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
 			assert.NoError(t, err)
 			return tx.RollbackWithError(errors.New("custom error"))
 		})
 		assert.True(t, execed)
-		assert.True(t, isRollback)
 		assert.EqualError(t, err, "custom error")
 	}
 	{
