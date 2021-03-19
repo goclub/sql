@@ -16,3 +16,14 @@
 GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性能不高的 SQL。虽然合理使用也可以写出高效SQL，但使用者在使用 ORM 的时候容易忽略最终运行的SQL是什么。
 
 [goclub/sql](https://github.com/goclub/sql) 提供介于手写 sql 和 ORM 之间的使用体验。
+
+
+## 连接数据库
+
+goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函数。 `dbClose` 等同于 `db.Close`
+
+[connect|embed](./exmaple/connect/main.go)
+
+
+## 通过迁移创建表
+

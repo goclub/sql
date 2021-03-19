@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-type DataSource struct {
+type MysqlDataSource struct {
 	User string `yaml:"user"`
 	Password string `yaml:"password"`
 	Host string `yaml:"host"`
@@ -19,7 +19,7 @@ type DataSource struct {
 	// }
 	Query map[string]string
 }
-func (config DataSource) String() (dataSourceName string) {
+func (config MysqlDataSource) String() (dataSourceName string) {
 	configList := []string{
 		config.User,
 		":",

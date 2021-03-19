@@ -18,7 +18,7 @@ import (
 var testDB *sq.Database
 func init () {
 
-	db, dbClose, err := sq.Open("mysql", sq.DataSource{
+	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
 		Password:"somepass",
 		Host: "127.0.0.1",
@@ -1093,7 +1093,7 @@ func (suite TestDBSuite) TestTransaction() {
 			return tx.Commit()
 		})
 		assert.True(t, execed)
-		assert.False(t, errors.Is(err, sq.ErrTransActionIsRollback))
+		assert.False(t, errors.Is(err, sq.ErrTransactionIsRollback))
 		assert.NoError(t, err)
 	}
 	{
@@ -1121,7 +1121,7 @@ func (suite TestDBSuite) TestTransaction() {
 			return tx.Rollback()
 		})
 		assert.True(t, execed)
-		assert.True(t, errors.Is(err, sq.ErrTransActionIsRollback))
+		assert.True(t, errors.Is(err, sq.ErrTransactionIsRollback))
 
 	}
 	{

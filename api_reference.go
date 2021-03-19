@@ -7,7 +7,7 @@ import (
 
 type APIDatabase interface {
 	// 检查连通性
-	Ping() error
+	Ping(ctx context.Context) error
 	// 配置 SQL 验证器
 	SetSQLChecker(sqlChecker SQLChecker)
 	// 关闭数据库连接
