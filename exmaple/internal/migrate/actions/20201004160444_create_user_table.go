@@ -2,11 +2,11 @@ package migrateActions
 
 import sq "github.com/goclub/sql"
 
-type Migrate struct {
-
-}
 func (Migrate) Migrate20201004160444CreateUserTable(mi sq.Migrate) {
-
+	// 还可以使用 mi.Exec
+	// mi.Exec("CREATE TABLE `demo` ( `id` int(11) unsigned NOT NULL AUTO_INCREMENT, PRIMARY KEY (`id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8;")
+	// 或者直接使用 mi.DB
+	// mi.DB
 	mi.CreateTable(sq.CreateTableQB{
 		TableName: "user",
 		PrimaryKey: []string{"id"},

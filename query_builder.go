@@ -41,6 +41,7 @@ type QB struct {
 	Index string
 
 	Update []Update
+	// 可使用 sq.Value() 快速创建 sq.Insert []Insert{sq.Value(),sq.Value()}
 	Insert []Insert
 
 	Where []Condition

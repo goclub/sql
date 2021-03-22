@@ -37,9 +37,7 @@ type Raw struct {
 	Values []interface{}
 }
 type Model interface {
-	TableName() string
-	SoftDeleteWhere() Raw
-	SoftDeleteSet() Raw
+	Tabler
 	BeforeCreate() error
 	AfterCreate(result sql.Result) error
 	BeforeUpdate() error

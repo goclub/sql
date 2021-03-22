@@ -22,8 +22,56 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 
 goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函数。 `dbClose` 等同于 `db.Close`
 
-[connect|embed](./exmaple/connect/main.go)
+[connect|embed](./exmaple/internal/connect/main.go)
 
 
 ## 通过迁移创建表
 
+> 新建并编辑迁移命令 
+
+[创建用户迁移文件|embed](./example/internal/migrate/actions/20201004160444_create_user_table.go)
+
+> 创建入口文件
+
+[入口|embed](./example/internal/migrate/main.go)
+
+## 准备表
+
+定义一个结构体需要满足 `sq.Tabler` 接口
+
+```go
+type Tabler interface {
+	TableName() string
+	SoftDeleteWhere() Raw
+	SoftDeleteSet() Raw
+}
+```
+
+`SoftDeleteWhere` `SoftDeleteSet` 可以通过组合 `sq.SoftDeleteDeletedAt` `sq.SoftDeleteDeleteTime` `sq.SoftDeleteIsDeleted` 
+更快的定义符合 `sq.Tabler` 的结构体 
+
+[user|embed](./example/internal/pd/user.go)
+
+## 插入数据
+
+> INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)
+
+[insert|embed](./example/internal/insert/main.go)
+
+## 基于 Model 插入数据
+
+大部分场景下使用 `db.Insert` 插入数据有点繁琐。基于 `sq.Model` 操作数据会方便很多。
+
+Model 的接口定义是
+
+```go
+type Model interface {
+	Tabler
+	BeforeCreate() error
+	AfterCreate(result sql.Result) error
+	BeforeUpdate() error
+	AfterUpdate() error
+}
+```
+
+`Model` 组合了 Tabler，并增加了四个生命周期hook。一般最常用的是  `BeforeCreate`
