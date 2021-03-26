@@ -52,6 +52,7 @@ type Relation interface {
 
 type WithoutSoftDelete struct {}
 func (WithoutSoftDelete) SoftDeleteWhere() Raw {return Raw{}}
+func (WithoutSoftDelete) SoftDeleteSet() Raw   {return Raw{}}
 
 type SoftDeleteDeletedAt struct {}
 func (SoftDeleteDeletedAt) SoftDeleteWhere() Raw {return Raw{"`deleted_at` IS NULL", nil}}
