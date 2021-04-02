@@ -64,14 +64,14 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return coreExecQB(ctx, storager, qb, Statement("").Enum().Insert)
 }
 
-func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	return coreInsertModel(ctx, db, ptr, checkSQL...)
 }
-func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error) {
+func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	return coreInsertModel(ctx, tx, ptr, checkSQL...)
 }
 
-func coreInsertModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (err error) {
+func coreInsertModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	qb := QB{
 		Table: ptr,
@@ -90,7 +90,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, checkSQL
 	})
 	raw := qb.SQLInsert()
 	query, values := raw.Query, raw.Values
-	result, err := storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {
+	result, err = storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {
 		return
 	}
 	err = ptr.AfterCreate(result) ; if err != nil {

@@ -43,6 +43,8 @@ type QB struct {
 	Update []Update
 	// 可使用 sq.Value() 快速创建 sq.Insert []Insert{sq.Value(),sq.Value()}
 	Insert []Insert
+	// INSERT IGNORE INTO
+	UseInsertIgnoreInto bool
 
 	Where []Condition
 	WhereOR [][]Condition
@@ -262,7 +264,12 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push("DELETE FROM")
 		sqlList.Push(qb.tableName)
 	}, func(_Insert []int) {
-			sqlList.Push("INSERT INTO")
+			if qb.UseInsertIgnoreInto {
+				sqlList.Push("INSERT IGNORE INTO")
+			} else {
+				sqlList.Push("INSERT INTO")
+			}
+
 			sqlList.Push(qb.tableName)
 			var columns []string
 			for _, item := range qb.Insert {
