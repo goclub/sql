@@ -16,7 +16,7 @@ type APIDatabase interface {
 	// 插入数据
 	Insert(ctx context.Context, qb QB) (result sql.Result, err error)
 	// 基于 Model 创建数据
-	InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (err error)
+	InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error)
 
 	// 查询单行多列 类似 sql.Row{}.Scan()
 	QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error)
