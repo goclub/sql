@@ -787,3 +787,16 @@ func (suite TestQBSuite) TestHaving() {
 	assert.Equal(t, "SELECT `name`, count(*) AS count FROM `user` WHERE `deleted_at` IS NULL GROUP BY `name` HAVING `count` > ?", raw.Query)
 	assert.Equal(t, []interface{}{1}, raw.Values)
 }
+func (suite TestQBSuite) TestInsert() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: User{},
+		UseInsertIgnoreInto: true,
+		Insert: []sq.Insert{
+			sq.Value("name", "nimoc"),
+		},
+	}
+	raw := qb.SQLInsert()
+	assert.Equal(t, "INSERT IGNORE INTO `user` (`name`) VALUES (?)", raw.Query)
+	assert.Equal(t, []interface{}{"nimoc"}, raw.Values)
+}

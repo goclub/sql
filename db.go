@@ -65,17 +65,24 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 }
 
 func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, db, ptr, checkSQL...)
+	return coreInsertModel(ctx, db, ptr,  QB{}, checkSQL...)
 }
 func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, tx, ptr, checkSQL...)
+	return coreInsertModel(ctx, tx, ptr, QB{}, checkSQL...)
+}
+func (db *Database) InsertModelBaseOnQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+	return coreInsertModel(ctx, db, ptr,  QB{}, checkSQL...)
+}
+func (tx *Transaction) InsertModelBaseOnQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+	return coreInsertModel(ctx, tx, ptr,  QB{}, checkSQL...)
 }
 
-func coreInsertModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB, checkSQL ...string) (result sql.Result, err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
-	qb := QB{
-		Table: ptr,
+	if qb.Table != nil {
+		log.Print("InsertModelBaseOnQB(ctx, qb, model) qb.Table need be nil")
 	}
+	qb.Table = ptr
 	qb.CheckSQL = checkSQL
 	qb.SQLChecker = storager.getSQLChecker()
 	rValue := reflect.ValueOf(ptr)
