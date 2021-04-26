@@ -24,7 +24,7 @@ func init () {
 		Host: "127.0.0.1",
 		Port:"3306",
 		DB: "test_goclub_sql",
-	}.String()) ; if err != nil {
+	}.FormatDSN()) ; if err != nil {
 		panic(err)
 	}
 	testDB = db

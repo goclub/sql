@@ -17,9 +17,9 @@ type MysqlDataSource struct {
 	// 	"parseTime": "True",
 	// 	"loc": "Local",
 	// }
-	Query map[string]string
+	Query map[string]string `yaml:"query"`
 }
-func (config MysqlDataSource) String() (dataSourceName string) {
+func (config MysqlDataSource) FormatDSN() (dataSourceName string) {
 	configList := []string{
 		config.User,
 		":",
