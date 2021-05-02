@@ -70,11 +70,11 @@ func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...stri
 func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
 	return coreInsertModel(ctx, tx, ptr, QB{}, checkSQL...)
 }
-func (db *Database) InsertModelBaseOnQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, db, ptr,  QB{}, checkSQL...)
+func (db *Database) InsertModelUseQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+	return coreInsertModel(ctx, db, ptr,  qb, checkSQL...)
 }
-func (tx *Transaction) InsertModelBaseOnQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, tx, ptr,  QB{}, checkSQL...)
+func (tx *Transaction) InsertModelUseQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+	return coreInsertModel(ctx, tx, ptr,  qb, checkSQL...)
 }
 
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB, checkSQL ...string) (result sql.Result, err error) {
@@ -117,8 +117,8 @@ func eachField(elemValue reflect.Value, elemType reflect.Type, handle func(colum
 		}
 		if !hasDBTag {continue}
 		if column == "" {continue}
-		// `sq:"ignore"`
-		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
+		// `sq:"ignoreInsert"`
+		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnoreInsert()
 		if shouldIgnoreInsert {continue}
 		// created updated time.Time
 		for _, timeField := range createAndUpdateTimeField {
@@ -354,8 +354,8 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 		for _, timeField := range updateTimeField {
 			if fieldType.Name == timeField {
 				setTimeNow(fieldValue, fieldType)
-				// UpdatedAt time.Time `sq:"ignore"`
-				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
+				// UpdatedAt time.Time `sq:"ignoreUpdate"`
+				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnoreUpdate()
 				if !shouldIgnore {
 					updateData = append(updateData, Update{
 						Column: Column(column),

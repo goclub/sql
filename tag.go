@@ -9,10 +9,19 @@ import (
 type Tag struct {
 	Value string
 }
-func (t Tag) IsIgnore() bool {
+func (t Tag) IsIgnoreUpdate() bool {
 	sqTags := strings.Split(t.Value, "|")
 	for _, tag := range sqTags {
-		if tag == "ignore" {
+		if tag == "ignoreUpdate" {
+			return true
+		}
+	}
+	return false
+}
+func (t Tag) IsIgnoreInsert() bool {
+	sqTags := strings.Split(t.Value, "|")
+	for _, tag := range sqTags {
+		if tag == "ignoreInsert" {
 			return true
 		}
 	}

@@ -18,7 +18,7 @@ type APIDatabase interface {
 	// 基于 Model 创建数据
 	InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error)
 	// 使用 Model 创建数据（基于传入的QB）
-	InsertModelBaseOnQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error)
+	InsertModelUseQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error)
 	// 查询单行多列 类似 sql.Row{}.Scan()
 	QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error)
 	// 查询单行多列并转换为结构体

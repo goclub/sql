@@ -14,7 +14,7 @@ import (
 type TableUser struct {
 	// 通过 goclub/sql 提供的 SoftDeleteDeletedAt 表明该表存在软删字段，还可以使用 sq.SoftDeleteIsDeleted  sq.SoftDeleteDeleteTime
 	// 它们的功能是让 TableUser 支持 SoftDeleteWhere() SoftDeleteSet() 方法
-	sq.SoftDeleteDeletedAt
+	sq.SoftDeletedAt
 }
 // 通过 TableName() 配置表名
 func (TableUser) TableName() string {return "user"}
@@ -75,7 +75,7 @@ func (UserWithAddress) RelationJoin() []sq.Join {
 type TableUserAddress struct {
 	// 通过 goclub/sql 提供的 SoftDeleteDeletedAt 表明该表存在软删字段，还可以使用 sq.SoftDeleteIsDeleted  sq.SoftDeleteDeleteTime
 	// 它们的功能是让 TableUser 支持 SoftDeleteWhere() SoftDeleteSet() 方法
-	sq.SoftDeleteDeletedAt
+	sq.SoftDeletedAt
 }
 type UserAddress struct {
 	UserID IDUser `db:"user_id"`
