@@ -2,7 +2,7 @@ package sq
 
 import (
 	"database/sql"
-	"github.com/pkg/errors"
+	"errors"
 	"strings"
 )
 
@@ -57,18 +57,6 @@ type primaryIDInfo struct {
 	HasID bool
 	IDValue interface{}
 }
-func primaryKeyWhere(ptr Model, primaryIDInfo primaryIDInfo, typeName string) ([]Condition, error) {
-	if primaryIDInfo.HasID {
-		return []Condition{{"id", Equal(primaryIDInfo.IDValue)}}, nil
-	} else {
-		switch UpdateModeler := ptr.(type) {
-		case WherePrimaryKeyer:
-			return UpdateModeler.WherePrimaryKey(), nil
-		default:
-			return nil, errors.New(typeName + " must has method UpdateModelWherePrimaryKey() sq.Condition or struct tag `db:\"id\"`")
-		}
-	}
-}
 func CheckRowScanErr(scanErr error) (has bool, err error) {
 	if scanErr != nil {
 		if scanErr == sql.ErrNoRows {
@@ -78,6 +66,13 @@ func CheckRowScanErr(scanErr error) (has bool, err error) {
 		}
 	} else {
 		has = true
+	}
+	return
+}
+func safeGetPrimaryKey(ptr Model) (primaryKey []Condition, err error){
+	primaryKey = ptr.PrimaryKey()
+	if len(primaryKey) == 0 {
+		return nil, errors.New("goclub/sql: PrimaryKey() can not return empty []sq.Condition")
 	}
 	return
 }

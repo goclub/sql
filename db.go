@@ -117,8 +117,8 @@ func eachField(elemValue reflect.Value, elemType reflect.Type, handle func(colum
 		}
 		if !hasDBTag {continue}
 		if column == "" {continue}
-		// `sq:"ignoreInsert"`
-		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnoreInsert()
+		// `sq:"ignore"`
+		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
 		if shouldIgnoreInsert {continue}
 		// created updated time.Time
 		for _, timeField := range createAndUpdateTimeField {
@@ -321,12 +321,18 @@ func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 }
 
 func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreUpdateModel(ctx, db, ptr, updateData, where, checkSQL...)
+	return coreUpdateModel(ctx, db, QB{}, ptr, updateData, where, checkSQL...)
 }
 func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreUpdateModel(ctx, tx, ptr, updateData, where, checkSQL...)
+	return coreUpdateModel(ctx, tx, QB{}, ptr, updateData, where, checkSQL...)
 }
-func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error) {
+func (db *Database) UpdateModelUseQB(ctx context.Context, qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
+	return coreUpdateModel(ctx, db, qb, ptr, updateData, where, checkSQL...)
+}
+func (tx *Transaction) UpdateModelUseQB(ctx context.Context, qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
+	return coreUpdateModel(ctx, tx, qb, ptr, updateData, where, checkSQL...)
+}
+func coreUpdateModel(ctx context.Context, storager Storager, qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -334,28 +340,17 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
-	primaryIDInfo := struct {
-		HasID bool
-		IDValue interface{}
-	}{}
 	for i:=0;i<elemType.NumField();i++ {
 		fieldType := elemType.Field(i)
 		fieldValue := elemValue.Field(i)
 		column, hasDBTag := fieldType.Tag.Lookup("db")
 		if !hasDBTag {continue}
-
-		// find primary id
-		if column == "id" {
-			primaryIDInfo.HasID = true
-			primaryIDInfo.IDValue = fieldValue.Interface()
-		}
-
 		//  updated time.Time
 		for _, timeField := range updateTimeField {
 			if fieldType.Name == timeField {
 				setTimeNow(fieldValue, fieldType)
-				// UpdatedAt time.Time `sq:"ignoreUpdate"`
-				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnoreUpdate()
+				// UpdatedAt time.Time `sq:"ignore"`
+				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
 				if !shouldIgnore {
 					updateData = append(updateData, Update{
 						Column: Column(column),
@@ -375,15 +370,13 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 			}
 		}
 	}
-	primaryKeyWhere, err := primaryKeyWhere(ptr, primaryIDInfo, elemType.Name()) ; if err != nil {
-		return
+	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
+	    return
 	}
-	wheres := append(primaryKeyWhere, where...)
-	qb := QB{
-		Table: ptr,
-		Update: updateData,
-		Where: wheres,
-	}
+	wheres := append(primaryKey, where...)
+	qb.Table = ptr
+	qb.Update = updateData
+	qb.Where = wheres
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
@@ -443,31 +436,12 @@ func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, chec
 	if rType.Kind() != reflect.Ptr {
 		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
 	}
-	elemValue := rValue.Elem()
-	elemType := rType.Elem()
-	primaryIDInfo := struct {
-		HasID bool
-		IDValue interface{}
-	}{}
-	for i:=0;i<elemType.NumField();i++ {
-		fieldType := elemType.Field(i)
-		fieldValue := elemValue.Field(i)
-		column, hasDBTag := fieldType.Tag.Lookup("db")
-		if !hasDBTag {
-			continue
-		}
-		// find primary id
-		if column == "id" {
-			primaryIDInfo.HasID = true
-			primaryIDInfo.IDValue = fieldValue.Interface()
-		}
-	}
-	primaryKeyWhere, err := primaryKeyWhere(ptr, primaryIDInfo, elemType.Name()) ; if err != nil {
+	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
 	}
 	qb := QB{
 		Table: ptr,
-		Where: primaryKeyWhere,
+		Where: primaryKey,
 		Limit: 1,
 	}
 	qb.CheckSQL = checkSQL
@@ -500,31 +474,12 @@ func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, chec
 	if rType.Kind() != reflect.Ptr {
 		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
 	}
-	elemValue := rValue.Elem()
-	elemType := rType.Elem()
-	primaryIDInfo := struct {
-		HasID bool
-		IDValue interface{}
-	}{}
-	for i:=0;i<elemType.NumField();i++ {
-		fieldType := elemType.Field(i)
-		fieldValue := elemValue.Field(i)
-		column, hasDBTag := fieldType.Tag.Lookup("db")
-		if !hasDBTag {
-			continue
-		}
-		// find primary id
-		if column == "id" {
-			primaryIDInfo.HasID = true
-			primaryIDInfo.IDValue = fieldValue.Interface()
-		}
-	}
-	primaryKeyWhere, err := primaryKeyWhere(ptr, primaryIDInfo, elemType.Name()) ; if err != nil {
+	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
 	}
 	qb := QB{
 		Table: ptr,
-		Where: primaryKeyWhere,
+		Where: primaryKey,
 		Update: []Update{{Raw:ptr.SoftDeleteSet(),}},
 		Limit: 1,
 	}

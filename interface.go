@@ -8,9 +8,7 @@ import (
 )
 
 
-type WherePrimaryKeyer interface {
-	WherePrimaryKey() []Condition
-}
+
 type Tabler interface {
 	TableName() string
 	SoftDeleteWhere() Raw
@@ -38,6 +36,7 @@ type Raw struct {
 }
 type Model interface {
 	Tabler
+	PrimaryKey() []Condition
 	BeforeCreate() error
 	AfterCreate(result sql.Result) error
 	BeforeUpdate() error

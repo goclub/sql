@@ -44,6 +44,8 @@ type APIDatabase interface {
 	Update(ctx context.Context, qb QB) (result sql.Result, err error)
 	// 基于 Model 更新数据
 	UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error)
+	// 基于 Model 更新数据(基于传入的qb)
+	UpdateModelUseQB(ctx context.Context,qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error)
 
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
 	ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error)

@@ -33,6 +33,9 @@ type User struct {
 	// 通过 sq.DefaultLifeCycle 可配置默认的生命周期触发函数
 	sq.DefaultLifeCycle
 }
+func (u User) PrimaryKey() []sq.Condition {
+	return sq.And(u.Column().ID, sq.Equal(u.ID))
+}
 // 因为 user 表的 id 字段是 uuid，所以在 User 的 BeforeCreate 生命周期去创建 id
 func (u *User) BeforeCreate() error {
 	if len(u.ID) == 0 {
