@@ -92,7 +92,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB, c
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
-	eachField(elemValue, elemType, func(column string, fieldType reflect.StructField, fieldValue reflect.Value) {
+	insertEachField(elemValue, elemType, func(column string, fieldType reflect.StructField, fieldValue reflect.Value) {
 		qb.Insert = append(qb.Insert, Insert{Column: Column(column), Value: fieldValue.Interface()})
 	})
 	raw := qb.SQLInsert()
@@ -105,20 +105,20 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB, c
 	}
 	return
 }
-func eachField(elemValue reflect.Value, elemType reflect.Type, handle func(column string, fieldType reflect.StructField, fieldValue reflect.Value)) {
+func insertEachField(elemValue reflect.Value, elemType reflect.Type, handle func(column string, fieldType reflect.StructField, fieldValue reflect.Value)) {
 	for i:=0;i<elemType.NumField();i++ {
 		fieldType := elemType.Field(i)
 		fieldValue := elemValue.Field(i)
 		// `db:"name"`
 		column, hasDBTag := fieldType.Tag.Lookup("db")
 		if fieldType.Anonymous == true {
-			eachField(fieldValue, fieldValue.Type(), handle)
+			insertEachField(fieldValue, fieldValue.Type(), handle)
 			continue
 		}
 		if !hasDBTag {continue}
 		if column == "" {continue}
-		// `sq:"ignore"`
-		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
+		// `sq:"ignoreCreate"`
+		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnoreCreate()
 		if shouldIgnoreInsert {continue}
 		// created updated time.Time
 		for _, timeField := range createAndUpdateTimeField {
@@ -349,8 +349,8 @@ func coreUpdateModel(ctx context.Context, storager Storager, qb QB, ptr Model, u
 		for _, timeField := range updateTimeField {
 			if fieldType.Name == timeField {
 				setTimeNow(fieldValue, fieldType)
-				// UpdatedAt time.Time `sq:"ignore"`
-				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnore()
+				// ID IDUser `sq:"ignoreUpdate"`
+				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnoreUpdate()
 				if !shouldIgnore {
 					updateData = append(updateData, Update{
 						Column: Column(column),
