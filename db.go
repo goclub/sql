@@ -117,8 +117,8 @@ func insertEachField(elemValue reflect.Value, elemType reflect.Type, handle func
 		}
 		if !hasDBTag {continue}
 		if column == "" {continue}
-		// `sq:"ignoreCreate"`
-		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnoreCreate()
+		// `sq:"ignoreInsert"`
+		shouldIgnoreInsert := Tag{fieldType.Tag.Get("sq")}.IsIgnoreInsert()
 		if shouldIgnoreInsert {continue}
 		// created updated time.Time
 		for _, timeField := range createAndUpdateTimeField {
