@@ -186,14 +186,18 @@ func (db *Database) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, er
 func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
 	return coreQuery(ctx, tx, ptr, qb)
 }
-func (db *Database) QueryModel(ctx context.Context, ptr Model)  (has bool, err error) {
-	qb := QB{}
+func (db *Database) QueryModel(ctx context.Context, ptr Model, checkSQL ...string)  (has bool, err error) {
+	qb := QB{
+		CheckSQL: checkSQL,
+	}
 	qb.Where = ptr.PrimaryKey()
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreQuery(ctx, db,ptr, qb)
 }
-func (tx *Transaction) QueryModel(ctx context.Context, ptr Model)  (has bool, err error) {
-	qb := QB{}
+func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, checkSQL ...string)  (has bool, err error) {
+	qb := QB{
+		CheckSQL: checkSQL,
+	}
 	qb.Where = ptr.PrimaryKey()
 	return coreQuery(ctx, tx, ptr, qb)
 }

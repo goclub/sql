@@ -24,7 +24,7 @@ type APIDatabase interface {
 	// 查询单行多列并转换为结构体
 	Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error)
 	// 基于 Model 查询单条数据
-	QueryModel(ctx context.Context, ptr Model)  (has bool, err error)
+	QueryModel(ctx context.Context, ptr Model, checkSQL ...string)  (has bool, err error)
 	// 查询多行并转换为结构体
 	QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error)
 	// 查询多行多列(自定义扫描)
