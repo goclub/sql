@@ -395,9 +395,9 @@ func (qb QB) SQL(statement Statement) Raw {
 			case []string:
 				checkSQL = v
 			}
-			matched, diff, stack := qb.SQLChecker.Check(checkSQL, query)
+			matched, message := qb.SQLChecker.Check(checkSQL, query)
 			if matched == false {
-				qb.SQLChecker.TrackCheckFail(diff, stack)
+				qb.SQLChecker.TrackCheckFail(checkSQL, query, message)
 			}
 		}
 	}()
