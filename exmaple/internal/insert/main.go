@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	sq "github.com/goclub/sql"
-	connectMysql "github.com/goclub/sql/exmaple/db"
-	"github.com/goclub/sql/exmaple/pd"
+	connectMysql "github.com/goclub/sql/exmaple/internal/db"
+	"github.com/goclub/sql/exmaple/internal/pd"
+
 	"log"
 )
 

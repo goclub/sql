@@ -64,18 +64,13 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return coreExecQB(ctx, storager, qb, Statement("").Enum().Insert)
 }
 
-func (db *Database) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, db, ptr,  QB{}, checkSQL...)
+func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error) {
+	return coreInsertModel(ctx, db, ptr,  qb)
 }
-func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, tx, ptr, QB{}, checkSQL...)
+func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error) {
+	return coreInsertModel(ctx, tx, ptr, qb)
 }
-func (db *Database) InsertModelUseQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, db, ptr,  qb, checkSQL...)
-}
-func (tx *Transaction) InsertModelUseQB(ctx context.Context, qb QB, ptr Model, checkSQL ...string) (result sql.Result, err error) {
-	return coreInsertModel(ctx, tx, ptr,  qb, checkSQL...)
-}
+
 
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB, checkSQL ...string) (result sql.Result, err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
@@ -153,7 +148,7 @@ func (db *Database) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) (e
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreQuerySliceScaner(ctx, db, qb, scan)
 }
-func (tx *Transaction) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) (error){
+func (tx *Transaction) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner)  (error){
 	return coreQuerySliceScaner(ctx, tx, qb, scan)
 }
 func coreQuerySliceScaner(ctx context.Context, storager Storager, qb QB, scan Scaner) (error) {
@@ -186,18 +181,12 @@ func (db *Database) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, er
 func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
 	return coreQuery(ctx, tx, ptr, qb)
 }
-func (db *Database) QueryModel(ctx context.Context, ptr Model, checkSQL ...string)  (has bool, err error) {
-	qb := QB{
-		CheckSQL: checkSQL,
-	}
+func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
 	qb.Where = ptr.PrimaryKey()
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreQuery(ctx, db,ptr, qb)
 }
-func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, checkSQL ...string)  (has bool, err error) {
-	qb := QB{
-		CheckSQL: checkSQL,
-	}
+func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
 	qb.Where = ptr.PrimaryKey()
 	return coreQuery(ctx, tx, ptr, qb)
 }
@@ -271,56 +260,20 @@ func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error
 	var i int
 	return coreQueryRowScan(ctx, storager, qb, &i)
 }
-func (db *Database) Sum(ctx context.Context, column Column ,qb QB) (value sql.NullInt64, err error) {
-	return coreSum(ctx, db, column, qb)
+func (db *Database) Sum(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
+	return coreSum(ctx, db,  column, qb)
 }
-func (tx *Transaction) Sum(ctx context.Context, column Column ,qb QB) (value sql.NullInt64, err error) {
+func (tx *Transaction) Sum(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
 	return coreSum(ctx, tx, column, qb)
 }
-func coreSum(ctx context.Context, storager Storager,column Column ,qb QB) (value sql.NullInt64, err error) {
+func coreSum(ctx context.Context, storager Storager, column Column ,qb QB) (value sql.NullInt64, err error) {
 	qb.SelectRaw = []Raw{{"SUM(" + column.wrapField() + ")", nil}}
 	_, err = coreQueryRowScan(ctx, storager, qb, &value) ; if err != nil {
 		return
 	}
 	return
 }
-// func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error){
-// 	err = qb.mustInTransaction() ; if err != nil {return}
-// 	return coreQueryModel(ctx, db, ptr, qb)
-// }
-// func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, qb QB) (has bool , err error){
-// 	return coreQueryModel(ctx, tx, ptr, qb)
-// }
-// func coreQueryModel(ctx context.Context, storager Storager,ptr Model, qb QB) (has bool , err error) {
-// 	qb.SQLChecker = storager.getSQLChecker()
-// 	qb.Table = ptr
-// 	qb.Limit = 1
-// 	return coreQueryStruct(ctx, storager, ptr, qb)
-// }
-// func (db *Database) QueryModelSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) (err error) {
-// 	err = qb.mustInTransaction() ; if err != nil {return}
-// 	return coreQueryModelSlice(ctx, db, modelSlicePtr, qb)
-// }
-// func (tx *Transaction) QueryModelSlice(ctx context.Context, modelSlicePtr interface{}, qb QB) error {
-// 	return coreQueryModelSlice(ctx, tx, modelSlicePtr, qb)
-// }
-// func coreQueryModelSlice(ctx context.Context, storager Storager, modelSlicePtr interface{}, qb QB) error {
-// 	qb.SQLChecker = storager.getSQLChecker()
-// 	ptrType := reflect.TypeOf(modelSlicePtr)
-// 	if ptrType.Kind() != reflect.Ptr {
-// 		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
-// 	}
-// 	elemType := ptrType.Elem()
-// 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
-// 	tablerInterface := reflectItemValue.Interface().(Tabler)
-// 	qb.Table = tablerInterface
-// 	raw := qb.SQLSelect()
-// 	query, values := raw.Query, raw.Values
-// 	err := storager.getCore().SelectContext(ctx, modelSlicePtr,query , values...) ; if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+
 func (db *Database) Update(ctx context.Context, qb QB) (result sql.Result, err error){
 	return coreUpdate(ctx, db, qb)
 }
@@ -336,19 +289,13 @@ func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return
 }
 
-func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreUpdateModel(ctx, db, QB{}, ptr, updateData, where, checkSQL...)
+func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error){
+	return coreUpdateModel(ctx, db, ptr, updateData, qb)
 }
-func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreUpdateModel(ctx, tx, QB{}, ptr, updateData, where, checkSQL...)
+func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error){
+	return coreUpdateModel(ctx, tx, ptr, updateData, qb)
 }
-func (db *Database) UpdateModelUseQB(ctx context.Context, qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreUpdateModel(ctx, db, qb, ptr, updateData, where, checkSQL...)
-}
-func (tx *Transaction) UpdateModelUseQB(ctx context.Context, qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error){
-	return coreUpdateModel(ctx, tx, qb, ptr, updateData, where, checkSQL...)
-}
-func coreUpdateModel(ctx context.Context, storager Storager, qb QB, ptr Model, updateData []Update, where []Condition, checkSQL ...string) (result sql.Result, err error) {
+func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -389,10 +336,9 @@ func coreUpdateModel(ctx context.Context, storager Storager, qb QB, ptr Model, u
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 	    return
 	}
-	wheres := append(primaryKey, where...)
 	qb.Table = ptr
 	qb.Update = updateData
-	qb.Where = wheres
+	qb.Where = primaryKey
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
@@ -423,11 +369,11 @@ func (db *Database) ClearTestData(ctx context.Context, qb QB) (result sql.Result
 	}
 	return db.HardDelete(ctx, qb)
 }
-func (db *Database) ClearTestModel(ctx context.Context, model Model, checkSQL ...string) (result sql.Result, err error) {
+func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
 		return
 	}
-	return db.HardDeleteModel(ctx, model, checkSQL...)
+	return db.HardDeleteModel(ctx, model, qb)
 }
 func (db *Database) HardDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return coreHardDelete(ctx, db, qb)
@@ -440,13 +386,13 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLDelete()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) HardDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreHardDeleteModel(ctx,db, ptr, checkSQL...)
+func (db *Database) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+	return coreHardDeleteModel(ctx,db, ptr, qb)
 }
-func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreHardDeleteModel(ctx, tx, ptr, checkSQL...)
+func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+	return coreHardDeleteModel(ctx, tx, ptr, qb)
 }
-func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -455,12 +401,10 @@ func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, chec
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
 	}
-	qb := QB{
-		Table: ptr,
-		Where: primaryKey,
-		Limit: 1,
-	}
-	qb.CheckSQL = checkSQL
+	qb.Table = ptr
+	qb.Where = primaryKey
+	qb.Limit = 1
+
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLDelete()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
@@ -478,13 +422,13 @@ func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLUpdate()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreSoftDeleteModel(ctx, db, ptr, checkSQL...)
+func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+	return coreSoftDeleteModel(ctx, db, ptr, qb)
 }
-func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, checkSQL ...string) (result sql.Result, err error){
-	return coreSoftDeleteModel(ctx, tx, ptr, checkSQL...)
+func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+	return coreSoftDeleteModel(ctx, tx, ptr, qb)
 }
-func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, checkSQL ...string) (result sql.Result, err error) {
+func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -493,13 +437,10 @@ func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, chec
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
 	}
-	qb := QB{
-		Table: ptr,
-		Where: primaryKey,
-		Update: []Update{{Raw:ptr.SoftDeleteSet(),}},
-		Limit: 1,
-	}
-	qb.CheckSQL = checkSQL
+	qb.Table = ptr
+	qb.Where = primaryKey
+	qb.Update = []Update{{Raw:ptr.SoftDeleteSet(),}}
+	qb.Limit = 1
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLUpdate()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)

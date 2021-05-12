@@ -51,13 +51,13 @@ func (suite TestDBSuite) TestInsert() {
 	newID := sq.UUID()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &TableUser{},
 			Where: sq.And(userCol.Name, sq.Like("TestInsert")),
 			CheckSQL:[]string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, newID),
 				sq.Value(userCol.Name, "TestInsert"),
@@ -106,7 +106,7 @@ func (suite TestDBSuite) TestInsertModel() {
 		_, err := testDB.InsertModel(
 			context.TODO(),
 			&user,
-			"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)",
+			sq.QB{CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}},
 		)
 		userID = user.ID
 		assert.NoError(t, err)
@@ -147,7 +147,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 	// 插入数据
 	{
 		user := User{Name:"TestQueryRowScan", Age: 20,}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -197,7 +197,7 @@ func (suite TestDBSuite) TestQuery() {
 	// 插入数据
 	{
 		user := User{Name:"TestQueryRowScan", Age: 20,}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -260,12 +260,12 @@ func (suite TestDBSuite) TestQuerySliceScaner() {
 	// 插入数据
 	{
 		user := User{Name:"TestQuerySliceScaner_1", Age: 20,}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
 		user := User{Name:"TestQuerySliceScaner_2", Age: 21,}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -311,12 +311,12 @@ func (suite TestDBSuite) TestQuerySlice() {
 	// 插入数据
 	{
 		user := User{Name:"TestQuerySlice_1", Age: 20,}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
 		user := User{Name:"TestQuerySlice_2", Age: 21,}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -352,7 +352,7 @@ func (suite TestDBSuite) TestCount() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 		})
 		assert.NoError(t, err)
@@ -361,7 +361,7 @@ func (suite TestDBSuite) TestCount() {
 	// 插入数据
 	{
 		user := User{Name:"TestCount_1"}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -374,7 +374,7 @@ func (suite TestDBSuite) TestCount() {
 	}
 	{
 		user := User{Name:"TestCount_2"}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -411,7 +411,7 @@ func (suite TestDBSuite) TestHas() {
 	// 插入数据
 	{
 		user := User{Name:"TestHas_1"}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -453,7 +453,7 @@ func (suite TestDBSuite) TestSum() {
 	// 插入数据
 	{
 		user := User{Name:"TestSum_1"}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -471,7 +471,7 @@ func (suite TestDBSuite) TestSum() {
 	// 插入数据
 	{
 		user := User{Name:"TestSum_2", Age: 20}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -489,7 +489,7 @@ func (suite TestDBSuite) TestSum() {
 	// 插入数据
 	{
 		user := User{Name:"TestSum_3", Age: 20}
-		_, err := testDB.InsertModel(context.TODO(), &user)
+		_, err := testDB.InsertModel(context.TODO(), &user, sq.QB{})
 		assert.NoError(t, err)
 	}
 	{
@@ -727,7 +727,7 @@ func (suite TestDBSuite) TestUpdateModel() {
 		}
 		result, err := testDB.UpdateModel(context.TODO(), &user, []sq.Update{
 			sq.Set(userCol.Name, "TestUpdateModel_changed"),
-		}, nil, "UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL",
+		}, sq.QB{CheckSQL: []string{"UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL"}},
 		)
 		assert.NoError(t, err)
 		affected, err := result.RowsAffected()
@@ -874,7 +874,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 		assert.Equal(t, count, uint64(1))
 	}
 	{
-		result, err := testDB.HardDeleteModel(context.TODO(), &User{ID:IDUser(newID)},"DELETE FROM `user` WHERE `id` = ? LIMIT ?")
+		result, err := testDB.HardDeleteModel(context.TODO(), &User{ID:IDUser(newID)}, sq.QB{CheckSQL: []string{"DELETE FROM `user` WHERE `id` = ? LIMIT ?"}})
 		assert.NoError(t, err)
 		affected, err := result.RowsAffected()
 		assert.NoError(t, err)
@@ -1010,7 +1010,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 		assert.Equal(t, count, uint64(1))
 	}
 	{
-		result, err := testDB.SoftDeleteModel(context.TODO(), &User{ID: newID,}, "UPDATE `user` SET `deleted_at` = ? WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?")
+		result, err := testDB.SoftDeleteModel(context.TODO(), &User{ID: newID,}, sq.QB{CheckSQL:[]string{"UPDATE `user` SET `deleted_at` = ? WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"}})
 		assert.NoError(t, err)
 		affected, err := result.RowsAffected()
 		assert.NoError(t, err)
@@ -1088,7 +1088,7 @@ func (suite TestDBSuite) TestTransaction() {
 		var execed bool
 		 err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted,func(tx *sq.Transaction) sq.TxResult {
 			execed = true
-			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_1"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
+			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_1"}, sq.QB{CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}})
 			assert.NoError(t, err)
 			return tx.Commit()
 		})
@@ -1116,7 +1116,7 @@ func (suite TestDBSuite) TestTransaction() {
 		var execed bool
 		err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted,func(tx *sq.Transaction) sq.TxResult {
 			execed = true
-			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_2"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
+			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_2"},sq.QB{CheckSQL:[]string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}})
 			assert.NoError(t, err)
 			return tx.Rollback()
 		})
@@ -1145,7 +1145,7 @@ func (suite TestDBSuite) TestTransaction() {
 		var execed bool
 		 err := testDB.BeginTransaction(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
 			execed = true
-			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_3"},"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)")
+			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_3"},sq.QB{CheckSQL: []string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}})
 			assert.NoError(t, err)
 			return tx.RollbackWithError(errors.New("custom error"))
 		})

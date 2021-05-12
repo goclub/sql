@@ -24,7 +24,7 @@ func init () {
 			"parseTime": "True",
 			"loc": "Local",
 		},
-	}.String()) ; if err != nil {
+	}.FormatDSN()) ; if err != nil {
 		// 大部分创建数据库连接失败应该panic
 		panic(err)
 	}
