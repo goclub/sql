@@ -72,7 +72,7 @@ func (suite TestDBSuite) TestInsert() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})
@@ -115,7 +115,7 @@ func (suite TestDBSuite) TestInsertModel() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(userID)),
 		})
@@ -182,7 +182,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 
 
 
-func (suite TestDBSuite) TestQueryStruct() {
+func (suite TestDBSuite) TestQuery() {
 	t := suite.T()
 	userCol := User{}.Column()
 	// 清空数据
@@ -208,7 +208,7 @@ func (suite TestDBSuite) TestQueryStruct() {
 		}
 		{
 			var data Data
-			has, err := testDB.QueryStruct(context.TODO(), &data, sq.QB{
+			has, err := testDB.Query(context.TODO(), &data, sq.QB{
 				Where: sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
 				CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 			})
@@ -219,7 +219,7 @@ func (suite TestDBSuite) TestQueryStruct() {
 		// 测试自定义select覆盖自动 select
 		{
 			var data Data
-			has, err := testDB.QueryStruct(context.TODO(), &data, sq.QB{
+			has, err := testDB.Query(context.TODO(), &data, sq.QB{
 				Select: []sq.Column{"name"},
 				Where: sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
 				CheckSQL: []string{"SELECT `name` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
@@ -236,7 +236,7 @@ func (suite TestDBSuite) TestQueryStruct() {
 			TableUser
 		}
 		var data Data
-		has, err := testDB.QueryStruct(context.TODO(), &data, sq.QB{
+		has, err := testDB.Query(context.TODO(), &data, sq.QB{
 			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScanNotExist")),
 			CheckSQL: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -534,7 +534,7 @@ func (suite TestDBSuite) TestQueryModel() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})
@@ -635,7 +635,7 @@ func (suite TestDBSuite) TestUpdate() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})
@@ -664,7 +664,7 @@ func (suite TestDBSuite) TestUpdate() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})
@@ -707,7 +707,7 @@ func (suite TestDBSuite) TestUpdateModel() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})
@@ -737,7 +737,7 @@ func (suite TestDBSuite) TestUpdateModel() {
 	}
 	{
 		user := User{}
-		has, err := testDB.QueryStruct(context.TODO(), &user, sq.QB{
+		has, err := testDB.Query(context.TODO(), &user, sq.QB{
 			CheckSQL: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
 			Where: sq.And(userCol.ID, sq.Equal(newID)),
 		})

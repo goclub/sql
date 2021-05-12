@@ -179,14 +179,26 @@ func coreQuerySliceScaner(ctx context.Context, storager Storager, qb QB, scan Sc
 	}
 	return nil
 }
-func (db *Database) QueryStruct(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
+func (db *Database) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreQueryStruct(ctx, db,ptr, qb)
+	return coreQuery(ctx, db,ptr, qb)
 }
-func (tx *Transaction) QueryStruct(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
-	return coreQueryStruct(ctx, tx, ptr, qb)
+func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
+	return coreQuery(ctx, tx, ptr, qb)
 }
-func coreQueryStruct(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has bool, err error) {
+func (db *Database) QueryModel(ctx context.Context, ptr Model)  (has bool, err error) {
+	qb := QB{}
+	qb.Where = ptr.PrimaryKey()
+	err = qb.mustInTransaction() ; if err != nil {return}
+	return coreQuery(ctx, db,ptr, qb)
+}
+func (tx *Transaction) QueryModel(ctx context.Context, ptr Model)  (has bool, err error) {
+	qb := QB{}
+	qb.Where = ptr.PrimaryKey()
+	return coreQuery(ctx, tx, ptr, qb)
+}
+
+func coreQuery(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has bool, err error) {
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
 	qb.Table = ptr

@@ -22,7 +22,9 @@ type APIDatabase interface {
 	// 查询单行多列 类似 sql.Row{}.Scan()
 	QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error)
 	// 查询单行多列并转换为结构体
-	QueryStruct(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error)
+	Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error)
+	// 基于 Model 查询单条数据
+	QueryModel(ctx context.Context, ptr Model)  (has bool, err error)
 	// 查询多行并转换为结构体
 	QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error)
 	// 查询多行多列(自定义扫描)
