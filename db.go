@@ -26,12 +26,13 @@ func (db *Database) getSQLChecker() (sqlChecker SQLChecker) {
 func (db *Database) SetSQLChecker(sqlChecker SQLChecker) {
 	db.sqlChecker = sqlChecker
 }
+
 func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
 	var coreDatabase *sqlx.DB
 	coreDatabase, err = sqlx.Open(driverName, dataSourceName)
 	db = &Database{
 		Core: coreDatabase,
-		sqlChecker: &defaultSQLCheck{},
+		sqlChecker: &DefaultSQLChecker{},
 	}
 	if err != nil && coreDatabase != nil {
 		dbClose = coreDatabase.Close

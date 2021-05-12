@@ -397,7 +397,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			}
 			matched, diff, stack := qb.SQLChecker.Check(checkSQL, query)
 			if matched == false {
-				qb.SQLChecker.Log(diff, stack)
+				qb.SQLChecker.TrackCheckFail(diff, stack)
 			}
 		}
 	}()

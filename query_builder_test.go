@@ -572,7 +572,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 				"SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL",
 				"SELECT `id` FROM `user` WHERE `deleted_at` IS NULL",
 			},
-			SQLChecker: sq.DefaultSQLCheck,
+			SQLChecker: sq.DefaultSQLChecker{},
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, query, raw.Query)

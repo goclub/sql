@@ -9,15 +9,14 @@ import (
 
 type SQLChecker interface {
 	Check(checkSQL []string, actual string) (matched bool, diff []string, stack []byte)
-	Log(diff []string,stack []byte)
+	TrackCheckFail(diff []string, stack []byte)
 }
 
-var DefaultSQLCheck = &defaultSQLCheck{}
-type defaultSQLCheck struct {
+type DefaultSQLChecker struct {
 	dmp *diffmatchpatch.DiffMatchPatch
 }
 
-func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bool, diff []string, stack []byte){
+func (check DefaultSQLChecker) Check(checkSQL []string, actual string) (matched bool, diff []string, stack []byte){
 	if len(checkSQL) == 0 {
 		return true, nil, nil
 	}
@@ -40,6 +39,9 @@ func (check defaultSQLCheck) Check(checkSQL []string, actual string) (matched bo
 	}
 	return false, diff, debug.Stack()
 }
-func (check defaultSQLCheck) Log(diff []string, stack []byte)  {
-	log.Print("goclub/sql:(SQLChecker)\n", strings.Join(diff, "\n"), "\n", string(stack))
+
+func (check DefaultSQLChecker) TrackCheckFail(diff []string, stack []byte)  {
+	log.Print("goclub/sql:(SQLChecker)\n",
+		strings.Join(diff, "\n"), "\n",
+		string(stack), )
 }
