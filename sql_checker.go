@@ -49,8 +49,8 @@ func (check DefaultSQLChecker) TrackFail(err error, reviews []string, query stri
 		log.Print(err)
 		return
 	}
-	message := "query:\n" + query +
-		       "reviews:\n" + strings.Join(reviews, "\n")+
+	message := "query:\n" + query + "\n" +
+		       "reviews:\n" + strings.Join(reviews, "\n")+ "\n" +
 		       "refs:\n" + refs
 	log.Print(message)
 }
