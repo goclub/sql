@@ -36,7 +36,6 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 		matched, ref, err := check.match(query, format) ; if err != nil {
 		    return false, refs, err
 		}
-		log.Print("ref", ref)
 		refs += ref
 		if matched == true {
 			return true, "", nil
@@ -85,7 +84,7 @@ func (check DefaultSQLChecker) match(query string, format string) (matched bool,
 	if trimmedSQL == trimmedFormat {
 		return true, "", nil
 	}
-	ref = "\n" + trimmedSQL + "\n" + trimmedFormat
+	ref = "\n\"" + trimmedSQL + "\"\n\"" + trimmedFormat +"\""
 	return
 }
 // 匹配 QB{}.Review 中的 {# AND `name` = ?#} 部分并返回

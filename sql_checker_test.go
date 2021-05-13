@@ -2,6 +2,7 @@ package sq
 
 import (
 	"github.com/stretchr/testify/assert"
+	"log"
 	"testing"
 )
 
@@ -13,8 +14,8 @@ func TestDefaultSQLChecker_Check(t *testing.T) {
 			"select * from user where id in {#IN#}",
 		}
 		{
-			execSQL := "select * from user where idin (?)"
-			matched, _,  err:= check.Check(checkSQL, execSQL)
+			execSQL := "select * from user where id in (?)"
+			matched, ref,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)
 		}
