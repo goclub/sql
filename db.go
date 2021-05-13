@@ -417,6 +417,7 @@ func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result sql.Result
 	return coreSoftDelete(ctx, tx, qb)
 }
 func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+	qb.SQLChecker = storager.getSQLChecker()
 	qb.Update = []Update{
 		{Raw: qb.Table.SoftDeleteSet(),},
 	}
