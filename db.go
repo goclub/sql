@@ -23,9 +23,10 @@ func (db *Database) getCore() (core StoragerCore) {
 func (db *Database) getSQLChecker() (sqlChecker SQLChecker) {
 	return db.sqlChecker
 }
-func (db *Database) SetSQLChecker(sqlChecker SQLChecker) {
+func (db *Database) SetSQLChecker(sqlChecker SQLChecker)  {
 	db.sqlChecker = sqlChecker
 }
+
 
 func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
 	var coreDatabase *sqlx.DB
@@ -73,13 +74,12 @@ func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (resul
 }
 
 
-func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB, checkSQL ...string) (result sql.Result, err error) {
+func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	if qb.Table != nil {
 		log.Print("InsertModelBaseOnQB(ctx, qb, model) qb.Table need be nil")
 	}
 	qb.Table = ptr
-	qb.CheckSQL = checkSQL
 	qb.SQLChecker = storager.getSQLChecker()
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()

@@ -568,7 +568,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 			Table: User{},
 			Select: []sq.Column{"id"},
 			Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
-			CheckSQL: []string{
+			Reviews: []string{
 				"SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL",
 				"SELECT `id` FROM `user` WHERE `deleted_at` IS NULL",
 			},

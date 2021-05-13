@@ -28,7 +28,7 @@ func example(ctx context.Context) error {
 			sq.Value(userCol.Age, 18),
 		},
 		// CheckSQL 的作用是给 DBA 审查 sql 或增加代码可读性，可以不传
-		CheckSQL: checkSQL,
+		Reviews: checkSQL,
 	}
 	result, err := db.Insert(ctx, qb) ; if err != nil {
 		// 无法处理的错误应当向上传递

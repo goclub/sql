@@ -69,9 +69,10 @@ type QB struct {
 	Raw Raw
 
 	Debug bool
-	// string or []string
-	CheckSQL interface{}
+	Review string
+	Reviews []string
 	SQLChecker SQLChecker
+
 }
 func (qb QB) mustInTransaction() error {
 	if len(qb.Lock) == 0 {
@@ -387,17 +388,16 @@ func (qb QB) SQL(statement Statement) Raw {
 		if qb.Debug {
 			log.Print("goclub/sql debug:\r\n" + query, "\r\n", values)
 		}
-		if qb.SQLChecker != nil {
-			checkSQL := []string{}
-			switch v := qb.CheckSQL.(type) {
-			case string:
-				checkSQL = []string{v}
-			case []string:
-				checkSQL = v
-			}
-			matched, message := qb.SQLChecker.Check(checkSQL, query)
-			if matched == false {
-				qb.SQLChecker.TrackCheckFail(checkSQL, query, message)
+		if qb.Review != "" {
+			qb.Reviews = append(qb.Reviews, qb.Review)
+		}
+		if len(qb.Reviews) != 0 {
+			matched, refs, err := qb.SQLChecker.Check(qb.Reviews, query) ; if err != nil {
+				qb.SQLChecker.TrackFail(err, qb.Reviews, query, "")
+			} else {
+				if matched == false {
+					qb.SQLChecker.TrackFail(err, qb.Reviews, query, refs)
+				}
 			}
 		}
 	}()

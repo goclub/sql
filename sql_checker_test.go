@@ -13,28 +13,45 @@ func TestDefaultSQLChecker_Check(t *testing.T) {
 			"select * from user where id in {#IN#}",
 		}
 		{
-			execSQL := "select * from user where id in (?)"
-			matched, message := check.Check(checkSQL, execSQL)
+			execSQL := "select * from user where idin (?)"
+			matched, _,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user where id in (?, ?)"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user where id in (?, ?, ?)"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user where id in (?, ?, ?, ?)"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
+		}
+	}
+	{
+		checkSQL := []string{
+			"select * from user where id in {#IN#} limit ?",
+		}
+		{
+			execSQL := "select * from user where id in (?) limit ?"
+			matched,_,  err:= check.Check(checkSQL, execSQL)
+			assert.Equal(t, matched, true)
+			assert.NoError(t, err)
+		}
+		{
+			execSQL := "select * from user where id in (?, ?) limit ?"
+			matched,_,  err:= check.Check(checkSQL, execSQL)
+			assert.Equal(t, matched, true)
+			assert.NoError(t, err)
 		}
 	}
 	{
@@ -43,34 +60,48 @@ func TestDefaultSQLChecker_Check(t *testing.T) {
 		}
 		{
 			execSQL := "select * from user where mobile = ? limit ?"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user where mobile = ? and name = ? limit ?"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user where mobile = ? and age = ? limit ?"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user where mobile = ? and name = ? and age = ? limit ?"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 		{
 			execSQL := "select * from user"
-			matched, message := check.Check(checkSQL, execSQL)
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, false)
-			assert.Equal(t, message, "")
+			assert.NoError(t, err)
 		}
 	}
 }
 
+func TestDefaultSQLChecker_Check2(t *testing.T) {
+	check := DefaultSQLChecker{}
+	{
+		checkSQL := []string{
+			"select * from user where mobile = ? {#and name = ?#} limit ?",
+		}
+		{
+			execSQL := "select * from user where mobile = ? limit ?"
+			matched,_,  err:= check.Check(checkSQL, execSQL)
+			assert.Equal(t, matched, true)
+			assert.NoError(t, err)
+		}
+	}
+}
