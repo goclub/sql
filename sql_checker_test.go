@@ -100,6 +100,17 @@ func TestDefaultSQLChecker_Check2(t *testing.T) {
 		{
 			execSQL := "select * from user where mobile = ? limit ?"
 			matched,_,  err:= check.Check(checkSQL, execSQL)
+			assert.Equal(t, matched, false)
+			assert.NoError(t, err)
+		}
+	}
+	{
+		checkSQL := []string{
+			"select * from user where mobile = ?{# and name = ?#} limit ?",
+		}
+		{
+			execSQL := "select * from user where mobile = ? limit ?"
+			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)
 		}
