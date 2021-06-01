@@ -219,10 +219,10 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	if ptrType.Kind() != reflect.Ptr {
 		return errors.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
-	elemType := ptrType.Elem()
-	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
-	tablerInterface := reflectItemValue.Interface().(Tabler)
 	if qb.Table == nil {
+		elemType := ptrType.Elem()
+		reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
+		tablerInterface := reflectItemValue.Interface().(Tabler)
 		qb.Table = tablerInterface
 	}
 	raw := qb.SQLSelect()
