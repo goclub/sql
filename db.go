@@ -217,7 +217,7 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(slicePtr)
 	if ptrType.Kind() != reflect.Ptr {
-		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
+		return errors.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
 	elemType := ptrType.Elem()
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
