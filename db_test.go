@@ -507,46 +507,46 @@ func (suite TestDBSuite) TestSum() {
 }
 
 
-func (suite TestDBSuite) TestQueryModel() {
-	t := suite.T()
-	userCol := User{}.Column()
-	newID := sq.UUID()
-	{
-		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
-			Where: sq.And(userCol.Name, sq.Like("TestQueryModel")),
-			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
-		})
-		assert.NoError(t, err)
-		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
-			Insert: []sq.Insert{
-				sq.Value(userCol.ID, newID),
-				sq.Value(userCol.Name, "TestQueryModel"),
-				sq.Value(userCol.Age, 18),
-			},
-			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
-		})
-		assert.NoError(t, err)
-		affected, err := result.RowsAffected()
-		assert.NoError(t, err)
-		assert.Equal(t, affected, int64(1))
-	}
-	{
-		user := User{}
-		has, err := testDB.Query(context.TODO(), &user, sq.QB{
-			Reviews: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
-			Where: sq.And(userCol.ID, sq.Equal(newID)),
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, has, true)
-		assert.Equal(t, user.ID, IDUser(newID))
-		assert.Equal(t, user.Name, "TestQueryModel")
-		assert.Equal(t, user.Age, 18)
-		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
-		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
-	}
-}
+// func (suite TestDBSuite) TestQueryModel() {
+// 	t := suite.T()
+// 	userCol := User{}.Column()
+// 	newID := sq.UUID()
+// 	{
+// 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
+// 			Table: User{},
+// 			Where: sq.And(userCol.Name, sq.Like("TestQueryModel")),
+// 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
+// 		})
+// 		assert.NoError(t, err)
+// 		result, err := testDB.Insert(context.TODO(), sq.QB{
+// 			Table: TableUser{},
+// 			Insert: []sq.Insert{
+// 				sq.Value(userCol.ID, newID),
+// 				sq.Value(userCol.Name, "TestQueryModel"),
+// 				sq.Value(userCol.Age, 18),
+// 			},
+// 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
+// 		})
+// 		assert.NoError(t, err)
+// 		affected, err := result.RowsAffected()
+// 		assert.NoError(t, err)
+// 		assert.Equal(t, affected, int64(1))
+// 	}
+// 	{
+// 		user := User{}
+// 		has, err := testDB.Query(context.TODO(), &user, sq.QB{
+// 			Reviews: []string{"SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` = ? AND `deleted_at` IS NULL LIMIT ?"},
+// 			Where: sq.And(userCol.ID, sq.Equal(newID)),
+// 		})
+// 		assert.NoError(t, err)
+// 		assert.Equal(t, has, true)
+// 		assert.Equal(t, user.ID, IDUser(newID))
+// 		assert.Equal(t, user.Name, "TestQueryModel")
+// 		assert.Equal(t, user.Age, 18)
+// 		assert.True(t, time.Now().Sub(user.CreatedAt) < time.Second)
+// 		assert.True(t, time.Now().Sub(user.UpdatedAt) < time.Second)
+// 	}
+// }
 
 
 func (suite TestDBSuite) TestQueryModelSlice() {

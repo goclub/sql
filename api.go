@@ -21,8 +21,9 @@ type API interface {
 	QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error)
 	// 查询单行多列并转换为结构体
 	Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error)
-	// 基于 Model 的 PrimaryKey 查询单条数据
-	QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error)
+	// 暂时取消 QueryModel 因为容易产生歧义
+	// // 基于 Model 的 PrimaryKey 查询单条数据
+	// QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error)
 	// 查询多行并转换为结构体
 	QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error)
 	// 查询多行多列(自定义扫描)
@@ -42,7 +43,7 @@ type API interface {
 
 	// 更新
 	Update(ctx context.Context, qb QB) (result sql.Result, err error)
-	// 基于 Model 的 PrimaryKey更新数据 并自动处理 create update 字段
+	// 基于 Model 的 PrimaryKey 更新数据 并自动处理 create update 字段
 	UpdateModel(ctx context.Context, ptr Model, updateData []Update, qb QB) (result sql.Result, err error)
 
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中

@@ -84,7 +84,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("InsertModel(ctx, ptr) " + rType.String() + " must be ptr"))
+		return result, errors.New("InsertModel(ctx, ptr) " + rType.String() + " must be ptr")
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -182,15 +182,15 @@ func (db *Database) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, er
 func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
 	return coreQuery(ctx, tx, ptr, qb)
 }
-func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
-	qb.Where = ptr.PrimaryKey()
-	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreQuery(ctx, db,ptr, qb)
-}
-func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
-	qb.Where = ptr.PrimaryKey()
-	return coreQuery(ctx, tx, ptr, qb)
-}
+// func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
+// 	qb.Where = ptr.PrimaryKey()
+// 	err = qb.mustInTransaction() ; if err != nil {return}
+// 	return coreQuery(ctx, db,ptr, qb)
+// }
+// func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
+// 	qb.Where = ptr.PrimaryKey()
+// 	return coreQuery(ctx, tx, ptr, qb)
+// }
 
 func coreQuery(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has bool, err error) {
 	qb.SQLChecker = storager.getSQLChecker()
@@ -244,7 +244,7 @@ func coreCount(ctx context.Context, storager Storager, qb QB) (count uint64, err
 	if has == false {
 		raw := qb.SQLSelect()
 		query := raw.Query
-		panic(errors.New("goclub/sql: Count() " + query + "not found data"))
+		return 0, errors.New("goclub/sql: Count() " + query + "not found data")
 	}
 	return
 }
@@ -300,7 +300,7 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
+		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -397,7 +397,7 @@ func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb Q
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
+		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
 	}
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
@@ -434,7 +434,7 @@ func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, qb Q
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		panic(errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr"))
+		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
 	}
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
@@ -491,7 +491,7 @@ func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlic
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(relationSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {
-		panic(errors.New("goclub/sql: " + ptrType.String() + "not pointer"))
+		return errors.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
 	elemType := ptrType.Elem()
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)

@@ -8,12 +8,22 @@ import (
 
 
 
+// sq.Table("user",nil, nil)
+// sq.Table("user", sq.Raw{"`deleted_at` IS NULL", nil}, sq.Raw{"`deleted_at` = ?" ,[]interface{}{time.Now()}})
+func Table(tableName string, softDeleteWhere func() Raw, softDeleteSet func()Raw) Tabler {
+	return table{
+		tableName: tableName,
+		softDeleteWhere: softDeleteWhere,
+		softDeleteSet: softDeleteSet,
+	}
+}
+
 type Tabler interface {
 	TableName() string
 	SoftDeleteWhere() Raw
 	SoftDeleteSet() Raw
 }
-// 供 relation 使用
+// 供 relation sq.Table() 使用
 type table struct {
 	tableName string
 	softDeleteWhere func() Raw
