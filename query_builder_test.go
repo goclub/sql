@@ -558,7 +558,7 @@ func (suite TestQBSuite) TestWhereIn() {
 		sq.And("id", sq.In([]string{"a","b"})),
 	)
 	assert.Equal(t, qb.Where, ands)
-	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` IN (?, ?) AND `deleted_at` IS NULL", query)
+	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `id` IN (?,?) AND `deleted_at` IS NULL", query)
 	assert.Equal(t, []interface{}{"a","b"}, values)
 }
 func (suite TestQBSuite) TestWhereIgnore() {
@@ -799,4 +799,21 @@ func (suite TestQBSuite) TestInsert() {
 	raw := qb.SQLInsert()
 	assert.Equal(t, "INSERT IGNORE INTO `user` (`name`) VALUES (?)", raw.Query)
 	assert.Equal(t, []interface{}{"nimoc"}, raw.Values)
+}
+
+func (suite TestQBSuite) TestInsertMultiple() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: User{},
+		InsertMultiple: sq.InsertMultiple{
+			Column: []sq.Column{"name", "age"},
+			Values: [][]interface{}{
+				{"nimo",18},
+				{"tim", 28},
+			},
+		},
+	}
+	raw := qb.SQLInsert()
+	assert.Equal(t, "INSERT INTO `user` (`name`,`age`) VALUES (?,?),(?,?)", raw.Query)
+	assert.Equal(t, []interface{}{"nimo",18,"tim",28}, raw.Values)
 }

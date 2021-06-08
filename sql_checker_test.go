@@ -19,19 +19,19 @@ func TestDefaultSQLChecker_Check(t *testing.T) {
 			assert.NoError(t, err)
 		}
 		{
-			execSQL := "select * from user where id in (?, ?)"
+			execSQL := "select * from user where id in (?,?)"
 			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)
 		}
 		{
-			execSQL := "select * from user where id in (?, ?, ?)"
+			execSQL := "select * from user where id in (?,?,?)"
 			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)
 		}
 		{
-			execSQL := "select * from user where id in (?, ?, ?, ?)"
+			execSQL := "select * from user where id in (?,?,?,?)"
 			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)
@@ -48,7 +48,7 @@ func TestDefaultSQLChecker_Check(t *testing.T) {
 			assert.NoError(t, err)
 		}
 		{
-			execSQL := "select * from user where id in (?, ?) limit ?"
+			execSQL := "select * from user where id in (?,?) limit ?"
 			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)
@@ -110,6 +110,26 @@ func TestDefaultSQLChecker_Check2(t *testing.T) {
 		}
 		{
 			execSQL := "select * from user where mobile = ? limit ?"
+			matched,_,  err:= check.Check(checkSQL, execSQL)
+			assert.Equal(t, matched, true)
+			assert.NoError(t, err)
+		}
+	}
+}
+func TestDefaultSQLChecker_Check3(t *testing.T) {
+	check := DefaultSQLChecker{}
+	{
+		checkSQL := []string{
+			"INSERT INTO `user` (`name`,`age`) VALUES {#VALUES#}",
+		}
+		{
+			execSQL := "INSERT INTO `user` (`name`,`age`) VALUES (?,?),(?,?)"
+			matched,_,  err:= check.Check(checkSQL, execSQL)
+			assert.Equal(t, matched, true)
+			assert.NoError(t, err)
+		}
+		{
+			execSQL := "INSERT INTO `user` (`name`,`age`) VALUES (?,?)"
 			matched,_,  err:= check.Check(checkSQL, execSQL)
 			assert.Equal(t, matched, true)
 			assert.NoError(t, err)

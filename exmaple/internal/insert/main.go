@@ -4,8 +4,7 @@ import (
 	"context"
 	sq "github.com/goclub/sql"
 	connectMysql "github.com/goclub/sql/exmaple/internal/db"
-	"github.com/goclub/sql/exmaple/internal/pd"
-
+	"github.com/goclub/sql/exmaple/internal/model"
 	"log"
 )
 
@@ -19,9 +18,9 @@ func example(ctx context.Context) error {
 	checkSQL := []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"}
 	db := connectMysql.DB
 	// qb 是 goclub/sql 的核心，用于生产sql
-	userCol := pd.UserTable{}.Column()
+	userCol := m.TableUser{}.Column()
 	qb := sq.QB{
-		Table: &pd.UserTable{},
+		Table: &m.TableUser{},
 		Insert: []sq.Insert{
 			sq.Value(userCol.ID, sq.UUID()),
 			sq.Value(userCol.Name, "nimo"),

@@ -64,12 +64,24 @@ func (check DefaultSQLChecker) match(query string, format string) (matched bool,
 	trimmedFormat := format
 
 	trimmedSQL := query
-	// remove  {#IN#} 和 (?, ?)
-	reg, err := regexp.Compile(`\(\?(, \?)*?\)`) ; if err != nil {
+	// remove {#VALUES#} 和 (?,?),(?,?) 和 (?,?)
+	{
+		var reg *regexp.Regexp
+		reg, err = regexp.Compile(`VALUES \(.*\)`) ; if err != nil {
 		return
 	}
-	trimmedSQL = reg.ReplaceAllString(trimmedSQL,"")
-	trimmedFormat = strings.Replace(trimmedFormat, "{#IN#}", "", -1)
+		trimmedSQL = reg.ReplaceAllString(trimmedSQL,"VALUES ")
+		trimmedFormat = strings.Replace(trimmedFormat, "{#VALUES#}", "", -1)
+	}
+	// remove  {#IN#} 和 (?,?)
+	{
+		var reg *regexp.Regexp
+		reg, err = regexp.Compile(`\(\?(,\?)*?\)`) ; if err != nil {
+		return
+	}
+		trimmedSQL = reg.ReplaceAllString(trimmedSQL,"")
+		trimmedFormat = strings.Replace(trimmedFormat, "{#IN#}", "", -1)
+	}
 	optional, err := check.matchCheckSQLOptional(trimmedFormat) ; if err != nil {
 		return
 	}
@@ -84,7 +96,7 @@ func (check DefaultSQLChecker) match(query string, format string) (matched bool,
 	if trimmedSQL == trimmedFormat {
 		return true, "", nil
 	}
-	ref = "\n\"" + trimmedSQL + "\"\n\"" + trimmedFormat +"\""
+	ref = "\n   sql: \"" + trimmedSQL + "\"\nformat: \"" + trimmedFormat +"\""
 	return
 }
 // 匹配 QB{}.Review 中的 {# AND `name` = ?#} 部分并返回

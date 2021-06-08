@@ -16,6 +16,10 @@ type Update struct {
 func Set(column Column, value interface{}) Update {
 	return Update{Column: column, Value: value}
 }
+type InsertMultiple struct {
+	Column []Column
+	Values [][]interface{}
+}
 // sq.Value(column, value)
 type Insert struct {
 	Column Column
@@ -43,6 +47,7 @@ type QB struct {
 	Update []Update
 	// 可使用 sq.Value() 快速创建 sq.Insert []Insert{sq.Value(),sq.Value()}
 	Insert []Insert
+	InsertMultiple InsertMultiple
 	// INSERT IGNORE INTO
 	UseInsertIgnoreInto bool
 
@@ -273,18 +278,31 @@ func (qb QB) SQL(statement Statement) Raw {
 			}
 
 			sqlList.Push(qb.tableName)
+			if len(qb.Insert) != 0 {
+				var insertValues []interface{}
+				for _, insert := range qb.Insert {
+					qb.InsertMultiple.Column = append(qb.InsertMultiple.Column, insert.Column)
+					insertValues = append(insertValues, insert.Value)
+				}
+				qb.InsertMultiple.Values = append(qb.InsertMultiple.Values, insertValues)
+			}
+
 			var columns []string
-			for _, item := range qb.Insert {
-				columns = append(columns, item.Column.wrapField())
-				values = append(values, item.Value)
+			for _, column := range qb.InsertMultiple.Column {
+				columns = append(columns, column.wrapField())
+			}
+			var allPlaceholders []string
+			for _, value := range qb.InsertMultiple.Values {
+				var rowPlaceholder []string
+				for _, v := range value {
+					rowPlaceholder = append(rowPlaceholder, "?")
+					values = append(values, v)
+				}
+				allPlaceholders = append(allPlaceholders, "("+strings.Join(rowPlaceholder, ",")+")")
 			}
 			sqlList.Push("(" + strings.Join(columns, ",") + ")")
 			sqlList.Push("VALUES")
-			var placeholders []string
-			for _, _ = range columns {
-				placeholders = append(placeholders, "?")
-			}
-			sqlList.Push("(" + strings.Join(placeholders, ",") + ")")
+			sqlList.Push(strings.Join(allPlaceholders, ","))
 	})
 	// where
 	{

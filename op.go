@@ -87,7 +87,7 @@ func In(slice interface{}) OP {
 			values = append(values, rValue.Index(i).Interface())
 			placeholderList.Push(sqlPlaceholder)
 		}
-		placeholder = "(" + placeholderList.Join(", ") + ")"
+		placeholder = "(" + placeholderList.Join(",") + ")"
 	}
 	return OP{
 		Symbol:      "IN",

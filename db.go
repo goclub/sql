@@ -73,7 +73,6 @@ func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (resul
 	return coreInsertModel(ctx, tx, ptr, qb)
 }
 
-
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	if qb.Table != nil {
