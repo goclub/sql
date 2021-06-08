@@ -45,6 +45,8 @@ type QB struct {
 	Index string
 
 	Update []Update
+	// UPDATE IGNORE
+	UseUpdateIgnore bool
 	// 可使用 sq.Value() 快速创建 sq.Insert []Insert{sq.Value(),sq.Value()}
 	Insert []Insert
 	InsertMultiple InsertMultiple
@@ -254,6 +256,9 @@ func (qb QB) SQL(statement Statement) Raw {
 		}
 	}, func(_Update bool) {
 		sqlList.Push("UPDATE")
+		if qb.UseUpdateIgnore {
+			sqlList.Push("IGNORE")
+		}
 		sqlList.Push(qb.tableName)
 		sqlList.Push("SET")
 		var sets  []string

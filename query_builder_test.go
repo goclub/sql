@@ -817,3 +817,16 @@ func (suite TestQBSuite) TestInsertMultiple() {
 	assert.Equal(t, "INSERT INTO `user` (`name`,`age`) VALUES (?,?),(?,?)", raw.Query)
 	assert.Equal(t, []interface{}{"nimo",18,"tim",28}, raw.Values)
 }
+
+func (suite TestQBSuite) TestUpdate() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: User{},
+		UseUpdateIgnore: true,
+		Update: []sq.Update{sq.Set("age", 2)},
+		Where:  sq.And("id", sq.Equal(1)),
+	}
+	raw := qb.SQLUpdate()
+	assert.Equal(t, "UPDATE IGNORE `user` SET `age`= ? WHERE `id` = ? AND `deleted_at` IS NULL", raw.Query)
+	assert.Equal(t, []interface{}{2, 1}, raw.Values)
+}
