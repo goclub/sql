@@ -88,6 +88,36 @@ func ScanInts(ints *[]int) Scaner {
 		return nil
 	}
 }
+func ScanUints(ints *[]uint) Scaner {
+	return func(rows *sqlx.Rows) error {
+		var item uint
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*ints = append(*ints, item)
+		return nil
+	}
+}
+func ScanInt64s(ints *[]int64) Scaner {
+	return func(rows *sqlx.Rows) error {
+		var item int64
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*ints = append(*ints, item)
+		return nil
+	}
+}
+func ScanUint64s(ints *[]uint64) Scaner {
+	return func(rows *sqlx.Rows) error {
+		var item uint64
+		err := rows.Scan(&item) ; if err != nil {
+			return err
+		}
+		*ints = append(*ints, item)
+		return nil
+	}
+}
 func ScanBool(bools *[]bool) Scaner {
 	return func(rows *sqlx.Rows) error {
 		var item bool
@@ -105,16 +135,6 @@ func ScanTimes(times *[]time.Time) Scaner {
 			return err
 		}
 		*times = append(*times, item)
-		return nil
-	}
-}
-func ScanUints(uints *[]uint) Scaner {
-	return func(rows *sqlx.Rows) error {
-		var item uint
-		err := rows.Scan(&item) ; if err != nil {
-			return err
-		}
-		*uints = append(*uints, item)
 		return nil
 	}
 }
