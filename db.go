@@ -87,9 +87,11 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
-	insertEachField(elemValue, elemType, func(column string, fieldType reflect.StructField, fieldValue reflect.Value) {
-		qb.Insert = append(qb.Insert, Insert{Column: Column(column), Value: fieldValue.Interface()})
-	})
+	if len(qb.Insert) != 0 || len(qb.InsertMultiple.Column) != 0 {
+		insertEachField(elemValue, elemType, func(column string, fieldType reflect.StructField, fieldValue reflect.Value) {
+			qb.Insert = append(qb.Insert, Insert{Column: Column(column), Value: fieldValue.Interface()})
+		})
+	}
 	raw := qb.SQLInsert()
 	query, values := raw.Query, raw.Values
 	result, err = storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {

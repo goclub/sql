@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"testing"
+	"time"
 )
 func TestQB(t *testing.T) {
 	suite.Run(t, new(TestQBSuite))
@@ -829,4 +830,16 @@ func (suite TestQBSuite) TestUpdate() {
 	raw := qb.SQLUpdate()
 	assert.Equal(t, "UPDATE IGNORE `user` SET `age`= ? WHERE `id` = ? AND `deleted_at` IS NULL", raw.Query)
 	assert.Equal(t, []interface{}{2, 1}, raw.Values)
+}
+func (suite TestQBSuite) TestDebug() {
+	t := suite.T()
+	qb := sq.QB{
+		Table: User{},
+		Where:  sq.
+			And("id", sq.Equal(1)).
+			And("date", sq.Equal(time.Now())),
+		Debug: true,
+	}
+	qb.SQLSelect()
+	_=t
 }
