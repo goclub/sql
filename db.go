@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	xerr "github.com/goclub/error"
 	"github.com/jmoiron/sqlx"
 	"log"
 	"reflect"
@@ -62,6 +63,7 @@ func (tx *Transaction) Insert(ctx context.Context, qb QB) (result sql.Result, er
 	return coreInsert(ctx, tx, qb)
 }
 func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	return coreExecQB(ctx, storager, qb, Statement("").Enum().Insert)
 }
@@ -74,6 +76,7 @@ func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (resul
 }
 
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	if qb.Table != nil {
 		log.Print("InsertModelBaseOnQB(ctx, qb, model) qb.Table need be nil")
@@ -135,6 +138,7 @@ func (tx *Transaction) QueryRowScan(ctx context.Context, qb QB, desc ...interfac
 	return coreQueryRowScan(ctx, tx, qb, desc...)
 }
 func coreQueryRowScan(ctx context.Context, storager Storager, qb QB, desc ...interface{}) (has bool, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
 	raw := qb.SQLSelect()
@@ -153,7 +157,8 @@ func (db *Database) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) (e
 func (tx *Transaction) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner)  (error){
 	return coreQuerySliceScaner(ctx, tx, qb, scan)
 }
-func coreQuerySliceScaner(ctx context.Context, storager Storager, qb QB, scan Scaner) (error) {
+func coreQuerySliceScaner(ctx context.Context, storager Storager, qb QB, scan Scaner) (err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
@@ -194,6 +199,7 @@ func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool,
 // }
 
 func coreQuery(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has bool, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
 	qb.Table = ptr
@@ -215,6 +221,7 @@ func (tx *Transaction) QuerySlice(ctx context.Context, slicePtr interface{}, qb 
 	return coreQuerySlice(ctx, tx, slicePtr, qb)
 }
 func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}, qb QB) (err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(slicePtr)
 	if ptrType.Kind() != reflect.Ptr {
@@ -238,6 +245,7 @@ func (tx *Transaction) Count(ctx context.Context, qb QB) (count uint64, err erro
 	return coreCount(ctx, tx, qb)
 }
 func coreCount(ctx context.Context, storager Storager, qb QB) (count uint64, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SelectRaw = []Raw{{"COUNT(*)", nil}}
 	qb.limitRaw = limitRaw{Valid: true, Limit: 0}
 	var has bool
@@ -258,6 +266,7 @@ func (tx *Transaction) Has(ctx context.Context, qb QB) (has bool, err error){
 	return coreHas(ctx, tx, qb)
 }
 func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SelectRaw = []Raw{{`1`, nil}}
 	var i int
 	return coreQueryRowScan(ctx, storager, qb, &i)
@@ -269,6 +278,7 @@ func (tx *Transaction) Sum(ctx context.Context,  column Column ,qb QB) (value sq
 	return coreSum(ctx, tx, column, qb)
 }
 func coreSum(ctx context.Context, storager Storager, column Column ,qb QB) (value sql.NullInt64, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SelectRaw = []Raw{{"SUM(" + column.wrapField() + ")", nil}}
 	_, err = coreQueryRowScan(ctx, storager, qb, &value) ; if err != nil {
 		return
@@ -283,6 +293,7 @@ func (tx *Transaction) Update(ctx context.Context, qb QB) (result sql.Result, er
 	return coreUpdate(ctx, tx, qb)
 }
 func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
@@ -298,6 +309,7 @@ func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []
 	return coreUpdateModel(ctx, tx, ptr, updateData, qb)
 }
 func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -366,12 +378,14 @@ func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	return
 }
 func (db *Database) ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
 		return
 	}
 	return db.HardDelete(ctx, qb)
 }
 func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
 		return
 	}
@@ -384,6 +398,7 @@ func (tx *Transaction) HardDelete(ctx context.Context, qb QB) (result sql.Result
 	return coreHardDelete(ctx, tx, qb)
 }
 func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLDelete()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
@@ -395,6 +410,7 @@ func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (r
 	return coreHardDeleteModel(ctx, tx, ptr, qb)
 }
 func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -418,9 +434,15 @@ func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result sql.Result
 	return coreSoftDelete(ctx, tx, qb)
 }
 func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
+	softDeleteSet := qb.Table.SoftDeleteSet()
+	if softDeleteSet.Query == "" {
+		err = xerr.New("goclub/sql: SoftDelete()" + qb.Table.TableName() + "without soft delete set")
+		return
+	}
 	qb.Update = []Update{
-		{Raw: qb.Table.SoftDeleteSet(),},
+		{Raw: softDeleteSet,},
 	}
 	raw := qb.SQLUpdate()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
@@ -432,6 +454,7 @@ func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (r
 	return coreSoftDeleteModel(ctx, tx, ptr, qb)
 }
 func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
@@ -457,6 +480,7 @@ func (tx *Transaction) QueryRelation(ctx context.Context, ptr Relation, qb QB) (
 	return coreQueryRelation(ctx, tx, ptr, qb)
 }
 func coreQueryRelation(ctx context.Context, storager Storager, ptr Relation, qb QB) (has bool, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Select = TagToColumns(ptr)
 	table := table {
@@ -489,6 +513,7 @@ func (tx *Transaction) QueryRelationSlice(ctx context.Context, relationSlicePtr 
 	return coreQueryRelationSlice(ctx, tx, relationSlicePtr, qb)
 }
 func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlicePtr interface{}, qb QB) (err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(relationSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {
@@ -521,6 +546,7 @@ func (tx *Transaction) Exec(ctx context.Context, query string, values []interfac
 	return coreExec(ctx, tx, query, values)
 }
 func coreExec(ctx context.Context, storager Storager, query string, values []interface{}) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	return storager.getCore().ExecContext(ctx, query, values... )
 }
 func (db *Database) ExecQB(ctx context.Context, qb QB, statement Statement) (result sql.Result, err error){
@@ -530,6 +556,7 @@ func (tx *Transaction) ExecQB(ctx context.Context, qb QB, statement Statement) (
 	return coreExecQB(ctx, tx, qb, statement)
 }
 func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Statement) (result sql.Result, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQL(statement)
 	result, err = storager.getCore().ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
