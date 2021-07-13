@@ -3,6 +3,7 @@ package sq
 import (
 	"errors"
 	"log"
+	"runtime/debug"
 	"strings"
 )
 
@@ -14,6 +15,11 @@ type Update struct {
 	OnUpdated func() error
 }
 func Set(column Column, value interface{}) Update {
+	if op, ok := value.(OP); ok {
+		value = op.Values[0]
+		log.Print("goclub/sql: sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use sq.Set(\"id\", taskID)")
+		debug.PrintStack()
+	}
 	return Update{Column: column, Value: value}
 }
 type InsertMultiple struct {

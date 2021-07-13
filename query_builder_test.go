@@ -843,3 +843,14 @@ func (suite TestQBSuite) TestDebug() {
 	qb.SQLSelect()
 	_=t
 }
+func (suite TestQBSuite) TestSet() {
+	t := suite.T()
+	{
+		update := sq.Set("id", sq.Equal(1))
+		assert.Equal(t, update.Value, 1)
+	}
+	{
+		update := sq.Set("id", sq.Equal(2))
+		assert.Equal(t, update.Value, 2)
+	}
+}

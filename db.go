@@ -90,7 +90,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
-	if len(qb.Insert) != 0 || len(qb.InsertMultiple.Column) != 0 {
+	if len(qb.Insert) == 0 && len(qb.InsertMultiple.Column) == 0 {
 		insertEachField(elemValue, elemType, func(column string, fieldType reflect.StructField, fieldValue reflect.Value) {
 			qb.Insert = append(qb.Insert, Insert{Column: Column(column), Value: fieldValue.Interface()})
 		})
