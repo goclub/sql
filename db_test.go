@@ -160,7 +160,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 			Select: []sq.Column{userCol.Name, userCol.Age},
 			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
 			Reviews: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
-		}, &name, &age)
+		}, []interface{}{&name, &age})
 		assert.NoError(t, err)
 		assert.Equal(t, has, true)
 		assert.Equal(t, name, "TestQueryRowScan")
@@ -174,7 +174,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 			Select: []sq.Column{userCol.Name, userCol.Age},
 			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScanNotExist")),
 			Reviews: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
-		}, &name, &age)
+		}, []interface{}{&name, &age})
 		assert.NoError(t, err)
 		assert.Equal(t, has, false)
 		assert.Equal(t, name, "")

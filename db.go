@@ -130,14 +130,14 @@ func insertEachField(elemValue reflect.Value, elemType reflect.Type, handle func
 	}
 }
 // QueryRowScan
-func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
+func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreQueryRowScan(ctx, db, qb, desc...)
+	return coreQueryRowScan(ctx, db, qb, desc)
 }
-func (tx *Transaction) QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error) {
-	return coreQueryRowScan(ctx, tx, qb, desc...)
+func (tx *Transaction) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
+	return coreQueryRowScan(ctx, tx, qb, desc)
 }
-func coreQueryRowScan(ctx context.Context, storager Storager, qb QB, desc ...interface{}) (has bool, err error) {
+func coreQueryRowScan(ctx context.Context, storager Storager, qb QB, desc []interface{}) (has bool, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
@@ -249,7 +249,7 @@ func coreCount(ctx context.Context, storager Storager, qb QB) (count uint64, err
 	qb.SelectRaw = []Raw{{"COUNT(*)", nil}}
 	qb.limitRaw = limitRaw{Valid: true, Limit: 0}
 	var has bool
-	has, err = coreQueryRowScan(ctx, storager, qb, &count);if err != nil {return }
+	has, err = coreQueryRowScan(ctx, storager, qb, []interface{}{&count});if err != nil {return }
 	if has == false {
 		raw := qb.SQLSelect()
 		query := raw.Query
@@ -269,7 +269,7 @@ func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SelectRaw = []Raw{{`1`, nil}}
 	var i int
-	return coreQueryRowScan(ctx, storager, qb, &i)
+	return coreQueryRowScan(ctx, storager, qb, []interface{}{&i})
 }
 func (db *Database) Sum(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
 	return coreSum(ctx, db,  column, qb)
@@ -280,7 +280,7 @@ func (tx *Transaction) Sum(ctx context.Context,  column Column ,qb QB) (value sq
 func coreSum(ctx context.Context, storager Storager, column Column ,qb QB) (value sql.NullInt64, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SelectRaw = []Raw{{"SUM(" + column.wrapField() + ")", nil}}
-	_, err = coreQueryRowScan(ctx, storager, qb, &value) ; if err != nil {
+	_, err = coreQueryRowScan(ctx, storager, qb, []interface{}{&value}) ; if err != nil {
 		return
 	}
 	return
@@ -369,7 +369,7 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 }
 func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	var databaseName string
-	_, err = db.QueryRowScan(ctx, QB{Raw: Raw{"SELECT DATABASE()", nil}}, &databaseName) ; if err != nil {
+	_, err = db.QueryRowScan(ctx, QB{Raw: Raw{"SELECT DATABASE()", nil}}, []interface{}{&databaseName}) ; if err != nil {
 		return
 	}
 	if strings.HasPrefix(databaseName, "test_") == false {

@@ -18,7 +18,7 @@ type API interface {
 	// 基于 Model 创建数据, 根据 Model 字段自动填充 qb.Insert
 	InsertModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error)
 	// 查询单行多列 类似 sql.Row{}.Scan()
-	QueryRowScan(ctx context.Context, qb QB, desc ...interface{}) (has bool, err error)
+	QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error)
 	// 查询单行多列并转换为结构体
 	Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error)
 	// 暂时取消 QueryModel 因为容易产生歧义
