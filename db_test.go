@@ -1288,3 +1288,41 @@ func (suite TestDBSuite) TestQueryRelationSlice() {
 		}
 	}
 }
+
+func TestInsertNullInt(t *testing.T) {
+	ctx := context.Background()
+	{
+		result, err := testDB.Insert(ctx, sq.QB{
+			Table: sq.Table("insert", nil, nil),
+			Insert: []sq.Insert{
+				{"age", sql.NullInt32{Valid:false, Int32: 1}},
+			},
+		}) ; assert.NoError(t, err)
+		id, err := result.LastInsertId() ; assert.NoError(t, err)
+		age := sql.NullInt32{}
+		has, err := testDB.QueryRowScan(ctx, sq.QB{
+			Table: sq.Table("insert", nil, nil),
+			Select:[]sq.Column{"age"},
+			Where: sq.And("id", sq.Equal(id)),
+		}, []interface{}{&age}) ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t,age, sql.NullInt32{Valid:false})
+	}
+	{
+		result, err := testDB.Insert(ctx, sq.QB{
+			Table: sq.Table("insert", nil, nil),
+			Insert: []sq.Insert{
+				{"age", sql.NullInt32{Valid:true, Int32: 1219}},
+			},
+		}) ; assert.NoError(t, err)
+		id, err := result.LastInsertId() ; assert.NoError(t, err)
+		age := sql.NullInt32{}
+		has, err := testDB.QueryRowScan(ctx, sq.QB{
+			Table: sq.Table("insert", nil, nil),
+			Select:[]sq.Column{"age"},
+			Where: sq.And("id", sq.Equal(id)),
+		}, []interface{}{&age}) ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t,age, sql.NullInt32{Valid:true, Int32: 1219})
+	}
+}

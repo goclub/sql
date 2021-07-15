@@ -11,6 +11,16 @@ import (
 // sq.Table("user",nil, nil)
 // sq.Table("user", sq.Raw{"`deleted_at` IS NULL", nil}, sq.Raw{"`deleted_at` = ?" ,[]interface{}{time.Now()}})
 func Table(tableName string, softDeleteWhere func() Raw, softDeleteSet func()Raw) Tabler {
+	if softDeleteWhere == nil {
+		softDeleteWhere = func() Raw {
+			return Raw{}
+		}
+	}
+	if softDeleteSet == nil {
+		softDeleteSet = func() Raw {
+			return Raw{}
+		}
+	}
 	return table{
 		tableName: tableName,
 		softDeleteWhere: softDeleteWhere,

@@ -36,5 +36,19 @@ func (Migrate) Migrate20201004160444CreateUserTable(mi sq.Migrate) {
 		Charset: mi.Charset().Utf8mb4,
 		Collate: mi.Utf8mb4_unicode_ci(),
 	})
+	mi.CreateTable(sq.CreateTableQB{
+		TableName: "insert",
+		PrimaryKey: []string{"id"},
+		Fields: append([]sq.MigrateField{
+			mi.Field("id").Type("bigint", 20).AutoIncrement().Unsigned(),
+			mi.Field("age").Int(11).Null(),
+		}, mi.CUDTimestamp()...),
+		Key: map[string][]string{
+
+		},
+		Engine: mi.Engine().InnoDB,
+		Charset: mi.Charset().Utf8mb4,
+		Collate: mi.Utf8mb4_unicode_ci(),
+	})
 }
 
