@@ -91,7 +91,7 @@ func (suite TestDBSuite) TestInsertModel() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestInsertModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -140,7 +140,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -156,7 +156,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 		var name string
 		var age uint64
 		has, err := testDB.QueryRowScan(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{userCol.Name, userCol.Age},
 			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScan")),
 			Reviews: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
@@ -170,7 +170,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 		var name string
 		var age uint64
 		has, err := testDB.QueryRowScan(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{userCol.Name, userCol.Age},
 			Where: sq.And(userCol.Name, sq.Equal("TestQueryRowScanNotExist")),
 			Reviews: []string{"SELECT `name`, `age` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL LIMIT ?"},
@@ -190,7 +190,7 @@ func (suite TestDBSuite) TestQuery() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -253,7 +253,7 @@ func (suite TestDBSuite) TestQuerySliceScaner() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestQuerySliceScaner")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -277,7 +277,7 @@ func (suite TestDBSuite) TestQuerySliceScaner() {
 		}
 		var list []Data
 		err := testDB.QuerySliceScaner(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{userCol.Name, userCol.Age},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestQuerySliceScaner")),
 			OrderBy: []sq.OrderBy{{userCol.Name, sq.ASC}},
@@ -304,7 +304,7 @@ func (suite TestDBSuite) TestQuerySlice() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestQuerySlice")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -346,7 +346,7 @@ func (suite TestDBSuite) TestCount() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -368,7 +368,7 @@ func (suite TestDBSuite) TestCount() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 		})
 		assert.NoError(t, err)
@@ -381,7 +381,7 @@ func (suite TestDBSuite) TestCount() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 		})
 		assert.NoError(t, err)
@@ -395,7 +395,7 @@ func (suite TestDBSuite) TestHas() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -403,7 +403,7 @@ func (suite TestDBSuite) TestHas() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
 			Reviews: []string{"SELECT 1 FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -418,7 +418,7 @@ func (suite TestDBSuite) TestHas() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
 		})
 		assert.NoError(t, err)
@@ -434,7 +434,7 @@ func (suite TestDBSuite) TestSum() {
 	// 清空数据
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -442,7 +442,7 @@ func (suite TestDBSuite) TestSum() {
 	}
 	{
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -460,7 +460,7 @@ func (suite TestDBSuite) TestSum() {
 	}
 	{
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -478,7 +478,7 @@ func (suite TestDBSuite) TestSum() {
 	}
 	{
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -496,7 +496,7 @@ func (suite TestDBSuite) TestSum() {
 	}
 	{
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -515,13 +515,13 @@ func (suite TestDBSuite) TestSum() {
 // 	newID := sq.UUID()
 // 	{
 // 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-// 			Table: User{},
+// 			Table: &User{},
 // 			Where: sq.And(userCol.Name, sq.Like("TestQueryModel")),
 // 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 // 		})
 // 		assert.NoError(t, err)
 // 		result, err := testDB.Insert(context.TODO(), sq.QB{
-// 			Table: TableUser{},
+// 			Table: &TableUser{},
 // 			Insert: []sq.Insert{
 // 				sq.Value(userCol.ID, newID),
 // 				sq.Value(userCol.Name, "TestQueryModel"),
@@ -557,7 +557,7 @@ func (suite TestDBSuite) TestQueryModelSlice() {
 
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table:    User{},
+			Table:    &User{},
 			Where:    sq.And(userCol.Name, sq.Like("TestQueryModelSlice")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -574,7 +574,7 @@ func (suite TestDBSuite) TestQueryModelSlice() {
 	{
 		for i:=0;i<10;i++ {
 			result, err := testDB.Insert(context.TODO(), sq.QB{
-				Table: TableUser{},
+				Table: &TableUser{},
 				Insert: []sq.Insert{
 					sq.Value(userCol.ID, sq.UUID()),
 					sq.Value(userCol.Name, "TestQueryModelSlice_" + strconv.Itoa(i)),
@@ -617,13 +617,13 @@ func (suite TestDBSuite) TestUpdate() {
 	_=createTime
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestUpdate")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, newID),
 				sq.Value(userCol.Name, "TestUpdate"),
@@ -653,7 +653,7 @@ func (suite TestDBSuite) TestUpdate() {
 	time.Sleep(time.Second)
 	{
 		result, err := testDB.Update(context.TODO(), sq.QB{
-				Table: User{},
+				Table: &User{},
 				Where: sq.And(userCol.ID, sq.Equal(newID)),
 				Update: []sq.Update{
 					sq.Set(userCol.Name, "TestUpdate_changed"),
@@ -691,13 +691,13 @@ func (suite TestDBSuite) TestUpdateModel() {
 
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestUpdateModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
 		assert.NoError(t, err)
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, newID),
 				sq.Value(userCol.Name, "TestUpdateModel"),
@@ -761,7 +761,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestHardDelete")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -770,7 +770,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -780,7 +780,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	}
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, sq.UUID()),
 				sq.Value(userCol.Name, "TestHardDelete"),
@@ -795,7 +795,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -805,7 +805,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	}
 	{
 		result, err := testDB.HardDelete(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestHardDelete")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -816,7 +816,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -835,7 +835,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestHardDeleteModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -844,7 +844,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -855,7 +855,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 	newID := sq.UUID()
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, newID),
 				sq.Value(userCol.Name, "TestHardDeleteModel"),
@@ -870,7 +870,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -887,7 +887,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -904,7 +904,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestSoftDelete")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -913,7 +913,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	}
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, sq.UUID()),
 				sq.Value(userCol.Name, "TestSoftDelete"),
@@ -928,7 +928,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -937,7 +937,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	}
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, sq.UUID()),
 				sq.Value(userCol.Name, "TestSoftDelete"),
@@ -952,7 +952,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -961,7 +961,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	}
 	{
 		result, err := testDB.SoftDelete(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews: []string{"UPDATE `user` SET `deleted_at` = ? WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -972,7 +972,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	}
 	{
 		_, err := testDB.SoftDelete(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 		})
 		assert.EqualError(t, err, "Error 1064: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'goclub/sql:(MAYBE_FORGET_WHERE)' at line 1")
 	}
@@ -983,7 +983,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestSoftDeleteModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -992,7 +992,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 	newID := IDUser(sq.UUID())
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, newID),
 				sq.Value(userCol.Name, "TestSoftDeleteModel"),
@@ -1007,7 +1007,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -1023,7 +1023,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 	}
 	{
 		count, err := testDB.Count(context.TODO(), sq.QB{
-			Table:             User{},
+			Table:             &User{},
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -1037,7 +1037,7 @@ func (suite TestDBSuite) TestExecQB() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestExecQB")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -1045,7 +1045,7 @@ func (suite TestDBSuite) TestExecQB() {
 	}
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: TableUser{},
+			Table: &TableUser{},
 			Insert: []sq.Insert{
 				sq.Value(userCol.ID, sq.UUID()),
 				sq.Value(userCol.Name, "TestExecQB"),
@@ -1059,7 +1059,7 @@ func (suite TestDBSuite) TestExecQB() {
 		assert.Equal(t, affected, int64(1))
 	}
 	result, err := testDB.ExecQB(context.TODO(), sq.QB{
-		Table: User{},
+		Table: &User{},
 		Update: []sq.Update{sq.Set("name", "TestExecQB_changed")},
 		Where: sq.And("name", sq.LikeLeft("TestExecQB")),
 	}, sq.Statement("").Enum().Update)
@@ -1075,7 +1075,7 @@ func (suite TestDBSuite) TestTransaction() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestTransaction")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -1083,7 +1083,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table:User{},
+			Table:&User{},
 			Where: sq.And("name", sq.Equal("TestTransaction_1")),
 		})
 		assert.NoError(t, err)
@@ -1103,7 +1103,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table:User{},
+			Table:&User{},
 			Where: sq.And("name", sq.Equal("TestTransaction_1")),
 		})
 		assert.NoError(t, err)
@@ -1111,7 +1111,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table:User{},
+			Table:&User{},
 			Where: sq.And("name", sq.Equal("TestTransaction_2")),
 		})
 		assert.NoError(t, err)
@@ -1131,7 +1131,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table:User{},
+			Table:&User{},
 			Where: sq.And("name", sq.Equal("TestTransaction_2")),
 		})
 		assert.NoError(t, err)
@@ -1140,7 +1140,7 @@ func (suite TestDBSuite) TestTransaction() {
 
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table:User{},
+			Table:&User{},
 			Where: sq.And("name", sq.Equal("TestTransaction_3")),
 		})
 		assert.NoError(t, err)
@@ -1159,7 +1159,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		has, err := testDB.Has(context.TODO(), sq.QB{
-			Table:User{},
+			Table:&User{},
 			Where: sq.And("name", sq.Equal("TestTransaction_3")),
 		})
 		assert.NoError(t, err)
@@ -1174,7 +1174,7 @@ func (suite TestDBSuite) TestQueryRelation() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestQueryRelation")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -1191,7 +1191,7 @@ func (suite TestDBSuite) TestQueryRelation() {
 	newID := sq.UUID()
 	{
 		_, err := testDB.Insert(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Insert: []sq.Insert{
 				sq.Value("id", newID),
 				sq.Value("name", "TestQueryRelation"),
@@ -1231,7 +1231,7 @@ func (suite TestDBSuite) TestQueryRelationSlice() {
 	userCol := User{}.Column()
 	{
 		_, err := testDB.ClearTestData(context.TODO(), sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And(userCol.Name, sq.Like("TestQueryRelationSlice")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -1251,7 +1251,7 @@ func (suite TestDBSuite) TestQueryRelationSlice() {
 			newID := sq.UUID()
 			idList = append(idList, IDUser(newID))
 			_, err := testDB.Insert(context.TODO(), sq.QB{
-				Table: User{},
+				Table: &User{},
 				Insert: []sq.Insert{
 					sq.Value("id", newID),
 					sq.Value("name", "TestQueryRelationSlice_" + strconv.Itoa(i)),

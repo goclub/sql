@@ -17,7 +17,7 @@ type TestQBSuite struct {
 func (suite TestQBSuite) TestTable() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 	}
 	raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL", query)
@@ -39,7 +39,7 @@ func (suite TestQBSuite) TestDisableSoftDelete() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			DisableSoftDelete: true,
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
@@ -48,7 +48,7 @@ func (suite TestQBSuite) TestDisableSoftDelete() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			DisableSoftDelete: false,
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
@@ -64,11 +64,11 @@ func (suite TestQBSuite) TestUnionTable() {
 			UnionTable: sq.UnionTable{
 				Tables:    []sq.QB{
 					{
-						Table:User{},
+						Table:&User{},
 						Where: where,
 					},
 					{
-						Table:User{},
+						Table:&User{},
 						Where: where,
 					},
 				},
@@ -88,11 +88,11 @@ func (suite TestQBSuite) TestUnionTable() {
 			UnionTable: sq.UnionTable{
 				Tables:    []sq.QB{
 					{
-						Table:User{},
+						Table:&User{},
 						Where: where,
 					},
 					{
-						Table:User{},
+						Table:&User{},
 						Where: where,
 					},
 				},
@@ -143,7 +143,7 @@ func (suite TestQBSuite) TestSelect() {
 func (suite TestQBSuite) TestSelectRaw() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		// Select 会被忽略 优先使用 SelectRaw
 		Select: []sq.Column{"name"},
 		SelectRaw: []sq.Raw{
@@ -176,7 +176,7 @@ func (suite TestQBSuite) TestSelectColumnHasDot() {
 func (suite TestQBSuite) TestIndex() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Index: "USE INDEX(PRIMARY)",
 	}
 	raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
@@ -188,7 +188,7 @@ func (suite TestQBSuite) TestWhere() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"name", sq.Equal("nimo")},
 			},
@@ -204,7 +204,7 @@ func (suite TestQBSuite) TestWhereOR() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			WhereOR: [][]sq.Condition{
 				{{"name", sq.Equal("nimo")}},
 				{{"name", sq.Equal("nico")}},
@@ -216,7 +216,7 @@ func (suite TestQBSuite) TestWhereOR() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{"id"},
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
@@ -244,7 +244,7 @@ func (suite TestQBSuite) TestWhereOR() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{"id"},
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
@@ -260,7 +260,7 @@ func (suite TestQBSuite) TestWhereOR() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{"id"},
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
@@ -276,7 +276,7 @@ func (suite TestQBSuite) TestWhereOR() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{"id"},
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
@@ -296,7 +296,7 @@ func (suite TestQBSuite) TestWhereRaw() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			WhereRaw: sq.Raw{"`name` = ? AND `age` = ?", []interface{}{"nimo", 1}},
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
@@ -309,7 +309,7 @@ func (suite TestQBSuite) TestWhereOPRaw() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				sq.ConditionRaw("`name` = `cname`", nil),
 				sq.ConditionRaw("`age` = ?", []interface{}{1}),
@@ -322,7 +322,7 @@ func (suite TestQBSuite) TestWhereOPRaw() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				sq.ConditionRaw("`name` = ?", []interface{}{"nimo"}),
 			},
@@ -336,10 +336,10 @@ func (suite TestQBSuite) TestWhereSubQuery() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"id", sq.SubQuery("IN", sq.QB{
-					Table: User{},
+					Table: &User{},
 					Select: []sq.Column{"id"},
 				})},
 			},
@@ -353,7 +353,7 @@ func (suite TestQBSuite) TestWhereAndTwoCondition() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"name", sq.Equal("nimo")},
 				{"age", sq.Equal(18)},
@@ -372,7 +372,7 @@ func (suite TestQBSuite) TestWhereOPGtIntLtInt() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"age", sq.GtInt(18)},
 				{"age", sq.LtInt(19)},
@@ -388,7 +388,7 @@ func (suite TestQBSuite) TestWhereOPGtIntLtInt() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"age", sq.GtOrEqualInt(18)},
 				{"age", sq.LtOrEqualInt(19)},
@@ -407,7 +407,7 @@ func (suite TestQBSuite) TestWhereOPGtFloatLtFloat() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"age", sq.GtFloat(18.11)},
 				{"age", sq.LtFloat(19.22)},
@@ -423,7 +423,7 @@ func (suite TestQBSuite) TestWhereOPGtFloatLtFloat() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"age", sq.GtOrEqualFloat(18.11)},
 				{"age", sq.LtOrEqualFloat(19.22)},
@@ -445,7 +445,7 @@ func (suite TestQBSuite) TestWhereOPGtFloatLtFloat() {
 //
 // 	{
 // 		qb := sq.QB{
-// 			Table: User{},
+// 			Table: &User{},
 // 			Where: []sq.Condition{
 // 				{"age", sq.GtTime(startTime)},
 // 				{"age", sq.LtTime(endTime)},
@@ -461,7 +461,7 @@ func (suite TestQBSuite) TestWhereOPGtFloatLtFloat() {
 // 	}
 // 	{
 // 		qb := sq.QB{
-// 			Table: User{},
+// 			Table: &User{},
 // 			Where: []sq.Condition{
 // 				{"age", sq.GtOrEqualTime(startTime)},
 // 				{"age", sq.LtOrEqualTime(endTime)},
@@ -480,7 +480,7 @@ func (suite TestQBSuite) TestWhereOPGtFloatLtFloat() {
 func (suite TestQBSuite) TestWhereEqualAndNotEqual() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Where: []sq.Condition{
 			{"name", sq.Equal("nimo")},
 			{"book", sq.NotEqual("abc")},
@@ -498,7 +498,7 @@ func (suite TestQBSuite) TestWhereEqualAndNotEqual() {
 func (suite TestQBSuite) TestWhereLike() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Where: []sq.Condition{
 			{"name", sq.Like("nimo")},
 		},
@@ -515,7 +515,7 @@ func (suite TestQBSuite) TestWhereLike() {
 func (suite TestQBSuite) TestWhereLikeLeft() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Where: []sq.Condition{
 			{"name", sq.LikeLeft("nimo")},
 		},
@@ -531,7 +531,7 @@ func (suite TestQBSuite) TestWhereLikeLeft() {
 func (suite TestQBSuite) TestWhereLikeRight() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Where: []sq.Condition{
 			{"name", sq.LikeRight("nimo")},
 		},
@@ -549,7 +549,7 @@ func (suite TestQBSuite) TestWhereLikeRight() {
 func (suite TestQBSuite) TestWhereIn() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Where: []sq.Condition{
 			{"id", sq.In([]string{"a","b"})},
 		},
@@ -566,7 +566,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 	t := suite.T()
 	test := func (searchName string, query string, values []interface{}) {
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Select: []sq.Column{"id"},
 			Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
 			Reviews: []string{
@@ -583,7 +583,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 	test("nimo", "SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL", []interface{}{"nimo"})
 	{
 		raw := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And("name", sq.Ignore(true, sq.Equal("nimo"))),
 			DisableSoftDelete: true,
 		}.SQLSelect()
@@ -592,7 +592,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 	}
 	{
 		raw := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: sq.And("name", sq.Ignore(true, sq.Equal("nimo"))).And("age", sq.Ignore(true, sq.Equal(1))),
 			DisableSoftDelete: true,
 		}.SQLSelect()
@@ -609,7 +609,7 @@ func (suite TestQBSuite) TestInPanic() {
 			panicValue = recover()
 		}()
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Where: []sq.Condition{
 				{"id", sq.In("a")},
 			},
@@ -623,7 +623,7 @@ func (suite TestQBSuite) TestLimit() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Limit: 1,
 		}
 		raw := qb.SQLSelect()
@@ -632,7 +632,7 @@ func (suite TestQBSuite) TestLimit() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL")
@@ -643,7 +643,7 @@ func (suite TestQBSuite) TestOffset() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Offset: 100,
 		}
 		raw := qb.SQLSelect()
@@ -652,7 +652,7 @@ func (suite TestQBSuite) TestOffset() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL")
@@ -663,7 +663,7 @@ func (suite TestQBSuite) TestLimitOffset() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Limit:2,
 			Offset: 100,
 		}
@@ -676,7 +676,7 @@ func (suite TestQBSuite) TestLock() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Lock: sq.FORSHARE,
 		}
 		raw := qb.SQLSelect()
@@ -685,7 +685,7 @@ func (suite TestQBSuite) TestLock() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Lock: sq.FORUPDATE,
 		}
 		raw := qb.SQLSelect()
@@ -732,7 +732,7 @@ func (suite TestQBSuite) TestOrderBy() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Limit: 2,
 			Offset:10,
 			OrderBy: []sq.OrderBy{{Column: "name"}},
@@ -743,7 +743,7 @@ func (suite TestQBSuite) TestOrderBy() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Limit: 2,
 			Offset:10,
 			OrderBy: []sq.OrderBy{{"name", sq.DESC}},
@@ -754,7 +754,7 @@ func (suite TestQBSuite) TestOrderBy() {
 	}
 	{
 		qb := sq.QB{
-			Table: User{},
+			Table: &User{},
 			Limit: 2,
 			Offset:10,
 			OrderBy: []sq.OrderBy{{"name", sq.DESC,}, {"age", sq.ASC}},
@@ -767,7 +767,7 @@ func (suite TestQBSuite) TestOrderBy() {
 func (suite TestQBSuite) TestUnsafeDelete() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 	}
 	raw := qb.SQLDelete()
 	assert.Equal(t, "goclub/sql:(MAYBE_FORGET_WHERE)", raw.Query)
@@ -776,7 +776,7 @@ func (suite TestQBSuite) TestUnsafeDelete() {
 func (suite TestQBSuite) TestHaving() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		SelectRaw: []sq.Raw{
 			{"`name`", nil},
 			{"count(*) AS count", nil},
@@ -791,7 +791,7 @@ func (suite TestQBSuite) TestHaving() {
 func (suite TestQBSuite) TestInsert() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		UseInsertIgnoreInto: true,
 		Insert: []sq.Insert{
 			sq.Value("name", "nimoc"),
@@ -805,7 +805,7 @@ func (suite TestQBSuite) TestInsert() {
 func (suite TestQBSuite) TestInsertMultiple() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		InsertMultiple: sq.InsertMultiple{
 			Column: []sq.Column{"name", "age"},
 			Values: [][]interface{}{
@@ -822,7 +822,7 @@ func (suite TestQBSuite) TestInsertMultiple() {
 func (suite TestQBSuite) TestUpdate() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		UseUpdateIgnore: true,
 		Update: []sq.Update{sq.Set("age", 2)},
 		Where:  sq.And("id", sq.Equal(1)),
@@ -834,7 +834,7 @@ func (suite TestQBSuite) TestUpdate() {
 func (suite TestQBSuite) TestDebug() {
 	t := suite.T()
 	qb := sq.QB{
-		Table: User{},
+		Table: &User{},
 		Where:  sq.
 			And("id", sq.Equal(1)).
 			And("date", sq.Equal(time.Now())),

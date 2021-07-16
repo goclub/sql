@@ -17,7 +17,7 @@ type TableUser struct {
 	sq.SoftDeletedAt
 }
 // 通过 TableName() 配置表名
-func (TableUser) TableName() string {return "user"}
+func (*TableUser) TableName() string {return "user"}
 // 给 user 表的 id 字段增加类型可减少代码中传错 id 的错误
 type IDUser string
 // 定义符合 sq.Model 接口的结构体
@@ -64,7 +64,7 @@ type UserWithAddress struct {
 	Address sql.NullString `db:"user_address.address"`
 }
 func (UserWithAddress) SoftDeleteWhere() (sq.Raw) {return sq.Raw{"`user`.`deleted_at` IS NULL AND `user_address`.`deleted_at` IS NULL", nil}}
-func (UserWithAddress) TableName() string {return "user"}
+func (*UserWithAddress) TableName() string {return "user"}
 func (UserWithAddress) RelationJoin() []sq.Join {
 	return []sq.Join{
 		{

@@ -230,6 +230,9 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	if qb.Table == nil {
 		elemType := ptrType.Elem()
 		reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
+		if reflectItemValue.CanAddr() {
+			reflectItemValue = reflectItemValue.Addr()
+		}
 		tablerInterface := reflectItemValue.Interface().(Tabler)
 		qb.Table = tablerInterface
 	}
@@ -521,6 +524,9 @@ func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlic
 	}
 	elemType := ptrType.Elem()
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
+	if reflectItemValue.CanAddr() {
+		reflectItemValue = reflectItemValue.Addr()
+	}
 	tablerInterface := reflectItemValue.Interface().(Relation)
 
 	qb.Select = TagToColumns(tablerInterface)
