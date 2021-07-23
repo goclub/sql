@@ -78,10 +78,10 @@ func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (resul
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = ptr.BeforeCreate() ; if err != nil {return}
-	if qb.Table != nil {
-		log.Print("InsertModelBaseOnQB(ctx, qb, model) qb.Table need be nil")
+	if qb.Form != nil {
+		log.Print("InsertModelBaseOnQB(ctx, qb, model) qb.Form need be nil")
 	}
-	qb.Table = ptr
+	qb.Form = ptr
 	qb.SQLChecker = storager.getSQLChecker()
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
@@ -202,7 +202,7 @@ func coreQuery(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has 
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
-	qb.Table = ptr
+	qb.Form = ptr
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
 	row := storager.getCore().QueryRowxContext(ctx, query, values...)
@@ -227,14 +227,14 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	if ptrType.Kind() != reflect.Ptr {
 		return errors.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
-	if qb.Table == nil {
+	if qb.Form == nil {
 		elemType := ptrType.Elem()
 		reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
 		if reflectItemValue.CanAddr() {
 			reflectItemValue = reflectItemValue.Addr()
 		}
 		tablerInterface := reflectItemValue.Interface().(Tabler)
-		qb.Table = tablerInterface
+		qb.Form = tablerInterface
 	}
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
@@ -353,7 +353,7 @@ func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateDa
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 	    return
 	}
-	qb.Table = ptr
+	qb.Form = ptr
 	qb.Update = updateData
 	qb.Where = primaryKey
 	qb.SQLChecker = storager.getSQLChecker()
@@ -422,7 +422,7 @@ func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb Q
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
 	}
-	qb.Table = ptr
+	qb.Form = ptr
 	qb.Where = primaryKey
 	qb.Limit = 1
 
@@ -439,9 +439,9 @@ func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result sql.Result
 func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
-	softDeleteSet := qb.Table.SoftDeleteSet()
+	softDeleteSet := qb.Form.SoftDeleteSet()
 	if softDeleteSet.Query == "" {
-		err = xerr.New("goclub/sql: SoftDelete()" + qb.Table.TableName() + "without soft delete set")
+		err = xerr.New("goclub/sql: SoftDelete()" + qb.Form.TableName() + "without soft delete set")
 		return
 	}
 	qb.Update = []Update{
@@ -466,7 +466,7 @@ func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, qb Q
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
 	}
-	qb.Table = ptr
+	qb.Form = ptr
 	qb.Where = primaryKey
 	qb.Update = []Update{{Raw:ptr.SoftDeleteSet(),}}
 	qb.Limit = 1
@@ -492,7 +492,7 @@ func coreQueryRelation(ctx context.Context, storager Storager, ptr Relation, qb 
 		// Relation 不需要 update
 		softDeleteSet: func() Raw {return Raw{}},
 	}
-	qb.Table = table
+	qb.Form = table
 	qb.Limit = 1
 	qb.Join = ptr.RelationJoin()
 
@@ -530,7 +530,7 @@ func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlic
 	tablerInterface := reflectItemValue.Interface().(Relation)
 
 	qb.Select = TagToColumns(tablerInterface)
-	qb.Table = table {
+	qb.Form = table {
 		tableName: tablerInterface.TableName(),
 		softDeleteWhere: tablerInterface.SoftDeleteWhere,
 		// Relation 不需要 update

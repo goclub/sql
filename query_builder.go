@@ -36,17 +36,17 @@ func Value(column Column, value interface{}) Insert {
 }
 
 type QB struct {
-	Table Tabler
-		tableName string
-	TableRaw TableRaw
+	Select []Column
+	SelectRaw []Raw
+
+	Form Tabler
+		form string
+	FormRaw FormRaw
 
 	DisableSoftDelete bool
 		softDelete Raw
 
 	UnionTable UnionTable
-
-	Select []Column
-	SelectRaw []Raw
 
 	Index string
 
@@ -94,7 +94,7 @@ func (qb QB) mustInTransaction() error {
 	return errors.New("goclub/sql: SELECT " + qb.Lock.String() + " must exec in transaction")
 }
 
-type TableRaw struct {
+type FormRaw struct {
 	TableName Raw
 	SoftDeleteWhere Raw
 }
@@ -211,29 +211,29 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push(unionRaw.Query)
 		values = append(values, unionRaw.Values...)
 	}
-	if qb.Table != nil {
-		qb.tableName = "`" + qb.Table.TableName() + "`"
+	if qb.Form != nil {
+		qb.form = "`" + qb.Form.TableName() + "`"
 		switch statement {
 		case statement.Enum().Select,
 			 statement.Enum().Update:
-			qb.softDelete = qb.Table.SoftDeleteWhere()
+			qb.softDelete = qb.Form.SoftDeleteWhere()
 		case statement.Enum().Insert:
 		case statement.Enum().Delete:
 		default:
 			panic(errors.New("statement can not be " + statement.String()))
 		}
 	}
-	if qb.TableRaw.TableName.Query != ""{
-		qb.tableName = qb.TableRaw.TableName.Query
-		values = append(values, qb.TableRaw.TableName.Values...)
-		qb.softDelete = qb.TableRaw.SoftDeleteWhere
+	if qb.FormRaw.TableName.Query != ""{
+		qb.form = qb.FormRaw.TableName.Query
+		values = append(values, qb.FormRaw.TableName.Values...)
+		qb.softDelete = qb.FormRaw.SoftDeleteWhere
 	}
 	statement.Switch(func(_Select int) {
 	  if qb.UnionTable.Tables == nil {
 		  sqlList.Push("SELECT")
 		  if qb.SelectRaw == nil {
-			  if qb.Table != nil && len(qb.Select) == 0 {
-				  qb.Select = TagToColumns(qb.Table)
+			  if qb.Form != nil && len(qb.Select) == 0 {
+				  qb.Select = TagToColumns(qb.Form)
 			  }
 			  if len(qb.Select) == 0 {
 				  sqlList.Push("*")
@@ -249,7 +249,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			  sqlList.Push(strings.Join(rawColumns, ", "))
 		  }
 		  sqlList.Push("FROM")
-		  sqlList.Push(qb.tableName)
+		  sqlList.Push(qb.form)
 	  }
 	  if qb.Index != "" {
 	  	sqlList.Push(qb.Index)
@@ -265,7 +265,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		if qb.UseUpdateIgnore {
 			sqlList.Push("IGNORE")
 		}
-		sqlList.Push(qb.tableName)
+		sqlList.Push(qb.form)
 		sqlList.Push("SET")
 		var sets  []string
 		for _, data := range qb.Update {
@@ -280,7 +280,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push(strings.Join(sets, ","))
 	}, func(_Delete string) {
 		sqlList.Push("DELETE FROM")
-		sqlList.Push(qb.tableName)
+		sqlList.Push(qb.form)
 	}, func(_Insert []int) {
 			if qb.UseInsertIgnoreInto {
 				sqlList.Push("INSERT IGNORE INTO")
@@ -288,7 +288,7 @@ func (qb QB) SQL(statement Statement) Raw {
 				sqlList.Push("INSERT INTO")
 			}
 
-			sqlList.Push(qb.tableName)
+			sqlList.Push(qb.form)
 			if len(qb.Insert) != 0 {
 				var insertValues []interface{}
 				for _, insert := range qb.Insert {
