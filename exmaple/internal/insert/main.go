@@ -20,7 +20,7 @@ func example(ctx context.Context) error {
 	// qb 是 goclub/sql 的核心，用于生产sql
 	userCol := m.TableUser{}.Column()
 	qb := sq.QB{
-		Form: &m.TableUser{},
+		From: &m.TableUser{},
 		Insert: []sq.Insert{
 			sq.Value(userCol.ID, sq.UUID()),
 			sq.Value(userCol.Name, "nimo"),
