@@ -1,5 +1,4 @@
-
-// Generate by https://tools.goclub.vip
+// Generate by https://t.goclub.run
 package m
 import (
 	"database/sql"
@@ -19,9 +18,10 @@ type TableUser struct {
 // 给 TableName 加上指针 * 能避免 db.InsertModel(user) 这种错误， 应当使用 db.InsertModel(&user) 或
 func (*TableUser) TableName() string { return "user" }
 type User struct {
-	ID   IDUser  `db:"id" sq:"ignoreCreate" sq:"ignoreUpdate" `
-	Name string  `db:"name"`
-	Age  uint8   `db:"age"`
+	ID            IDUser  `db:"id" sq:"ignoreInsert" sq:"ignoreUpdate" `
+	Name          string  `db:"name"`
+	Mobile        string  `db:"mobile"`
+	ChinaIDCardNo string  `db:"china_id_card_no"`
 	TableUser
 	sq.CreatedAtUpdatedAt
 	sq.DefaultLifeCycle
@@ -41,15 +41,17 @@ func (v *User) AfterCreate(result sql.Result) error {
 }
 
 func (v TableUser) Column() (col struct{
-	ID    sq.Column
-	Name  sq.Column
-	Age   sq.Column
+	ID             sq.Column
+	Name           sq.Column
+	Mobile         sq.Column
+	ChinaIDCardNo  sq.Column
 	CreatedAt sq.Column
 	UpdatedAt sq.Column
 }) {
-	col.ID    = "id"
-	col.Name  = "name"
-	col.Age   = "age"
+	col.ID             = "id"
+	col.Name           = "name"
+	col.Mobile         = "mobile"
+	col.ChinaIDCardNo  = "china_id_card_no"
 	col.CreatedAt = "created_at"
 	col.UpdatedAt = "updated_at"
 	return

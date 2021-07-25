@@ -18,35 +18,44 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 [goclub/sql](https://github.com/goclub/sql) 提供介于手写 sql 和 ORM 之间的使用体验。
 
 
-## 连接数据库
+## Open
+
+> 连接数据库
 
 goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函数。 `dbClose` 等同于 `db.Close`
 
-[connect | embed](./exmaple/internal/connect/main.go)
+[Open](./example/internal/connect/main.go)
 
 
-## 通过迁移创建表
+## ExecMigrate
 
-> 新建并编辑迁移命令 
+> 通过迁移代码创建表结构 
 
-[创建用户迁移文件 | embed](./example/internal/migrate/actions/20201004160444_create_user_table.go)
+[创建用户迁移文件](./example/internal/migrate/migrate/user.go)
 
-> 创建入口文件
+[ExecMigrate](./example/internal/migrate/main.go)
 
-[入口 | embed](./example/internal/migrate/main.go)
+## 可视化创建 Model
 
-## 准备表
+[t.goclub.run](https://t.goclub.run/?kind=model)
 
+## InsertModel
 
-[可视化配置 model](https://tools.goclub.vip/?tag=model)
-
-## 插入数据
-
-> INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)
-
-[insert | embed](./example/internal/insert/main.go)
-
-## 基于 Model 插入数据
+> 基于 Model 插入数据
 
 大部分场景下使用 `db.Insert` 插入数据有点繁琐。基于 `sq.Model` 使用 `db.InsertModel`操作数据会方便很多。
+
+[InsertModel](./example/internal/insert_model/main.go)
+
+## Insert
+
+你也可以不通过 Model 插入数据
+
+[Insert](./example/internal/insert/main.go)
+
+
+## UpdateModel
+
+> 基于 Update 更新数据
+
 
