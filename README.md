@@ -24,16 +24,16 @@ GORM XORM 存在 ORM 都有的特点，使用者容易使用 ORM 运行一些性
 
 goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函数。 `dbClose` 等同于 `db.Close`
 
-[Open](./example/internal/connect/main.go)
+[Open](./example/internal/connect/main.go?embed)
 
 
 ## ExecMigrate
 
 > 通过迁移代码创建表结构 
 
-[创建用户迁移文件](./example/internal/migrate/migrate/user.go)
+[创建用户迁移文件](./example/internal/migrate/migrate/user.go?embed)
 
-[ExecMigrate](./example/internal/migrate/main.go)
+[ExecMigrate](./example/internal/migrate/main.go?embed)
 
 ## 可视化创建 Model
 
@@ -45,13 +45,13 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 大部分场景下使用 `db.Insert` 插入数据有点繁琐。基于 `sq.Model` 使用 `db.InsertModel`操作数据会方便很多。
 
-[InsertModel](./example/internal/insert_model/main.go)
+[InsertModel](./example/internal/insert_model/main.go?embed)
 
 ## Insert
 
 你也可以不通过 Model 插入数据
 
-[Insert](./example/internal/insert/main.go)
+[Insert](./example/internal/insert/main.go?embed)
 
 
 ## UpdateModel
