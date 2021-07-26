@@ -1,3 +1,67 @@
+!(function () {
+    function markrunSidebar(settings) {
+        settings = settings || {}
+        settings.content = settings.content || document.body
+        var map = {}
+        var sidebar = document.createElement('ul')
+        var childNodes = settings.content.querySelectorAll('h2,h3')
+        var childNodesLength = childNodes.length
+        var currentSubHeaderId = null
+        childNodes.forEach(function(element){
+            var id = element.id
+            var text = element.innerText
+            var data = {
+                id: id,
+                text: text
+            }
+            switch (element.tagName) {
+                case 'H2':
+                    currentSubHeaderId = id
+                    map[id] = map[id] || data
+                    break
+                case 'H3':
+                    if (currentSubHeaderId !== null) {
+                        map[currentSubHeaderId].child = map[currentSubHeaderId].child ||[]
+                        map[currentSubHeaderId].child.push(data)
+                    }
+                    break
+                default:
+            }
+        })
+        for(var key in map) {
+            var item = map[key]
+            var li = document.createElement('li')
+            var link = document.createElement('a')
+            link.innerHTML = item.text
+            link.setAttribute('href', '#' + item.id)
+            link.setAttribute('class', 'markdown-sidebar-link')
+            li.appendChild(link)
+            sidebar.appendChild(li)
+            if (item.child) {
+                var littleUl = document.createElement('ul')
+                item.child.forEach(function (littleTitle) {
+                    var littleLi = document.createElement('li')
+                    var littleLink = document.createElement('a')
+                    littleLink.innerHTML = littleTitle.text
+                    littleLink.setAttribute('href', '#' + littleTitle.id)
+                    littleLink.setAttribute('class', 'markdown-sidebar-link')
+                    littleLi.appendChild(littleLink)
+                    littleUl.appendChild(littleLi)
+                })
+                li.appendChild(littleUl)
+            }
+        }
+        settings.element.appendChild(sidebar)
+        return map
+    }
+    if (typeof window !== 'undefined') {
+        window.markrunSidebar = markrunSidebar
+    }
+    if (typeof module !== 'undefined') {
+        module.exports = markrunSidebar
+    }
+})()
+
 document.querySelectorAll('a').forEach(function (node) {
     var cloneLink = node.cloneNode(true)
     var sourcePath = node.href.replace(embedReg, "").replace(location.origin + location.pathname, '')
@@ -32,7 +96,7 @@ document.querySelectorAll('a').forEach(function (node) {
         code.innerHTML = html
         pre.appendChild(code)
         var sourceLink = document.createElement("a")
-        sourceLink.innerText = node.innerText + ":" + sourcePath.replace(embedReg, "")
+        sourceLink.innerText = node.innerText + ": " + sourcePath.replace(embedReg, "")
         sourceLink.href = onlineHref
         box.appendChild(sourceLink)
         box.appendChild(pre)
@@ -42,4 +106,17 @@ document.querySelectorAll('a').forEach(function (node) {
         box.appendChild(cloneSourceLink)
         node.parentNode.replaceChild(box,node)
     })
+})
+document.getElementById("nav").className = "markdown-header"
+var markrunSideData = markrunSidebar({
+    content: document.getElementById("content"),
+    element: document.getElementById("nav")
+})
+var topNode = document.createElement('span')
+topNode.innerText = "TOP"
+topNode.className = "gotop"
+document.body.appendChild(topNode)
+var timer = null
+topNode.addEventListener("click", function (){
+    scrollTo(0,0);
 })

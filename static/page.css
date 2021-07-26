@@ -1,15 +1,8 @@
 .markdown-header {
-    box-sizing: border-box;
-    position: fixed;
-    width: 100%;
-    top: 0;
-    box-sizing: border-box;
-    box-shadow: 0 0 1px rgba(0,0,0,0.25);
-    transition: background-color 0.3s ease-in-out;
-    background-color: #fff;
-    height: 60px;
-    padding: 10px 60px;
-    z-index: 2;
+    max-width: 64em;
+    padding: 0 6rem;
+    margin-left: auto;
+    margin-right: auto;
 }
 .markdown-header-logo {
     text-decoration: none;
@@ -135,4 +128,19 @@
     .markdown-content {
         padding-left: 0;
     }
+}
+#skip-to-content {
+    display: none;
+}
+.gotop {
+    width: 2em;
+    height: 2em;
+    line-height: 2em;
+    background: #42b983;
+    color: aliceblue;
+    cursor: pointer;
+    position: fixed;
+    right: 1em;
+    bottom: 1em;
+    text-align: center;
 }

@@ -35,7 +35,7 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 [ExecMigrate](./example/internal/migrate/main.go?embed)
 
-## 可视化创建 Model
+## 创建Model
 
 [t.goclub.run](https://t.goclub.run/?kind=model)
 
