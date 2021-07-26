@@ -32,7 +32,7 @@ document.querySelectorAll('a').forEach(function (node) {
         code.innerHTML = html
         pre.appendChild(code)
         var sourceLink = document.createElement("a")
-        sourceLink.innerText = sourcePath.replace(embedReg, "")
+        sourceLink.innerText = node.innerText + ":" + sourcePath.replace(embedReg, "")
         sourceLink.href = onlineHref
         box.appendChild(sourceLink)
         box.appendChild(pre)
