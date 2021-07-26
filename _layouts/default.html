@@ -66,7 +66,7 @@
     <script>
       var url = "'/static/page.js?v=' | append: site.github.build_revision | relative_url }}\""
       if (/debugpage/.test(location.href)) {
-        url = "http://127.0.0.1:9080/page.css"
+        url = "http://127.0.0.1:9080/page.js"
       }
       var node = document.createElement("script")
       node.src = url
