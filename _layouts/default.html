@@ -27,9 +27,9 @@
         href = "http://127.0.0.1:9080/page.css"
       }
       var node = document.createElement("link")
-      node.setAttribute('stylesheet', "stylesheet")
+      node.setAttribute('rel', "stylesheet")
       node.href = href
-      document.body.appendChild(node)
+      document.head.appendChild(node)
     </script>
   </head>
   <body>
