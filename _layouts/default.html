@@ -21,8 +21,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
-<!--    <link rel="stylesheet" href="{{ '/static/page.css?v=' | append: site.github.build_revision | relative_url }}">-->
-    <link rel="stylesheet" href="http://127.0.0.1:9080/page.css">
+    <script>
+      var href = "{{ '/static/page.css?v=' | append: site.github.build_revision | relative_url }}"
+      if (/debugpage/.test(location.href)) {
+        href = "http://127.0.0.1:9080/page.css"
+      }
+      var node = document.createElement("link")
+      node.setAttribute('stylesheet', "stylesheet")
+      node.href = href
+      document.body.append(node)
+    </script>
   </head>
   <body>
     <a id="skip-to-content" href="#content">Skip to the content.</a>
@@ -55,7 +63,14 @@
       window.GithubRepoURL = ""
       window.GithubRepoURL = "{{ site.github.repository_url }}"
     </script>
-<!--    <script src="{{ '/static/page.js?v=' | append: site.github.build_revision | relative_url }}"></script>-->
-    <script src="http://127.0.0.1:9080/page.js"></script>
+    <script>
+      var url = "'/static/page.js?v=' | append: site.github.build_revision | relative_url }}\""
+      if (/debugpage/.test(location.href)) {
+        url = "http://127.0.0.1:9080/page.css"
+      }
+      var node = document.createElement("script")
+      node.src = url
+      document.body.append(node)
+    </script>
   </body>
 </html>
