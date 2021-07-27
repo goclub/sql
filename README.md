@@ -31,7 +31,7 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 > 通过迁移代码创建表结构 
 
-[创建用户迁移文件](./example/internal/migrate/migrate/user.go?embed)
+[创建用户迁移文件](./example/internal/migrate/migrate/20201004160444_user.go?embed)
 
 [ExecMigrate](./example/internal/migrate/main.go?embed)
 
