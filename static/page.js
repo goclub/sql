@@ -112,11 +112,11 @@ var markrunSideData = markrunSidebar({
     content: document.getElementById("content"),
     element: document.getElementById("nav")
 })
-var topNode = document.createElement('span')
-topNode.innerText = "TOP"
-topNode.className = "gotop"
-document.body.appendChild(topNode)
-var timer = null
-topNode.addEventListener("click", function (){
-    scrollTo(0,0);
-})
+// var topNode = document.createElement('span')
+// topNode.innerText = "TOP"
+// topNode.className = "gotop"
+// document.body.appendChild(topNode)
+// var timer = null
+// topNode.addEventListener("click", function (){
+//     scrollTo(0,0);
+// })
