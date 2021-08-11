@@ -1,7 +1,6 @@
 # goclub/sql
 [![Go Reference](https://pkg.go.dev/badge/github.com/goclub/sql.svg)](https://pkg.go.dev/github.com/goclub/sql)
 
-![](./cat.png)
 
 > goclub/sql 让你了解每一个函数执行的sql是什么，保证SQL的性能最大化的同时超越ORM的便捷。
 
