@@ -438,6 +438,11 @@ func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result sql.Result
 }
 func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+	softDeleteWhere := qb.From.SoftDeleteWhere()
+	if softDeleteWhere.Query == "" {
+		err = xerr.New("goclub/sql: SoftDelete(ctx, qb) qb.Form.SoftDeleteWhere().Query can not be empty string" )
+		return
+	}
 	qb.SQLChecker = storager.getSQLChecker()
 	softDeleteSet := qb.From.SoftDeleteSet()
 	if softDeleteSet.Query == "" {

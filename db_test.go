@@ -976,6 +976,12 @@ func (suite TestDBSuite) TestSoftDelete() {
 		})
 		assert.EqualError(t, err, "Error 1064: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'goclub/sql:(MAYBE_FORGET_WHERE)' at line 1")
 	}
+	{
+		_, err := testDB.SoftDelete(context.TODO(), sq.QB{
+			From: sq.Table("user",nil, nil),
+		})
+		assert.EqualError(t, err, "goclub/sql: SoftDelete(ctx, qb) qb.Form.SoftDeleteWhere().Query can not be empty string")
+	}
 }
 
 func (suite TestDBSuite) TestSoftDeleteModel() {
