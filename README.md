@@ -58,3 +58,7 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 > 基于 Update 更新数据
 
 
+## 致谢
+
+> [jetbrains](https://jb.gg/OpenSource)
+
