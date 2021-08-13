@@ -41,7 +41,7 @@ type QB struct {
 
 	From Tabler
 		from string
-	FormRaw FormRaw
+	FromRaw FromRaw
 
 	DisableSoftDelete bool
 		softDelete Raw
@@ -94,7 +94,7 @@ func (qb QB) mustInTransaction() error {
 	return errors.New("goclub/sql: SELECT " + qb.Lock.String() + " must exec in transaction")
 }
 
-type FormRaw struct {
+type FromRaw struct {
 	TableName Raw
 	SoftDeleteWhere Raw
 }
@@ -223,10 +223,10 @@ func (qb QB) SQL(statement Statement) Raw {
 			panic(errors.New("statement can not be " + statement.String()))
 		}
 	}
-	if qb.FormRaw.TableName.Query != ""{
-		qb.from = qb.FormRaw.TableName.Query
-		values = append(values, qb.FormRaw.TableName.Values...)
-		qb.softDelete = qb.FormRaw.SoftDeleteWhere
+	if qb.FromRaw.TableName.Query != ""{
+		qb.from = qb.FromRaw.TableName.Query
+		values = append(values, qb.FromRaw.TableName.Values...)
+		qb.softDelete = qb.FromRaw.SoftDeleteWhere
 	}
 	statement.Switch(func(_Select int) {
 	  if qb.UnionTable.Tables == nil {

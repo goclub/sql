@@ -26,7 +26,7 @@ func (suite TestQBSuite) TestTable() {
 func (suite TestQBSuite) TestTableRaw() {
 	t := suite.T()
 	qb := sq.QB{
-		FormRaw: sq.FormRaw{
+		FromRaw: sq.FromRaw{
 			TableName:       sq.Raw{"(SELECT * FROM `user` WHERE `name` like ?) as user", []interface{}{"%tableRaw%"}},
 			SoftDeleteWhere: sq.Raw{},
 		},
@@ -111,7 +111,7 @@ func (suite TestQBSuite) TestSelect() {
 	t := suite.T()
 	{
 		qb := sq.QB{
-			FormRaw: sq.FormRaw{
+			FromRaw: sq.FromRaw{
 				TableName: sq.Raw{"user", nil},
 				SoftDeleteWhere: sq.Raw{},
 			},
@@ -126,7 +126,7 @@ func (suite TestQBSuite) TestSelect() {
 	}
 	{
 		qb := sq.QB{
-			FormRaw: sq.FormRaw{
+			FromRaw: sq.FromRaw{
 				TableName:       sq.Raw{"user", nil},
 				SoftDeleteWhere: sq.Raw{},
 			},
@@ -160,7 +160,7 @@ func (suite TestQBSuite) TestSelectRaw() {
 func (suite TestQBSuite) TestSelectColumnHasDot() {
 	t := suite.T()
 	qb := sq.QB{
-		FormRaw: sq.FormRaw{
+		FromRaw: sq.FromRaw{
 			TableName:       sq.Raw{"user as u", nil},
 			SoftDeleteWhere: sq.Raw{},
 		},
@@ -697,7 +697,7 @@ func (suite TestQBSuite) TestJoin() {
 	t := suite.T()
 	uaCol := UserWithAddress{}.Column()
 	qb := sq.QB{
-		FormRaw: sq.FormRaw{
+		FromRaw: sq.FromRaw{
 			TableName:       sq.Raw{"user", nil},
 			SoftDeleteWhere: sq.Raw{"`user`.`deleted_at` is NULL AND user_address`.`deleted_at` is NULL", nil},
 		},
