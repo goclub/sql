@@ -43,8 +43,9 @@ type API interface {
 
 	// 更新
 	Update(ctx context.Context, qb QB) (result sql.Result, err error)
-	// 基于 Model 的 PrimaryKey 更新数据 并自动处理 create update 字段
-	UpdateModel(ctx context.Context, ptr Model, updateData []Update, qb QB) (result sql.Result, err error)
+	// 暂时取消 QueryModel 因为容易产生歧义
+	// // 基于 Model 的 PrimaryKey 更新数据 并自动处理 create update 字段
+	// UpdateModel(ctx context.Context, ptr Model, updateData []Update, qb QB) (result sql.Result, err error)
 
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
 	ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error)
@@ -53,12 +54,14 @@ type API interface {
 
 	// 硬删除（不可恢复）
 	HardDelete(ctx context.Context, qb QB) (result sql.Result, err error)
-	// 基于 Model 硬删除（不可恢复）
-	HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error)
+	// 暂时取消 HardDeleteModel 因为容易产生歧义
+	// // 基于 Model 硬删除（不可恢复）
+	// HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error)
 	// 软删除（可恢复）
 	SoftDelete(ctx context.Context, qb QB) (result sql.Result, err error)
-	// 基于 Model 软删除（可恢复）
-	SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error)
+	// 暂时取消 SoftDeleteModel 因为容易产生歧义
+	// // 基于 Model 软删除（可恢复）
+	// SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error)
 
 	// 执行QB
 	ExecQB(ctx context.Context, qb QB, statement Statement) (result sql.Result, err error)

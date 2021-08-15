@@ -188,10 +188,11 @@ func (db *Database) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, er
 func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB)  (has bool, err error) {
 	return coreQuery(ctx, tx, ptr, qb)
 }
+
 // func (db *Database) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
 // 	qb.Where = ptr.PrimaryKey()
 // 	err = qb.mustInTransaction() ; if err != nil {return}
-// 	return coreQuery(ctx, db,ptr, qb)
+// 	return coreQuery(ctx, db, ptr, qb)
 // }
 // func (tx *Transaction) QueryModel(ctx context.Context, ptr Model, qb QB)  (has bool, err error) {
 // 	qb.Where = ptr.PrimaryKey()
@@ -305,71 +306,71 @@ func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return
 }
 
-func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error){
-	return coreUpdateModel(ctx, db, ptr, updateData, qb)
-}
-func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error){
-	return coreUpdateModel(ctx, tx, ptr, updateData, qb)
-}
-func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error) {
-	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	rValue := reflect.ValueOf(ptr)
-	rType := rValue.Type()
-	if rType.Kind() != reflect.Ptr {
-		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
-	}
-	elemValue := rValue.Elem()
-	elemType := rType.Elem()
-	for i:=0;i<elemType.NumField();i++ {
-		fieldType := elemType.Field(i)
-		fieldValue := elemValue.Field(i)
-		column, hasDBTag := fieldType.Tag.Lookup("db")
-		if !hasDBTag {continue}
-		//  updated time.Time
-		for _, timeField := range updateTimeField {
-			if fieldType.Name == timeField {
-				setTimeNow(fieldValue, fieldType)
-				// ID IDUser `sq:"ignoreUpdate"`
-				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnoreUpdate()
-				if !shouldIgnore {
-					updateData = append(updateData, Update{
-						Column: Column(column),
-						Value: fieldValue.Interface(),
-					})
-				}
-			}
-		}
-		for dataIndex, data := range updateData {
-			if len(data.Column) != 0  && column == data.Column.String() {
-					if data.OnUpdated == nil {
-						updateData[dataIndex].OnUpdated = func() error {
-							fieldValue.Set(reflect.ValueOf(data.Value))
-							return nil
-						}
-					}
-			}
-		}
-	}
-	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
-	    return
-	}
-	qb.From = ptr
-	qb.Update = updateData
-	qb.Where = primaryKey
-	qb.SQLChecker = storager.getSQLChecker()
-	raw := qb.SQLUpdate()
-	query, values := raw.Query, raw.Values
-	result, err = storager.getCore().ExecContext(ctx, query, values...)
-	if err != nil {return result, err}
-	for _, data := range updateData {
-		if data.OnUpdated != nil {
-			updatedErr := data.OnUpdated() ; if updatedErr != nil {
-				return result, updatedErr
-			}
-		}
-	}
-	return
-}
+// func (db *Database) UpdateModel(ctx context.Context, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error){
+// 	return coreUpdateModel(ctx, db, ptr, updateData, qb)
+// }
+// func (tx *Transaction) UpdateModel(ctx context.Context, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error){
+// 	return coreUpdateModel(ctx, tx, ptr, updateData, qb)
+// }
+// func coreUpdateModel(ctx context.Context, storager Storager, ptr Model, updateData []Update,  qb QB) (result sql.Result, err error) {
+// 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+// 	rValue := reflect.ValueOf(ptr)
+// 	rType := rValue.Type()
+// 	if rType.Kind() != reflect.Ptr {
+// 		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
+// 	}
+// 	elemValue := rValue.Elem()
+// 	elemType := rType.Elem()
+// 	for i:=0;i<elemType.NumField();i++ {
+// 		fieldType := elemType.Field(i)
+// 		fieldValue := elemValue.Field(i)
+// 		column, hasDBTag := fieldType.Tag.Lookup("db")
+// 		if !hasDBTag {continue}
+// 		//  updated time.Time
+// 		for _, timeField := range updateTimeField {
+// 			if fieldType.Name == timeField {
+// 				setTimeNow(fieldValue, fieldType)
+// 				// ID IDUser `sq:"ignoreUpdate"`
+// 				shouldIgnore := Tag{fieldType.Tag.Get("sq")}.IsIgnoreUpdate()
+// 				if !shouldIgnore {
+// 					updateData = append(updateData, Update{
+// 						Column: Column(column),
+// 						Value: fieldValue.Interface(),
+// 					})
+// 				}
+// 			}
+// 		}
+// 		for dataIndex, data := range updateData {
+// 			if len(data.Column) != 0  && column == data.Column.String() {
+// 					if data.OnUpdated == nil {
+// 						updateData[dataIndex].OnUpdated = func() error {
+// 							fieldValue.Set(reflect.ValueOf(data.Value))
+// 							return nil
+// 						}
+// 					}
+// 			}
+// 		}
+// 	}
+// 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
+// 	    return
+// 	}
+// 	qb.From = ptr
+// 	qb.Update = updateData
+// 	qb.Where = primaryKey
+// 	qb.SQLChecker = storager.getSQLChecker()
+// 	raw := qb.SQLUpdate()
+// 	query, values := raw.Query, raw.Values
+// 	result, err = storager.getCore().ExecContext(ctx, query, values...)
+// 	if err != nil {return result, err}
+// 	for _, data := range updateData {
+// 		if data.OnUpdated != nil {
+// 			updatedErr := data.OnUpdated() ; if updatedErr != nil {
+// 				return result, updatedErr
+// 			}
+// 		}
+// 	}
+// 	return
+// }
 func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	var databaseName string
 	_, err = db.QueryRowScan(ctx, QB{Raw: Raw{"SELECT DATABASE()", nil}}, []interface{}{&databaseName}) ; if err != nil {
@@ -392,7 +393,7 @@ func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (res
 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
 		return
 	}
-	return db.HardDeleteModel(ctx, model, qb)
+	return db.hardDeleteModel(ctx, model, qb)
 }
 func (db *Database) HardDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return coreHardDelete(ctx, db, qb)
@@ -406,12 +407,12 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLDelete()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+func (db *Database) hardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
 	return coreHardDeleteModel(ctx,db, ptr, qb)
 }
-func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
-	return coreHardDeleteModel(ctx, tx, ptr, qb)
-}
+// func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+// 	return coreHardDeleteModel(ctx, tx, ptr, qb)
+// }
 func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	rValue := reflect.ValueOf(ptr)
@@ -455,31 +456,30 @@ func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLUpdate()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
-	return coreSoftDeleteModel(ctx, db, ptr, qb)
-}
-func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
-	return coreSoftDeleteModel(ctx, tx, ptr, qb)
-}
-func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
-	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	rValue := reflect.ValueOf(ptr)
-	rType := rValue.Type()
-	if rType.Kind() != reflect.Ptr {
-		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
-	}
-	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
-		return
-	}
-	qb.From = ptr
-	qb.Where = primaryKey
-	qb.Update = []Update{{Raw:ptr.SoftDeleteSet(),}}
-	qb.Limit = 1
-	qb.SQLChecker = storager.getSQLChecker()
-	raw := qb.SQLUpdate()
-	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
-
-}
+// func (db *Database) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+// 	return coreSoftDeleteModel(ctx, db, ptr, qb)
+// }
+// func (tx *Transaction) SoftDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+// 	return coreSoftDeleteModel(ctx, tx, ptr, qb)
+// }
+// func coreSoftDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+// 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+// 	rValue := reflect.ValueOf(ptr)
+// 	rType := rValue.Type()
+// 	if rType.Kind() != reflect.Ptr {
+// 		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
+// 	}
+// 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
+// 		return
+// 	}
+// 	qb.From = ptr
+// 	qb.Where = primaryKey
+// 	qb.Update = []Update{{Raw:ptr.SoftDeleteSet(),}}
+// 	qb.Limit = 1
+// 	qb.SQLChecker = storager.getSQLChecker()
+// 	raw := qb.SQLUpdate()
+// 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
+// }
 func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has bool, err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreQueryRelation(ctx, db, ptr, qb)
