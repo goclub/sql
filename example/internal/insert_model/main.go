@@ -21,18 +21,13 @@ func example(ctx context.Context) (err error) {
 		Mobile: "1341111222",
 		ChinaIDCardNo: "31111119921219000",
 	}
-	// InsertModel 会自动获取 user struct field,会忽略 struct tag 中带有 sq:"ignoreUpdate" 的字段
-	result, err := db.InsertModel(ctx, &user, sq.QB{
-		// Review 可不填
+	// InsertModel 会自动获取 user 的结构体字段(struct field),会忽略 struct tag 中带有 sq:"ignoreInsert" 的字段
+	// 使用 InsertModel 时 sq.QB 不需要配置 Form
+	_, err = db.InsertModel(ctx, &user, sq.QB{
+		// Review 的作用是用于审查 sql 或增加代码可读性，可以忽略
 		Review: "INSERT INTO `user` (`name`,`mobile`,`china_id_card_no`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)",
 	}) ; if err != nil {
 	    return
 	}
-	// result.LastInsertId() 一般在 存在 AUTO_INCREMENT 的场景使用
-	rowsAffected, err := result.RowsAffected() ; if err != nil {
-		// RowsAffected 不是每个数据库或数据库驱动都支持的，需要根据时间情况决定是否要使用 RowsAffected
-		return err
-	}
-	log.Print("rowsAffected:", rowsAffected)
 	return nil
 }

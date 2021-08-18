@@ -218,6 +218,11 @@ func (mi MigrateField) Int(size int) MigrateField {
 	mi.fieldType = "int"
 	return mi
 }
+func (mi MigrateField) Bigint(size int) MigrateField {
+	mi.size = size
+	mi.fieldType = "bigint"
+	return mi
+}
 func (mi MigrateField) Tinyint(size int) MigrateField {
 	mi.size = size
 	mi.fieldType = "tinyint"

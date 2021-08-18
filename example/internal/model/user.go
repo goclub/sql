@@ -1,4 +1,4 @@
-// Generate by https://t.goclub.run
+// Generate by https://goclub.run
 package m
 import (
 	"database/sql"

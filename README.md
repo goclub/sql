@@ -36,7 +36,13 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 ## 定义Model
 
-通过表单装机 Model: [t.goclub.run](https://t.goclub.run/?kind=model)
+通过表单创建 Model: [goclub.run](https://goclub.run/?k=model)
+
+## Insert
+
+> 使用 Insert 插入数据
+
+[Insert](./example/internal/insert/main.go?embed)
 
 ## InsertModel
 
@@ -46,19 +52,35 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 [InsertModel](./example/internal/insert_model/main.go?embed)
 
-## Insert
 
-你也可以不通过 Model 插入数据
+## Update
 
-[Insert](./example/internal/insert/main.go?embed)
+> 使用 Update 更新数据
 
+[Update](./example/internal/update/main.go?embed)
 
-## UpdateModel
+> goclub/sql 故意没有提供 UpdateModel 方法, 使用 `db.Update(ctx, sq.QB{...})` 精准的更新数据
 
-> 基于 Update 更新数据
+## Query 
 
+> 使用 Query 查询单条数据
+> 使用 QueryList 查询多条数据
+
+[Query](./example/internal/query/main.go?embed)
+
+> goclub/sql 故意没有提供 QueryModel 方法, 使用 `db.Query(ctx, &user, sq.QB{ Where: sq.And(col.ID, sq.Equal(userID)) })` 可以查询 Model
+ 
+## SoftDelete HardDelete
+
+> 使用SoftDelete 或者 HardDelete 删除数据 
+
+[delete](./example/internal/delete/main.go?embed)
+
+## Relation
+
+[relation](./example/internal/relation/main.go?embed)
 
 ## 致谢
 
-> [jetbrains](https://jb.gg/OpenSource)
+> 感谢 [jetbrains](https://jb.gg/OpenSource) 提供 Goland 开源授权
 
