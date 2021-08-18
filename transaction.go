@@ -53,6 +53,12 @@ func (result TxResult) Error() string {
 	}
 }
 
+type BeginTransaction interface {
+	BeginTransaction (ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error)
+}
+type BeginTransactionOpt interface {
+	BeginTransactionOpt (ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error)
+}
 var ErrTransactionIsRollback = errors.New("goclub/sql: transaction rollback")
 func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
 	return db.BeginTransactionOpt(ctx, sql.TxOptions{

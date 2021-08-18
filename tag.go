@@ -12,7 +12,7 @@ type Tag struct {
 func (t Tag) IsIgnoreInsert() bool {
 	sqTags := strings.Split(t.Value, "|")
 	for _, tag := range sqTags {
-		if tag == "ignoreInsert" {
+		if strings.TrimSpace(tag) == "ignoreInsert" {
 			return true
 		}
 	}
@@ -21,7 +21,7 @@ func (t Tag) IsIgnoreInsert() bool {
 func (t Tag) IsIgnoreUpdate() bool {
 	sqTags := strings.Split(t.Value, "|")
 	for _, tag := range sqTags {
-		if tag == "ignoreUpdate" {
+		if strings.TrimSpace(tag) == "ignoreUpdate" {
 			return true
 		}
 	}

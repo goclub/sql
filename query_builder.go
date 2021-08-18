@@ -30,8 +30,8 @@ func (u updates) SetRaw(query string, values ...interface{}) updates {
 	for i, value := range values {
 		if op, ok := value.(OP); ok {
 			values[i] = op.Values[0]
-			log.Print("goclub/sql: sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-			debug.PrintStack()
+			DefaultLog.Print("goclub/sql: sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+			DefaultLog.Print(debug.Stack())
 		}
 	}
 	u = append(u, Update{
@@ -435,7 +435,7 @@ func (qb QB) SQL(statement Statement) Raw {
 	query := sqlList.Join(" ")
 	defer func() {
 		if qb.Debug {
-			log.Printf("goclub/sql debug:\r\n query:%s\r\nvalues:%#+v", query, values)
+			DefaultLog.Printf("goclub/sql debug:\r\n query:%s\r\nvalues:%#+v", query, values)
 		}
 		if qb.Review != "" {
 			qb.Reviews = append(qb.Reviews, qb.Review)
