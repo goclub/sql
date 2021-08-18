@@ -794,7 +794,7 @@ func (suite TestQBSuite) TestInsert() {
 		From: &User{},
 		UseInsertIgnoreInto: true,
 		Insert: []sq.Insert{
-			sq.Value("name", "nimoc"),
+			{"name", "nimoc"},
 		},
 	}
 	raw := qb.SQLInsert()
@@ -824,7 +824,7 @@ func (suite TestQBSuite) TestUpdate() {
 	qb := sq.QB{
 		From: &User{},
 		UseUpdateIgnore: true,
-		Update: []sq.Update{sq.Set("age", 2)},
+		Update: sq.Set("age", 2),
 		Where:  sq.And("id", sq.Equal(1)),
 	}
 	raw := qb.SQLUpdate()
@@ -847,10 +847,10 @@ func (suite TestQBSuite) TestSet() {
 	t := suite.T()
 	{
 		update := sq.Set("id", sq.Equal(1))
-		assert.Equal(t, update.Value, 1)
+		assert.Equal(t, update[0].Value, 1)
 	}
 	{
 		update := sq.Set("id", sq.Equal(2))
-		assert.Equal(t, update.Value, 2)
+		assert.Equal(t, update[0].Value, 2)
 	}
 }

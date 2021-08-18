@@ -12,27 +12,48 @@ type Update struct {
 	Column Column
 	Value interface{}
 	Raw Raw
-	OnUpdated func() error
 }
-func Set(column Column, value interface{}) Update {
+type updates []Update
+func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
-		log.Print("goclub/sql: sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use sq.Set(\"id\", taskID)")
+		log.Print("goclub/sql: sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
 		debug.PrintStack()
 	}
-	return Update{Column: column, Value: value}
+	u = append(u, Update{
+		Column: column,
+		Value: value,
+	})
+	return u
+}
+func (u updates) SetRaw(query string, values ...interface{}) updates {
+	for i, value := range values {
+		if op, ok := value.(OP); ok {
+			values[i] = op.Values[0]
+			log.Print("goclub/sql: sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+			debug.PrintStack()
+		}
+	}
+	u = append(u, Update{
+		Raw: Raw{query, values},
+	})
+	return u
+}
+func Set(column Column, value interface{}) updates {
+	return updates{}.Set(column, value)
+}
+func SetRaw(query string, value ...interface{}) updates {
+	return updates{}.SetRaw(query, value)
 }
 type InsertMultiple struct {
 	Column []Column
 	Values [][]interface{}
 }
-// sq.Value(column, value)
+type Values []Insert
+
 type Insert struct {
 	Column Column
 	Value interface{}
-}
-func Value(column Column, value interface{}) Insert {
-	return Insert{Column: column, Value: value}
 }
 
 type QB struct {
@@ -53,8 +74,7 @@ type QB struct {
 	Update []Update
 	// UPDATE IGNORE
 	UseUpdateIgnore bool
-	// 可使用 sq.Value() 快速创建 sq.Insert []Insert{sq.Value(),sq.Value()}
-	Insert []Insert
+	Insert Values
 	InsertMultiple InsertMultiple
 	// INSERT IGNORE INTO
 	UseInsertIgnoreInto bool

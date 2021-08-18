@@ -16,7 +16,7 @@ func ConditionRaw(query string, values []interface{}) Condition {
 func And(column Column, operator OP) conditions{
 	return conditions{}.And(column, operator)
 }
-func AndRaw(query string, values []interface{}) conditions {
+func AndRaw(query string, values ...interface{}) conditions {
 	return And("", OP{
 		Query: query,
 		Values: values,
@@ -38,7 +38,7 @@ func (w conditions) And(column Column, operator OP) conditions {
 	})
 	return w
 }
-func (w conditions) AndRaw(query string, values []interface{}) conditions {
+func (w conditions) AndRaw(query string, values ...interface{}) conditions {
 	w = append(w, Condition{
 		Column: "",
 		OP: OP{
@@ -48,12 +48,12 @@ func (w conditions) AndRaw(query string, values []interface{}) conditions {
 	})
 	return w
 }
-func (w conditions) OrGroup(conditions []Condition) conditions {
-	op := OP{OrGroup: conditions}
-	item := Condition{OP:op}
-	w = append(w, item)
-	return w
-}
+// func (w conditions) OrGroup(conditions []Condition) conditions {
+// 	op := OP{OrGroup: conditions}
+// 	item := Condition{OP:op}
+// 	w = append(w, item)
+// 	return w
+// }
 func ConditionsSQL(w [][]Condition) (raw Raw) {
 	var orList stringQueue
 	for _, whereAndList := range w {

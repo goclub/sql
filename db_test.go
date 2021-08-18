@@ -58,10 +58,10 @@ func (suite TestDBSuite) TestInsert() {
 		assert.NoError(t, err)
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
-			Insert: []sq.Insert{
-				sq.Value(userCol.ID, newID),
-				sq.Value(userCol.Name, "TestInsert"),
-				sq.Value(userCol.Age, 18),
+			Insert: sq.Values{
+				{userCol.ID, newID},
+				{userCol.Name, "TestInsert"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -523,9 +523,9 @@ func (suite TestDBSuite) TestSum() {
 // 		result, err := testDB.Insert(context.TODO(), sq.QB{
 // 			From: &TableUser{},
 // 			Insert: []sq.Insert{
-// 				sq.Value(userCol.ID, newID),
-// 				sq.Value(userCol.Name, "TestQueryModel"),
-// 				sq.Value(userCol.Age, 18),
+// 				{userCol.ID, newID},
+// 				{userCol.Name, "TestQueryModel"},
+// 				{userCol.Age, 18},
 // 			},
 // 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 // 		})
@@ -575,10 +575,10 @@ func (suite TestDBSuite) TestQueryModelSlice() {
 		for i:=0;i<10;i++ {
 			result, err := testDB.Insert(context.TODO(), sq.QB{
 				From: &TableUser{},
-				Insert: []sq.Insert{
-					sq.Value(userCol.ID, sq.UUID()),
-					sq.Value(userCol.Name, "TestQueryModelSlice_" + strconv.Itoa(i)),
-					sq.Value(userCol.Age, i),
+				Insert: sq.Values{
+					{userCol.ID, sq.UUID()},
+					{userCol.Name, "TestQueryModelSlice_" + strconv.Itoa(i)},
+					{userCol.Age, i},
 				},
 				Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 			})
@@ -625,9 +625,9 @@ func (suite TestDBSuite) TestUpdate() {
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
 			Insert: []sq.Insert{
-				sq.Value(userCol.ID, newID),
-				sq.Value(userCol.Name, "TestUpdate"),
-				sq.Value(userCol.Age, 18),
+				{userCol.ID, newID},
+				{userCol.Name, "TestUpdate"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -655,9 +655,7 @@ func (suite TestDBSuite) TestUpdate() {
 		result, err := testDB.Update(context.TODO(), sq.QB{
 				From: &User{},
 				Where: sq.And(userCol.ID, sq.Equal(newID)),
-				Update: []sq.Update{
-					sq.Set(userCol.Name, "TestUpdate_changed"),
-				},
+				Update: sq.Set(userCol.Name, "TestUpdate_changed"),
 				Reviews: []string{"UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
@@ -698,10 +696,10 @@ func (suite TestDBSuite) TestUpdateModel() {
 		assert.NoError(t, err)
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
-			Insert: []sq.Insert{
-				sq.Value(userCol.ID, newID),
-				sq.Value(userCol.Name, "TestUpdateModel"),
-				sq.Value(userCol.Age, 18),
+			Insert: sq.Values{
+				{userCol.ID, newID},
+				{userCol.Name, "TestUpdateModel"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -784,9 +782,9 @@ func (suite TestDBSuite) TestHardDelete() {
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
 			Insert: []sq.Insert{
-				sq.Value(userCol.ID, sq.UUID()),
-				sq.Value(userCol.Name, "TestHardDelete"),
-				sq.Value(userCol.Age, 18),
+				{userCol.ID, sq.UUID()},
+				{userCol.Name, "TestHardDelete"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -859,9 +857,9 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
 			Insert: []sq.Insert{
-				sq.Value(userCol.ID, newID),
-				sq.Value(userCol.Name, "TestHardDeleteModel"),
-				sq.Value(userCol.Age, 18),
+				{userCol.ID, newID},
+				{userCol.Name, "TestHardDeleteModel"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -917,9 +915,9 @@ func (suite TestDBSuite) TestSoftDelete() {
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
 			Insert: []sq.Insert{
-				sq.Value(userCol.ID, sq.UUID()),
-				sq.Value(userCol.Name, "TestSoftDelete"),
-				sq.Value(userCol.Age, 18),
+				{userCol.ID, sq.UUID()},
+				{userCol.Name, "TestSoftDelete"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -941,9 +939,9 @@ func (suite TestDBSuite) TestSoftDelete() {
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
 			Insert: []sq.Insert{
-				sq.Value(userCol.ID, sq.UUID()),
-				sq.Value(userCol.Name, "TestSoftDelete"),
-				sq.Value(userCol.Age, 18),
+				{userCol.ID, sq.UUID()},
+				{userCol.Name, "TestSoftDelete"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -1001,10 +999,10 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 	{
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
-			Insert: []sq.Insert{
-				sq.Value(userCol.ID, newID),
-				sq.Value(userCol.Name, "TestSoftDeleteModel"),
-				sq.Value(userCol.Age, 18),
+			Insert: sq.Values{
+				{userCol.ID, newID},
+				{userCol.Name, "TestSoftDeleteModel"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -1055,9 +1053,9 @@ func (suite TestDBSuite) TestExecQB() {
 		result, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &TableUser{},
 			Insert: []sq.Insert{
-				sq.Value(userCol.ID, sq.UUID()),
-				sq.Value(userCol.Name, "TestExecQB"),
-				sq.Value(userCol.Age, 18),
+				{userCol.ID, sq.UUID()},
+				{userCol.Name, "TestExecQB"},
+				{userCol.Age, 18},
 			},
 			Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`) VALUES (?,?,?)"},
 		})
@@ -1068,7 +1066,7 @@ func (suite TestDBSuite) TestExecQB() {
 	}
 	result, err := testDB.ExecQB(context.TODO(), sq.QB{
 		From: &User{},
-		Update: []sq.Update{sq.Set("name", "TestExecQB_changed")},
+		Update: sq.Set("name", "TestExecQB_changed"),
 		Where: sq.And("name", sq.LikeLeft("TestExecQB")),
 	}, sq.Statement("").Enum().Update)
 	assert.NoError(t, err)
@@ -1201,17 +1199,17 @@ func (suite TestDBSuite) TestQueryRelation() {
 		_, err := testDB.Insert(context.TODO(), sq.QB{
 			From: &User{},
 			Insert: []sq.Insert{
-				sq.Value("id", newID),
-				sq.Value("name", "TestQueryRelation"),
-				sq.Value("age", 1),
+				{"id", newID},
+				{"name", "TestQueryRelation"},
+				{"age", 1},
 			},
 		})
 		assert.NoError(t, err)
 		_, err = testDB.Insert(context.TODO(), sq.QB{
 			From: UserAddress{},
 			Insert: []sq.Insert{
-				sq.Value("user_id", newID),
-				sq.Value("address", "TestQueryRelation_address"),
+				{"user_id", newID},
+				{"address", "TestQueryRelation_address"},
 			},
 		})
 		assert.NoError(t, err)
@@ -1261,17 +1259,17 @@ func (suite TestDBSuite) TestQueryRelationSlice() {
 			_, err := testDB.Insert(context.TODO(), sq.QB{
 				From: &User{},
 				Insert: []sq.Insert{
-					sq.Value("id", newID),
-					sq.Value("name", "TestQueryRelationSlice_" + strconv.Itoa(i)),
-					sq.Value("age", i),
+					{"id", newID},
+					{"name", "TestQueryRelationSlice_" + strconv.Itoa(i)},
+					{"age", i},
 				},
 			})
 			assert.NoError(t, err)
 			_, err = testDB.Insert(context.TODO(), sq.QB{
 				From: UserAddress{},
 				Insert: []sq.Insert{
-					sq.Value("user_id", newID),
-					sq.Value("address", "TestQueryRelationSlice_address_"  + strconv.Itoa(i)),
+					{"user_id", newID},
+					{"address", "TestQueryRelationSlice_address_"  + strconv.Itoa(i)},
 				},
 			})
 			assert.NoError(t, err)

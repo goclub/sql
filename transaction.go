@@ -81,3 +81,13 @@ func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, 
 		return ErrTransactionIsRollback
 	}
 }
+const (
+	LevelDefault sql.IsolationLevel = sql.LevelDefault
+	LevelReadUncommitted sql.IsolationLevel = sql.LevelReadUncommitted
+	LevelReadCommitted sql.IsolationLevel = sql.LevelReadCommitted
+	LevelWriteCommitted sql.IsolationLevel = sql.LevelWriteCommitted
+	LevelRepeatableRead sql.IsolationLevel = sql.LevelRepeatableRead
+	LevelSnapshot sql.IsolationLevel = sql.LevelSnapshot
+	LevelSerializable sql.IsolationLevel = sql.LevelSerializable
+	LevelLinearizable sql.IsolationLevel = sql.LevelLinearizable
+)
