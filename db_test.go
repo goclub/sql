@@ -1,6 +1,7 @@
 package sq_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"log"
 	"strconv"
 	"testing"
 	"time"
@@ -17,7 +19,7 @@ import (
 
 var testDB *sq.Database
 func init () {
-
+	sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
 		Password:"somepass",

@@ -315,7 +315,6 @@ func (suite TestQBSuite) TestWhereOPRaw() {
 				sq.ConditionRaw("`age` = ?", []interface{}{1}),
 			},
 		}
-		assert.Equal(t, qb.Where, []sq.Condition(sq.AndRaw("`name` = `cname`", nil).AndRaw("`age` = ?", []interface{}{1})))
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `name` = `cname` AND `age` = ? AND `deleted_at` IS NULL", query)
 		assert.Equal(t, []interface{}{1}, values)

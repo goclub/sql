@@ -1,13 +1,14 @@
-package sq
+package sq_test
 
 import (
+	sq "github.com/goclub/sql"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 
 func TestDefaultSQLChecker_Check(t *testing.T) {
-	check := DefaultSQLChecker{}
+	check := sq.DefaultSQLChecker{}
 	{
 		checkSQL := []string{
 			"select * from user where id in {#IN#}",
@@ -92,7 +93,7 @@ func TestDefaultSQLChecker_Check(t *testing.T) {
 }
 
 func TestDefaultSQLChecker_Check2(t *testing.T) {
-	check := DefaultSQLChecker{}
+	check := sq.DefaultSQLChecker{}
 	{
 		checkSQL := []string{
 			"select * from user where mobile = ? {#and name = ?#} limit ?",
@@ -117,7 +118,7 @@ func TestDefaultSQLChecker_Check2(t *testing.T) {
 	}
 }
 func TestDefaultSQLChecker_Check3(t *testing.T) {
-	check := DefaultSQLChecker{}
+	check := sq.DefaultSQLChecker{}
 	{
 		checkSQL := []string{
 			"INSERT INTO `user` (`name`,`age`) VALUES {#VALUES#}",

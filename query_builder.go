@@ -17,8 +17,8 @@ type updates []Update
 func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
-		log.Print("goclub/sql: sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-		debug.PrintStack()
+		DefaultLog.Print("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+		DefaultLog.Print(debug.Stack())
 	}
 	u = append(u, Update{
 		Column: column,
@@ -43,7 +43,7 @@ func Set(column Column, value interface{}) updates {
 	return updates{}.Set(column, value)
 }
 func SetRaw(query string, value ...interface{}) updates {
-	return updates{}.SetRaw(query, value)
+	return updates{}.SetRaw(query, value...)
 }
 type InsertMultiple struct {
 	Column []Column

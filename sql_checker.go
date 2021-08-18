@@ -3,7 +3,6 @@ package sq
 import (
 	"errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
-	"log"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -46,13 +45,13 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 func (check DefaultSQLChecker) TrackFail(err error, reviews []string, query string, refs string) {
 	defer debug.PrintStack()
 	if err != nil {
-		log.Print(err)
+		DefaultLog.Print(err)
 		return
 	}
 	message := "query:\n" + query + "\n" +
 		       "reviews:\n" + strings.Join(reviews, "\n")+ "\n" +
 		       "refs:\n" + refs
-	log.Print(message)
+	DefaultLog.Print(message)
 }
 
 type defaultSQLCheckerDifferent struct {
