@@ -403,9 +403,6 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push("GROUP BY")
 		sqlList.Push(strings.Join(columnsToStrings(qb.GroupBy), ", "))
 	}
-	if len(qb.Lock) != 0 {
-		sqlList.Push(qb.Lock.String())
-	}
 	// havaing
 	if qb.HavingRaw.Query != ""{
 		sqlList.Push("HAVING")
@@ -431,6 +428,9 @@ func (qb QB) SQL(statement Statement) Raw {
 	if qb.Offset != 0 {
 		sqlList.Push("OFFSET ?")
 		values = append(values, qb.Offset)
+	}
+	if len(qb.Lock) != 0 {
+		sqlList.Push(qb.Lock.String())
 	}
 	query := sqlList.Join(" ")
 	defer func() {

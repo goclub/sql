@@ -677,10 +677,11 @@ func (suite TestQBSuite) TestLock() {
 		qb := sq.QB{
 			From: &User{},
 			Lock: sq.FORSHARE,
+			Limit: 1,
 		}
 		raw := qb.SQLSelect()
-		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL FOR SHARE")
-		assert.Equal(t, []interface{}(nil), raw.Values)
+		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL LIMIT ? FOR SHARE")
+		assert.Equal(t, []interface{}{1}, raw.Values)
 	}
 	{
 		qb := sq.QB{
