@@ -1,7 +1,7 @@
 package sq
 
 import (
-	"errors"
+	xerr "github.com/goclub/error"
 	"reflect"
 )
 
@@ -77,7 +77,7 @@ func In(slice interface{}) OP {
 	var values []interface{}
 	rValue := reflect.ValueOf(slice)
 	if rValue.Type().Kind() != reflect.Slice {
-		panic(errors.New("sq.In(" + rValue.Type().Name() + ") slice must be slice"))
+		panic(xerr.New("sq.In(" + rValue.Type().Name() + ") slice must be slice"))
 	}
 	if rValue.Len() == 0 {
 		placeholder = "(NULL)"

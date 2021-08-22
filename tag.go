@@ -1,7 +1,7 @@
 package sq
 
 import (
-	"errors"
+	xerr "github.com/goclub/error"
 	"reflect"
 	"strings"
 )
@@ -40,7 +40,7 @@ func TagToColumns(v interface{}) (columns []Column) {
 }
 func scanTagToColumns(rValue reflect.Value, rType reflect.Type, columns *[]Column, tier *int) {
 	if *tier > 10 {
-		panic(errors.New("goclub/sql: Too many structures are nested"))
+		panic(xerr.New("goclub/sql: Too many structures are nested"))
 	}
 	for i:=0;i<rType.NumField();i++ {
 		structField := rType.Field(i)

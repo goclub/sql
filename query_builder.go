@@ -1,7 +1,7 @@
 package sq
 
 import (
-	"errors"
+	xerr "github.com/goclub/error"
 	"log"
 	"runtime/debug"
 	"strings"
@@ -111,7 +111,7 @@ func (qb QB) mustInTransaction() error {
 	if len(qb.Lock) == 0 {
 		return nil
 	}
-	return errors.New("goclub/sql: SELECT " + qb.Lock.String() + " must exec in transaction")
+	return xerr.New("goclub/sql: SELECT " + qb.Lock.String() + " must exec in transaction")
 }
 
 type FromRaw struct {
@@ -240,7 +240,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		case statement.Enum().Insert:
 		case statement.Enum().Delete:
 		default:
-			panic(errors.New("statement can not be " + statement.String()))
+			panic(xerr.New("statement can not be " + statement.String()))
 		}
 	}
 	if qb.FromRaw.TableName.Query != ""{
@@ -343,7 +343,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			whereRaw = qb.WhereRaw
 		} else {
 			tooMuchWhere := len(qb.Where) != 0 && len(qb.WhereOR) != 0
-			if tooMuchWhere { panic(errors.New("if qb.WhereOR not empty, then qb.Where must be nil")) }
+			if tooMuchWhere { panic(xerr.New("if qb.WhereOR not empty, then qb.Where must be nil")) }
 			if len(qb.Where) != 0 && len(qb.WhereOR) == 0 {
 				qb.WhereOR = append(qb.WhereOR, qb.Where)
 			}

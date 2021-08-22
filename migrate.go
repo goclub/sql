@@ -1,7 +1,7 @@
 package sq
 
 import (
-	"errors"
+	xerr "github.com/goclub/error"
 	"log"
 	"reflect"
 	"strconv"
@@ -27,13 +27,13 @@ func (mi Migrate) Init() {
 func ExecMigrate(db *Database, ptr interface{}) {
 	rPtrValue := reflect.ValueOf(ptr)
 	if rPtrValue.Kind() != reflect.Ptr {
-		panic(errors.New("ExecMigrate(db, ptr) ptr must be pointer"))
+		panic(xerr.New("ExecMigrate(db, ptr) ptr must be pointer"))
 	}
 	rValue := rPtrValue.Elem()
 	rType := rValue.Type()
 	// 暂时取消 main 限制 2021年02月02日19:58:54 @nimoc
 	// if rType.PkgPath() == "main" {
-	// 	panic(errors.New("ExecMigrate(db, ptr) ptr can not belong to package main"))
+	// 	panic(xerr.New("ExecMigrate(db, ptr) ptr can not belong to package main"))
 	// }
 	mi := NewMigrate(db)
 	mi.Init()
@@ -59,7 +59,7 @@ func ExecMigrate(db *Database, ptr interface{}) {
 		if count == 0 {} else if count == 1 {
 			continue
 		} else {
-			panic(errors.New("warning: goclub_sql_migrations has two same name: " + methodName))
+			panic(xerr.New("warning: goclub_sql_migrations has two same name: " + methodName))
 		}
 		log.Print("[goclub_sql migrate]exec: " +methodName)
 		rValue.MethodByName(methodName).Call([]reflect.Value{miValue})
@@ -94,12 +94,12 @@ type CreateTableQB struct {
 func (qb CreateTableQB) ToSql() string {
 	stringQueue := stringQueue{}
 	if qb.TableName == "" {
-		panic(errors.New("TableName can not be empty string"))
+		panic(xerr.New("TableName can not be empty string"))
 	}
 	newLine := "\n"
 	stringQueue.Push(`CREATE TABLE`, " ", "`", qb.TableName, "`", "(")
 	if len(qb.Fields) == 0 {
-		panic(errors.New("Fields can not be empty slice"))
+		panic(xerr.New("Fields can not be empty slice"))
 	}
 	for _, field := range  qb.Fields {
 		stringQueue.Push(newLine, "  ")
@@ -138,10 +138,10 @@ func (qb CreateTableQB) ToSql() string {
 		}
 		if field.references.valid {
 			if field.references.otherTableName == "" {
-				panic(errors.New("references tableName can not be empty string"))
+				panic(xerr.New("references tableName can not be empty string"))
 			}
 			if field.references.otherTableField == "" {
-				panic(errors.New("references field can not be empty string"))
+				panic(xerr.New("references field can not be empty string"))
 			}
 			stringQueue.Push(" REFERENCES", field.references.otherTableName, "(", field.references.otherTableField, ")")
 		}
@@ -151,7 +151,7 @@ func (qb CreateTableQB) ToSql() string {
 		stringQueue.Push(",")
 	}
 	if len(qb.PrimaryKey) == 0 {
-		panic(errors.New("your must set PRIMARY KEY "))
+		panic(xerr.New("your must set PRIMARY KEY "))
 	}
 	stringQueue.Push(newLine, "  PRIMARY KEY (`", strings.Join(qb.PrimaryKey, "`,`"), "`),")
 	for key, values := range qb.UniqueKey {
@@ -168,22 +168,22 @@ func (qb CreateTableQB) ToSql() string {
 		popValue := stringQueueBindValue{}
 		stringQueue.PopBind(&popValue)
 		if !popValue.Has {
-			panic(errors.New("stringQueue.PopBind() must has value"))
+			panic(xerr.New("stringQueue.PopBind() must has value"))
 		}
 		stringQueue.Push(strings.TrimSuffix(popValue.Value, ","))
 	}
 	stringQueue.Push(newLine, ") ")
 	if qb.Engine == "" {
-		panic(errors.New("field Engine can not be empty string"))
+		panic(xerr.New("field Engine can not be empty string"))
 	}
 	if qb.Engine == "" {
-		panic(errors.New("field Engine can not be empty string"))
+		panic(xerr.New("field Engine can not be empty string"))
 	}
 	if qb.Charset == "" {
-		panic(errors.New("field Charset can not be empty string"))
+		panic(xerr.New("field Charset can not be empty string"))
 	}
 	if qb.Collate == "" {
-		panic(errors.New("field Collate can not be empty string"))
+		panic(xerr.New("field Collate can not be empty string"))
 	}
 	stringQueue.Push("ENGINE=", qb.Engine.String(), " CHARSET=", qb.Charset.String(), " COLLATE=", qb.Collate.String())
 	stringQueue.Push(";")

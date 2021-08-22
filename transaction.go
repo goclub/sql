@@ -3,8 +3,8 @@ package sq
 import (
 	"context"
 	"database/sql"
+	xerr "github.com/goclub/error"
 	"github.com/jmoiron/sqlx"
-	"github.com/pkg/errors"
 )
 
 type Transaction struct {
@@ -59,7 +59,7 @@ type BeginTransaction interface {
 type BeginTransactionOpt interface {
 	BeginTransactionOpt (ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error)
 }
-var ErrTransactionIsRollback = errors.New("goclub/sql: transaction rollback")
+var ErrTransactionIsRollback = xerr.New("goclub/sql: transaction rollback")
 func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
 	return db.BeginTransactionOpt(ctx, sql.TxOptions{
 		Isolation: level,

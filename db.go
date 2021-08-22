@@ -3,7 +3,6 @@ package sq
 import (
 	"context"
 	"database/sql"
-	"errors"
 	xerr "github.com/goclub/error"
 	"github.com/jmoiron/sqlx"
 	"log"
@@ -86,7 +85,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		return result, errors.New("InsertModel(ctx, ptr) " + rType.String() + " must be ptr")
+		return result, xerr.New("InsertModel(ctx, ptr) " + rType.String() + " must be ptr")
 	}
 	elemValue := rValue.Elem()
 	elemType := rType.Elem()
@@ -226,7 +225,7 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(slicePtr)
 	if ptrType.Kind() != reflect.Ptr {
-		return errors.New("goclub/sql: " + ptrType.String() + "not pointer")
+		return xerr.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
 	if qb.From == nil {
 		elemType := ptrType.Elem()
@@ -257,7 +256,7 @@ func coreCount(ctx context.Context, storager Storager, qb QB) (count uint64, err
 	if has == false {
 		raw := qb.SQLSelect()
 		query := raw.Query
-		return 0, errors.New("goclub/sql: Count() " + query + "not found data")
+		return 0, xerr.New("goclub/sql: Count() " + query + "not found data")
 	}
 	return
 }
@@ -317,7 +316,7 @@ func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 // 	rValue := reflect.ValueOf(ptr)
 // 	rType := rValue.Type()
 // 	if rType.Kind() != reflect.Ptr {
-// 		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
+// 		return result, xerr.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
 // 	}
 // 	elemValue := rValue.Elem()
 // 	elemType := rType.Elem()
@@ -377,7 +376,7 @@ func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 		return
 	}
 	if strings.HasPrefix(databaseName, "test_") == false {
-		return errors.New("ClearTestData only support delete test database")
+		return xerr.New("ClearTestData only support delete test database")
 	}
 	return
 }
@@ -418,7 +417,7 @@ func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb Q
 	rValue := reflect.ValueOf(ptr)
 	rType := rValue.Type()
 	if rType.Kind() != reflect.Ptr {
-		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
+		return result, xerr.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
 	}
 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 		return
@@ -467,7 +466,7 @@ func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 // 	rValue := reflect.ValueOf(ptr)
 // 	rType := rValue.Type()
 // 	if rType.Kind() != reflect.Ptr {
-// 		return result, errors.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
+// 		return result, xerr.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
 // 	}
 // 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
 // 		return
@@ -525,7 +524,7 @@ func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlic
 	qb.SQLChecker = storager.getSQLChecker()
 	ptrType := reflect.TypeOf(relationSlicePtr)
 	if ptrType.Kind() != reflect.Ptr {
-		return errors.New("goclub/sql: " + ptrType.String() + "not pointer")
+		return xerr.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
 	elemType := ptrType.Elem()
 	reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)

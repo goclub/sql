@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"errors"
+	xerr "github.com/goclub/error"
 	_ "github.com/go-sql-driver/mysql"
 	sq "github.com/goclub/sql"
 	"github.com/jmoiron/sqlx"
@@ -1106,7 +1106,7 @@ func (suite TestDBSuite) TestTransaction() {
 			return tx.Commit()
 		})
 		assert.True(t, execed)
-		assert.False(t, errors.Is(err, sq.ErrTransactionIsRollback))
+		assert.False(t, xerr.Is(err, sq.ErrTransactionIsRollback))
 		assert.NoError(t, err)
 	}
 	{
@@ -1134,7 +1134,7 @@ func (suite TestDBSuite) TestTransaction() {
 			return tx.Rollback()
 		})
 		assert.True(t, execed)
-		assert.True(t, errors.Is(err, sq.ErrTransactionIsRollback))
+		assert.True(t, xerr.Is(err, sq.ErrTransactionIsRollback))
 
 	}
 	{
@@ -1160,7 +1160,7 @@ func (suite TestDBSuite) TestTransaction() {
 			execed = true
 			_, err := tx.InsertModel(context.TODO(), &User{Name:"TestTransaction_3"},sq.QB{Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}})
 			assert.NoError(t, err)
-			return tx.RollbackWithError(errors.New("custom error"))
+			return tx.RollbackWithError(xerr.New("custom error"))
 		})
 		assert.True(t, execed)
 		assert.EqualError(t, err, "custom error")

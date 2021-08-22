@@ -1,8 +1,8 @@
 package sq_test
 
 import (
-	"errors"
 	sq "github.com/goclub/sql"
+	
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -615,7 +615,8 @@ func (suite TestQBSuite) TestInPanic() {
 		}
 		_ = qb.SQLSelect()
 	}()
-	assert.Equal(t, panicValue, errors.New("sq.In(string) slice must be slice"))
+
+	assert.Equal(t, panicValue.(error).Error(), "sq.In(string) slice must be slice")
 }
 
 func (suite TestQBSuite) TestLimit() {

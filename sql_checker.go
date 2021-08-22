@@ -1,7 +1,7 @@
 package sq
 
 import (
-	"errors"
+	xerr "github.com/goclub/error"
 	"github.com/sergi/go-diff/diffmatchpatch"
 	"regexp"
 	"runtime/debug"
@@ -120,7 +120,7 @@ func (check DefaultSQLChecker)  matchCheckSQLOptional(str string) (optional []st
 					if last.Done == false {
 						message := "goclub/sql: SQLCheck missing #}\n" + str + "\n" +
 							strings.Repeat(" ", index) + "^"
-						return nil, errors.New(message)
+						return nil, xerr.New(message)
 					}
 				}
 				data = append(data, Position{
@@ -135,14 +135,14 @@ func (check DefaultSQLChecker)  matchCheckSQLOptional(str string) (optional []st
 				endIndex := index+2
 				// 检查 #} 之前必须存在 {#
 				if len(data) == 0 {
-					return nil, errors.New("goclub/sq;: SQLCheck missing {#\n" + str + "\n" +
+					return nil, xerr.New("goclub/sq;: SQLCheck missing {#\n" + str + "\n" +
 						strings.Repeat(" ", index) + "^")
 				}
 				last := data[len(data)-1]
 				if last.Done == true {
 					message := "goclub/sql: SQLCheck missing {#\n" + str + "\n" +
 						strings.Repeat(" ", index) + "^"
-					return nil, errors.New(message)
+					return nil, xerr.New(message)
 				}
 				last.End = endIndex
 				last.Done = true
@@ -154,7 +154,7 @@ func (check DefaultSQLChecker)  matchCheckSQLOptional(str string) (optional []st
 		if item.Done == false {
 			message := "goclub/sql: SQLCheck missing #}\n" + str + "\n" +
 				strings.Repeat(" ", len(str)) + "^"
-			return nil, errors.New(message)
+			return nil, xerr.New(message)
 		}
 		optional = append(optional, str[item.Start+2:item.End-2])
 	}
