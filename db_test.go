@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	xerr "github.com/goclub/error"
 	_ "github.com/go-sql-driver/mysql"
+	xerr "github.com/goclub/error"
 	sq "github.com/goclub/sql"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
@@ -1333,4 +1333,12 @@ func TestInsertNullInt(t *testing.T) {
 		assert.Equal(t,has, true)
 		assert.Equal(t,age, sql.NullInt32{Valid:true, Int32: 1219})
 	}
+}
+
+func TestErrTransactionIsRollback(t *testing.T) {
+	ctx := context.Background()
+	err := testDB.BeginTransaction(ctx, sq.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		return tx.Rollback()
+	})
+	assert.Equal(t,xerr.Is(err, sq.ErrTransactionIsRollback), true)
 }

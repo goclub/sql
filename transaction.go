@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	xerr "github.com/goclub/error"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -85,7 +86,7 @@ func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, 
 		if txResult.withError != nil {
 			return txResult.withError
 		}
-		return ErrTransactionIsRollback
+		return xerr.WithStack(ErrTransactionIsRollback)
 	}
 }
 const (
