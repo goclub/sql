@@ -18,7 +18,7 @@ func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
 		DefaultLog.Print("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-		DefaultLog.Print(debug.Stack())
+		DefaultLog.Print(string(debug.Stack()))
 	}
 	u = append(u, Update{
 		Column: column,
@@ -31,7 +31,7 @@ func (u updates) SetRaw(query string, values ...interface{}) updates {
 		if op, ok := value.(OP); ok {
 			values[i] = op.Values[0]
 			DefaultLog.Print("goclub/sql: sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-			DefaultLog.Print(debug.Stack())
+			DefaultLog.Print(string(debug.Stack()))
 		}
 	}
 	u = append(u, Update{
