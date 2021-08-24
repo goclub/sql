@@ -5,5 +5,5 @@ import (
 	"os"
 )
 
-var DefaultLog = log.New(os.Stdout, "goclub/sql:", log.Ldate|log.Ltime|log.Lshortfile)
+var DefaultLog = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 

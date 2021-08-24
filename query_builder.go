@@ -435,7 +435,7 @@ func (qb QB) SQL(statement Statement) Raw {
 	query := sqlList.Join(" ")
 	defer func() {
 		if qb.Debug {
-			DefaultLog.Printf("goclub/sql debug:\r\n query:%s\r\nvalues:%#+v", query, values)
+			DefaultLog.Printf("goclub/sql: debug\n%s\n%#+v", query, values)
 		}
 		if qb.Review != "" {
 			qb.Reviews = append(qb.Reviews, qb.Review)
