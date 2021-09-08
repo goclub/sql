@@ -376,6 +376,26 @@ func (qb QB) SQL(statement Statement) Raw {
 			sqlList.Push(whereString)
 		}
 	}
+	// group by
+	if qb.GroupByRaw.Query != "" {
+		sqlList.Push("GROUP BY")
+		sqlList.Push(qb.GroupByRaw.Query)
+		values = append(values, qb.GroupByRaw.Values...)
+	} else if len(qb.GroupBy) != 0 {
+		sqlList.Push("GROUP BY")
+		sqlList.Push(strings.Join(columnsToStrings(qb.GroupBy), ", "))
+	}
+	// having
+	if qb.HavingRaw.Query != ""{
+		sqlList.Push("HAVING")
+		sqlList.Push(qb.HavingRaw.Query)
+		values = append(values, qb.HavingRaw.Values...)
+	} else if len(qb.Having) != 0 {
+		sqlList.Push("HAVING")
+		havaingRaw := ConditionsSQL([][]Condition{qb.Having})
+		sqlList.Push(havaingRaw.Query)
+		values = append(values, havaingRaw.Values...)
+	}
 	// order by
 	if qb.OrderByRaw.Query != "" {
 		sqlList.Push("ORDER BY")
@@ -394,26 +414,6 @@ func (qb QB) SQL(statement Statement) Raw {
 		}
 		sqlList.Push(orderList.Join(", "))
 	}
-	// group by
-	if qb.GroupByRaw.Query != "" {
-		sqlList.Push("GROUP BY")
-		sqlList.Push(qb.GroupByRaw.Query)
-		values = append(values, qb.GroupByRaw.Values...)
-	} else if len(qb.GroupBy) != 0 {
-		sqlList.Push("GROUP BY")
-		sqlList.Push(strings.Join(columnsToStrings(qb.GroupBy), ", "))
-	}
-	// havaing
-	if qb.HavingRaw.Query != ""{
-		sqlList.Push("HAVING")
-		sqlList.Push(qb.HavingRaw.Query)
-		values = append(values, qb.HavingRaw.Values...)
-	} else if len(qb.Having) != 0 {
-		sqlList.Push("HAVING")
-		havaingRaw := ConditionsSQL([][]Condition{qb.Having})
-		sqlList.Push(havaingRaw.Query)
-		values = append(values, havaingRaw.Values...)
-	}
 	// limit
 	limit := qb.Limit
 	// 优先使用 qb.limitRaw, 因为 db.Count 需要用到
@@ -429,6 +429,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push("OFFSET ?")
 		values = append(values, qb.Offset)
 	}
+	// lock
 	if len(qb.Lock) != 0 {
 		sqlList.Push(qb.Lock.String())
 	}

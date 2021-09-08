@@ -855,3 +855,17 @@ func (suite TestQBSuite) TestSet() {
 		assert.Equal(t, update[0].Value, 2)
 	}
 }
+
+
+func (suite TestQBSuite) TestGroupByOrderBy() {
+	t := suite.T()
+	qb := sq.QB{
+		From: &User{},
+		GroupBy: []sq.Column{"date"},
+		OrderBy: []sq.OrderBy{
+			{"date", sq.DESC,},
+		},
+	}
+	raw := qb.SQLSelect()
+	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL GROUP BY `date` ORDER BY `date` DESC", raw.Query)
+}
