@@ -1070,7 +1070,7 @@ func (suite TestDBSuite) TestExecQB() {
 		From: &User{},
 		Update: sq.Set("name", "TestExecQB_changed"),
 		Where: sq.And("name", sq.LikeLeft("TestExecQB")),
-	}, sq.Statement("").Enum().Update)
+	}, sq.StatementUpdate)
 	assert.NoError(t, err)
 	affected, err := result.RowsAffected()
 	assert.NoError(t, err)

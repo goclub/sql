@@ -64,7 +64,7 @@ func (tx *Transaction) Insert(ctx context.Context, qb QB) (result sql.Result, er
 func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
-	return coreExecQB(ctx, storager, qb, Statement("").Enum().Insert)
+	return coreExecQB(ctx, storager, qb, StatementInsert)
 }
 
 func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error) {
@@ -235,6 +235,12 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 		}
 		tablerInterface := reflectItemValue.Interface().(Tabler)
 		qb.From = tablerInterface
+	} else {
+		// 如果设置了 qb.Form 但没有设置 qb.Select 可能会导致 select * ,这种情况在代码已经在线上运行时但是表变动了时会很危险
+		if len(qb.Select) == 0 && len(qb.SelectRaw) == 0 {
+			err = xerr.New("goclub/sql: QuerySlice(ctx, slice, qb) if qb.Form not nil then qb.Select or qb.SelectRaw can not be nil, or you can set qb.Form be nil")
+			return
+		}
 	}
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values

@@ -25,15 +25,30 @@ func (suite TestQBSuite) TestTable() {
 }
 func (suite TestQBSuite) TestTableRaw() {
 	t := suite.T()
-	qb := sq.QB{
-		FromRaw: sq.FromRaw{
-			TableName:       sq.Raw{"(SELECT * FROM `user` WHERE `name` like ?) as user", []interface{}{"%tableRaw%"}},
-			SoftDeleteWhere: sq.Raw{},
-		},
+	{
+		qb := sq.QB{
+			SelectRaw: []sq.Raw{{Query: "*"}},
+			FromRaw: sq.FromRaw{
+				TableName:       sq.Raw{"(SELECT * FROM `user` WHERE `name` like ?) as user", []interface{}{"%tableRaw%"}},
+				SoftDeleteWhere: sq.Raw{},
+			},
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		assert.Equal(t, "SELECT * FROM (SELECT * FROM `user` WHERE `name` like ?) as user", query)
+		assert.Equal(t, []interface{}{"%tableRaw%"}, values)
 	}
-	raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-	assert.Equal(t, "SELECT * FROM (SELECT * FROM `user` WHERE `name` like ?) as user", query)
-	assert.Equal(t, []interface{}{"%tableRaw%"}, values)
+	{
+		qb := sq.QB{
+			FromRaw: sq.FromRaw{
+				TableName:       sq.Raw{"(SELECT * FROM `user` WHERE `name` like ?) as user", []interface{}{"%tableRaw%"}},
+				SoftDeleteWhere: sq.Raw{},
+			},
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		assert.Equal(t, "goclub/sql: if qb.SelectRaw is nil or qb.Form is nil then qb.Select can not be nil or empty slice", query)
+		assert.Equal(t, []interface{}(nil), values)
+	}
+
 }
 func (suite TestQBSuite) TestDisableSoftDelete() {
 	t := suite.T()
@@ -115,7 +130,7 @@ func (suite TestQBSuite) TestSelect() {
 				TableName: sq.Raw{"user", nil},
 				SoftDeleteWhere: sq.Raw{},
 			},
-			Select: nil,
+			SelectRaw: []sq.Raw{{Query: "*"}},
 			Where: []sq.Condition{
 				{"id", sq.Equal(1)},
 			},
@@ -123,6 +138,21 @@ func (suite TestQBSuite) TestSelect() {
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 		assert.Equal(t, "SELECT * FROM user WHERE `id` = ?", query)
 		assert.Equal(t, []interface{}{1}, values)
+	}
+	{
+		qb := sq.QB{
+			FromRaw: sq.FromRaw{
+				TableName: sq.Raw{"user", nil},
+				SoftDeleteWhere: sq.Raw{},
+			},
+			Select: nil,
+			Where: []sq.Condition{
+				{"id", sq.Equal(1)},
+			},
+		}
+		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
+		assert.Equal(t, "goclub/sql: if qb.SelectRaw is nil or qb.Form is nil then qb.Select can not be nil or empty slice", query)
+		assert.Nil(t, values)
 	}
 	{
 		qb := sq.QB{
@@ -723,8 +753,8 @@ func (suite TestQBSuite) TestJoinType() {
 }
 func (suite TestQBSuite) TestStatement() {
 	t := suite.T()
-	assert.Equal(t, sq.Statement("").Enum().Select.String(), "SELECT")
-	assert.Equal(t, sq.Statement("").Enum().Select.String(), string(sq.Statement("").Enum().Select))
+	assert.Equal(t, sq.StatementSelect.String(), "SELECT")
+	assert.Equal(t, sq.StatementSelect.String(), string(sq.StatementSelect))
 }
 
 

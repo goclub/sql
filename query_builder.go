@@ -189,44 +189,20 @@ func (c Column) wrapFieldWithAS() string {
 	return column
 }
 type Statement string
+const StatementSelect Statement = "SELECT"
+const StatementUpdate Statement = "UPDATE"
+const StatementDelete Statement = "DELETE"
+const StatementInsert Statement = "INSERT"
+
 func (s Statement) String() string { return string(s)}
-func (Statement) Enum() (e struct {
-	Select Statement
-	Update Statement
-	Delete Statement
-	Insert Statement
-}){
-	e.Select = "SELECT"
-	e.Update = "UPDATE"
-	e.Delete = "DELETE"
-	e.Insert = "INSERT"
-	return
-}
-func (s Statement) Switch(
-	Select func(_Select int),
-	Update func(_Update bool),
-	Delete func(_Delete string),
-	Insert func (_Insert []int),
-	) {
-	enum := s.Enum()
-	switch s {
-	case enum.Select:
-		Select(0)
-	case enum.Update:
-		Update(false)
-	case enum.Delete:
-		Delete("")
-	case enum.Insert:
-		Insert(nil)
-	}
-}
+
 func (qb QB) SQL(statement Statement) Raw {
 	if len(qb.Raw.Query) != 0 {
 		return qb.Raw
 	}
 	var values []interface{}
 	var sqlList stringQueue
-	if statement == statement.Enum().Select && qb.UnionTable.Tables != nil{
+	if statement == StatementSelect && qb.UnionTable.Tables != nil{
 		unionRaw := qb.UnionTable.SQLSelect()
 		sqlList.Push(unionRaw.Query)
 		values = append(values, unionRaw.Values...)
@@ -234,11 +210,11 @@ func (qb QB) SQL(statement Statement) Raw {
 	if qb.From != nil {
 		qb.from = "`" + qb.From.TableName() + "`"
 		switch statement {
-		case statement.Enum().Select,
-			 statement.Enum().Update:
+		case StatementSelect,
+			StatementUpdate:
 			qb.softDelete = qb.From.SoftDeleteWhere()
-		case statement.Enum().Insert:
-		case statement.Enum().Delete:
+		case StatementInsert:
+		case StatementDelete:
 		default:
 			panic(xerr.New("statement can not be " + statement.String()))
 		}
@@ -248,31 +224,32 @@ func (qb QB) SQL(statement Statement) Raw {
 		values = append(values, qb.FromRaw.TableName.Values...)
 		qb.softDelete = qb.FromRaw.SoftDeleteWhere
 	}
-	statement.Switch(func(_Select int) {
-	  if qb.UnionTable.Tables == nil {
-		  sqlList.Push("SELECT")
-		  if qb.SelectRaw == nil {
-			  if qb.From != nil && len(qb.Select) == 0 {
-				  qb.Select = TagToColumns(qb.From)
-			  }
-			  if len(qb.Select) == 0 {
-				  sqlList.Push("*")
-			  } else {
-				  sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
-			  }
-		  } else{
-			  var rawColumns []string
-			  for _, raws := range qb.SelectRaw {
-				  rawColumns = append(rawColumns, raws.Query)
-				  values = append(values, raws.Values...)
-			  }
-			  sqlList.Push(strings.Join(rawColumns, ", "))
-		  }
-		  sqlList.Push("FROM")
-		  sqlList.Push(qb.from)
-	  }
-	  if qb.Index != "" {
-	  	sqlList.Push(qb.Index)
+	switch statement {
+	case StatementSelect:
+		if qb.UnionTable.Tables == nil {
+			sqlList.Push("SELECT")
+			if qb.SelectRaw == nil {
+				if qb.From != nil && len(qb.Select) == 0 {
+					qb.Select = TagToColumns(qb.From)
+				}
+				if len(qb.Select) == 0 {
+					return Raw{Query: "goclub/sql: if qb.SelectRaw is nil or qb.Form is nil then qb.Select can not be nil or empty slice"}
+				} else {
+					sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
+				}
+			} else{
+				var rawColumns []string
+				for _, raws := range qb.SelectRaw {
+					rawColumns = append(rawColumns, raws.Query)
+					values = append(values, raws.Values...)
+				}
+				sqlList.Push(strings.Join(rawColumns, ", "))
+			}
+			sqlList.Push("FROM")
+			sqlList.Push(qb.from)
+		}
+		if qb.Index != "" {
+			sqlList.Push(qb.Index)
 		}
 		for _, join := range qb.Join {
 			sqlList.Push(join.Type.String())
@@ -280,7 +257,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			sqlList.Push("ON")
 			sqlList.Push(join.On)
 		}
-	}, func(_Update bool) {
+	case StatementUpdate:
 		sqlList.Push("UPDATE")
 		if qb.UseUpdateIgnore {
 			sqlList.Push("IGNORE")
@@ -298,43 +275,45 @@ func (qb QB) SQL(statement Statement) Raw {
 			}
 		}
 		sqlList.Push(strings.Join(sets, ","))
-	}, func(_Delete string) {
+	case StatementDelete:
 		sqlList.Push("DELETE FROM")
 		sqlList.Push(qb.from)
-	}, func(_Insert []int) {
-			if qb.UseInsertIgnoreInto {
-				sqlList.Push("INSERT IGNORE INTO")
-			} else {
-				sqlList.Push("INSERT INTO")
-			}
+	case StatementInsert:
+		if qb.UseInsertIgnoreInto {
+			sqlList.Push("INSERT IGNORE INTO")
+		} else {
+			sqlList.Push("INSERT INTO")
+		}
 
-			sqlList.Push(qb.from)
-			if len(qb.Insert) != 0 {
-				var insertValues []interface{}
-				for _, insert := range qb.Insert {
-					qb.InsertMultiple.Column = append(qb.InsertMultiple.Column, insert.Column)
-					insertValues = append(insertValues, insert.Value)
-				}
-				qb.InsertMultiple.Values = append(qb.InsertMultiple.Values, insertValues)
+		sqlList.Push(qb.from)
+		if len(qb.Insert) != 0 {
+			var insertValues []interface{}
+			for _, insert := range qb.Insert {
+				qb.InsertMultiple.Column = append(qb.InsertMultiple.Column, insert.Column)
+				insertValues = append(insertValues, insert.Value)
 			}
+			qb.InsertMultiple.Values = append(qb.InsertMultiple.Values, insertValues)
+		}
 
-			var columns []string
-			for _, column := range qb.InsertMultiple.Column {
-				columns = append(columns, column.wrapField())
+		var columns []string
+		for _, column := range qb.InsertMultiple.Column {
+			columns = append(columns, column.wrapField())
+		}
+		var allPlaceholders []string
+		for _, value := range qb.InsertMultiple.Values {
+			var rowPlaceholder []string
+			for _, v := range value {
+				rowPlaceholder = append(rowPlaceholder, "?")
+				values = append(values, v)
 			}
-			var allPlaceholders []string
-			for _, value := range qb.InsertMultiple.Values {
-				var rowPlaceholder []string
-				for _, v := range value {
-					rowPlaceholder = append(rowPlaceholder, "?")
-					values = append(values, v)
-				}
-				allPlaceholders = append(allPlaceholders, "("+strings.Join(rowPlaceholder, ",")+")")
-			}
-			sqlList.Push("(" + strings.Join(columns, ",") + ")")
-			sqlList.Push("VALUES")
-			sqlList.Push(strings.Join(allPlaceholders, ","))
-	})
+			allPlaceholders = append(allPlaceholders, "("+strings.Join(rowPlaceholder, ",")+")")
+		}
+		sqlList.Push("(" + strings.Join(columns, ",") + ")")
+		sqlList.Push("VALUES")
+		sqlList.Push(strings.Join(allPlaceholders, ","))
+	default:
+		panic(xerr.New("incorrect statement"))
+	}
 	// where
 	{
 		var whereString string
@@ -353,7 +332,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		whereString, whereValues = whereRaw.Query, whereRaw.Values
 		values = append(values, whereValues...)
 		var disableWhereIsEmpty bool
-		if statement == statement.Enum().Delete || statement == statement.Enum().Update {
+		if statement == StatementDelete || statement == StatementUpdate {
 			disableWhereIsEmpty = true
 		}
 		if disableWhereIsEmpty && len(strings.TrimSpace(whereString)) == 0 {
@@ -454,16 +433,16 @@ func (qb QB) SQL(statement Statement) Raw {
 	return Raw{query, values}
 }
 func (qb QB) SQLSelect() Raw {
-	return qb.SQL(Statement("").Enum().Select)
+	return qb.SQL(StatementSelect)
 }
 func (qb QB) SQLInsert() Raw {
-	return qb.SQL(Statement("").Enum().Insert)
+	return qb.SQL(StatementInsert)
 }
 func (qb QB) SQLUpdate() Raw {
-	return qb.SQL(Statement("").Enum().Update)
+	return qb.SQL(StatementUpdate)
 }
 func (qb QB) SQLDelete() Raw {
-	return qb.SQL(Statement("").Enum().Delete)
+	return qb.SQL(StatementDelete)
 }
 func (qb QB) Paging(page int, perPage int) QB {
 	if page == 0 {
