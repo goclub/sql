@@ -71,6 +71,10 @@ type API interface {
 	// 开启事务
 	BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error)
 	BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error)
+	// show status like "last_query_cost"
+	LastQueryCost(ctx context.Context) (lastQueryCost float64, err error)
+	// 打印 show status like "last_query_cost" 的结果
+	PrintLastQueryCost(ctx context.Context)
 }
 func verifyDoc() {
 	db := &Database{}

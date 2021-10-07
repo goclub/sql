@@ -1358,4 +1358,5 @@ func TestLastQueryCost(t *testing.T) {
 		cost, err := testDB.LastQueryCost(ctx)  ; assert.NoError(t, err)
 		_=cost
 	}
+	testDB.PrintLastQueryCost(ctx)
 }

@@ -589,7 +589,7 @@ func (tx *Transaction) LastQueryCost(ctx context.Context) (lastQueryCost float64
 }
 func coreLastQueryCost(ctx context.Context, storager Storager) (lastQueryCost float64, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	rows := storager.getCore().QueryRowx(`show status like "last_query_cost"`) ; if err != nil {
+	rows := storager.getCore().QueryRowxContext(ctx, `show status like "last_query_cost"`) ; if err != nil {
 	    return
 	}
 	var name string
@@ -597,4 +597,16 @@ func coreLastQueryCost(ctx context.Context, storager Storager) (lastQueryCost fl
 	    return
 	}
 	return
+}
+func (db *Database) PrintLastQueryCost(ctx context.Context){
+	corePrintLastQueryCost(ctx, db)
+}
+func (tx *Transaction) PrintLastQueryCost(ctx context.Context){
+	corePrintLastQueryCost(ctx, tx)
+}
+func corePrintLastQueryCost(ctx context.Context, storager Storager){
+	cost, err := coreLastQueryCost(ctx, storager) ; if err != nil {
+		DefaultLog.Printf("%+v", err)
+	}
+	DefaultLog.Print("last_query_cost: ", cost)
 }
