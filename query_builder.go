@@ -471,7 +471,7 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 			DefaultLog.Printf("%+v", err)
 		}
 	}()
-	if qb.Debug {
+	if qb.Debug == false {
 		DefaultLog.Print("Debug:")
 		qb.PrintSQL = true
 		qb.Explain = true

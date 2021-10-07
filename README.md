@@ -80,6 +80,133 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 [relation](./example/internal/relation/main.go?embed)
 
+## Debug
+
+```go
+sq.QB{
+	Debug: true
+}
+```
+
+打开Debug可以查看
+
+1. 运行的SQL
+1. explain
+1. 执行时间
+1. last_query_cost
+
+![](./media/debug.png)
+
+你也可以单独打开某一项或几项
+
+```go
+sq.QB{
+    PrintSQL: true,
+}
+
+sq.QB{
+    Explain: true,
+}
+
+sq.QB{
+    RunTime: true,
+}
+
+sq.QB{
+    LastQueryCost: true,
+}
+```
+
+## Review
+
+Review 的作用是用于审查 sql 或增加代码可读性
+
+### {#IN#}
+
+> 语法: {#IN#}
+
+默认会直接与执行SQL进行比对, 执行SQL与Review不一致则会在运行时 print 错误.
+
+有时候执行的SQL不是固定的字符串例如
+
+where in 时会根据查询条件不同导致有多种情况
+```
+select * from user where id in (?)
+select * from user where id in (?,?)
+select * from user where id in (?,?,?)
+...
+
+```
+虽然可以使用 Reviews 配置多个review
+```go
+sq.QB{
+    Review: []string{
+    	"select * from user where id in (?)",
+    	"select * from user where id in (?,?)",
+		"select * from user where id in (?,?,?),
+    },
+}
+```
+
+但这样无法覆盖全部的情况.
+
+可以使用 `{#IN#}` 模糊匹配
+```go
+sq.QB{
+    Review: "select * from user where id in {#IN#}"
+}
+```
+### {{# and name = ?#}}
+
+> 语法: `{{#任意字符#}}` 
+ 
+如果你使用了 `sq.Ignore` 你可能需要用到 Reviews
+
+```go
+sq.QB{
+    From: &User{},
+    Select: []sq.Column{"id"},
+    Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
+    Reviews: []string{
+        "SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL",
+        "SELECT `id` FROM `user` WHERE `deleted_at` IS NULL",
+    },
+}
+```
+
+你可以使用 `{{# and name = ?#}}` 代替多个 review
+
+> 建议将空格前置:使用 `{{# and name = ?#}}`, 而不是 `{{#and name = ? #}}`
+
+```go
+sq.QB{
+    From: &User{},
+    Select: []sq.Column{"id"},
+    Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
+    Review: "SELECT `id` FROM `user` WHERE{{# `name` = ?#}} AND `deleted_at` IS NULL",
+    },
+}
+```
+
+### {#VALUES#}
+
+> 语法: `{#VALUES#}`
+
+一些 Insert 语句会出现 `(?,?)` `(?,?),(?,?)` 的情况
+
+```
+INSERT INTO `user` (`name`,`age`) VALUES (?,?),(?,?)
+INSERT INTO `user` (`name`,`age`) VALUES (?,?)
+```
+
+可以使用 `{#VALUES#}` 模糊匹配
+
+```go
+sq.QB{
+    Review: "INSERT INTO `user` (`name`,`age`) VALUES {#VALUES#}"
+}
+```
+
 ## 致谢
 
 > 感谢 [jetbrains](https://jb.gg/OpenSource) 提供 Goland 开源授权
