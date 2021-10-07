@@ -227,7 +227,7 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	if ptrType.Kind() != reflect.Ptr {
 		return xerr.New("goclub/sql: " + ptrType.String() + "not pointer")
 	}
-	if qb.From == nil {
+	if qb.From == nil && qb.FromRaw.TableName.Query  == "" && qb.Raw.Query == "" {
 		elemType := ptrType.Elem()
 		reflectItemValue := reflect.MakeSlice(elemType, 1,1).Index(0)
 		if reflectItemValue.CanAddr() {
@@ -238,7 +238,7 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	} else {
 		// 如果设置了 qb.Form 但没有设置 qb.Select 可能会导致 select * ,这种情况在代码已经在线上运行时但是表变动了时会很危险
 		if len(qb.Select) == 0 && len(qb.SelectRaw) == 0 {
-			err = xerr.New("goclub/sql: QuerySlice(ctx, slice, qb) if qb.Form not nil then qb.Select or qb.SelectRaw can not be nil, or you can set qb.Form be nil")
+			err = xerr.New("goclub/sql: QuerySlice(ctx, slice, qb) if qb.Form/qb.FromRaw/qb.Raw not zero value, then qb.Select or qb.SelectRaw can not be nil, or you can set qb.Form/qb.FromRaw/qb.Raw be nil")
 			return
 		}
 	}
