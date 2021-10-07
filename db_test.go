@@ -1,7 +1,6 @@
 package sq_test
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
@@ -10,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"log"
 	"strconv"
 	"testing"
 	"time"
@@ -19,7 +17,7 @@ import (
 
 var testDB *sq.Database
 func init () {
-	sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
+	// sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
 		Password:"somepass",
@@ -331,7 +329,7 @@ func (suite TestDBSuite) TestQuerySlice() {
 		}
 		var list []Data
 		err := testDB.QuerySlice(context.TODO(), &list, sq.QB{
-			Where: sq.And(userCol.Name, sq.LikeLeft("TestQuerySlice")),
+			Where: sq.And(userCol.Name, sq.LikeLeft("TestQuerySlice"),),
 			OrderBy: []sq.OrderBy{{userCol.Name, sq.ASC}},
 			Reviews: []string{"SELECT `name`, `age` FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL ORDER BY `name` ASC"},
 		},)
@@ -422,6 +420,7 @@ func (suite TestDBSuite) TestHas() {
 		has, err := testDB.Has(context.TODO(), sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
+			Review: " SELECT 1 FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, has, true)
@@ -446,7 +445,7 @@ func (suite TestDBSuite) TestSum() {
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
-			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, value, sql.NullInt64{
@@ -464,7 +463,7 @@ func (suite TestDBSuite) TestSum() {
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
-			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, value, sql.NullInt64{
@@ -482,7 +481,7 @@ func (suite TestDBSuite) TestSum() {
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
-			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, value, sql.NullInt64{
@@ -500,7 +499,7 @@ func (suite TestDBSuite) TestSum() {
 		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
-			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
+			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, value, sql.NullInt64{

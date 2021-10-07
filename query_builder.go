@@ -1,10 +1,12 @@
 package sq
 
 import (
+	"context"
 	xerr "github.com/goclub/error"
 	"log"
 	"runtime/debug"
 	"strings"
+	"time"
 )
 
 // sq.Set(column, value)
@@ -30,7 +32,7 @@ func (u updates) SetRaw(query string, values ...interface{}) updates {
 	for i, value := range values {
 		if op, ok := value.(OP); ok {
 			values[i] = op.Values[0]
-			DefaultLog.Print("goclub/sql: sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+			DefaultLog.Print("sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
 			DefaultLog.Print(string(debug.Stack()))
 		}
 	}
@@ -102,9 +104,18 @@ type QB struct {
 	Raw Raw
 
 	Debug bool
+	PrintSQL bool
+	Explain bool
+	RunTime bool
+	elapsedTimeData struct{
+		startTime time.Time
+	}
+	LastQueryCost bool
+
 	Review string
 	Reviews []string
 	SQLChecker SQLChecker
+	disableSQLChecker bool
 
 }
 func (qb QB) mustInTransaction() error {
@@ -414,13 +425,10 @@ func (qb QB) SQL(statement Statement) Raw {
 	}
 	query := sqlList.Join(" ")
 	defer func() {
-		if qb.Debug {
-			DefaultLog.Printf("goclub/sql: debug\n%s\n%#+v", query, values)
-		}
 		if qb.Review != "" {
 			qb.Reviews = append(qb.Reviews, qb.Review)
 		}
-		if len(qb.Reviews) != 0 {
+		if len(qb.Reviews) != 0 && qb.disableSQLChecker == false{
 			matched, refs, err := qb.SQLChecker.Check(qb.Reviews, query) ; if err != nil {
 				qb.SQLChecker.TrackFail(err, qb.Reviews, query, "")
 			} else {
@@ -455,4 +463,63 @@ func (qb QB) Paging(page int, perPage int) QB {
 	qb.Offset = (page - 1) * perPage
 	qb.Limit = perPage
 	return qb
+}
+func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement Statement){
+	var err error
+	defer func() {
+		if err != nil {
+			DefaultLog.Printf("%+v", err)
+		}
+	}()
+	if qb.Debug {
+		DefaultLog.Print("Debug:")
+		qb.PrintSQL = true
+		qb.Explain = true
+		qb.RunTime = true
+		qb.LastQueryCost = true
+	}
+	qb.disableSQLChecker = true
+	raw := qb.SQL(statement)
+	qb.disableSQLChecker = false
+	core := storager.getCore()
+	// PrintSQL
+	if qb.PrintSQL {
+		cleanPrint(func(logger *log.Logger) {
+			logger.Print(renderSQL(raw.Query, raw.Values))
+		})
+	}
+	// EXPLAIN
+	if qb.Explain {
+		row := core.QueryRowxContext(ctx, "EXPLAIN " + raw.Query, raw.Values...)
+		cleanPrint(func(logger *log.Logger) {
+			logger.Print(renderExplain(row))
+		})
+	}
+	if qb.RunTime {
+		qb.elapsedTimeData.startTime = time.Now()
+	}
+	return
+}
+
+func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement Statement){
+	var err error
+	defer func() {
+		if err != nil {
+			DefaultLog.Printf("%+v", err)
+		}
+	}()
+	if qb.RunTime {
+		cleanPrint(func(logger *log.Logger) {
+			logger.Print(renderRunTime(time.Now().Sub(qb.elapsedTimeData.startTime)))
+		})
+	}
+	if qb.LastQueryCost {
+		var lastQueryCost float64
+		lastQueryCost, err = coreLastQueryCost(ctx, storager) ; if err != nil {
+		    return
+		}
+		cleanPrint(func(logger *log.Logger) {
+			logger.Print(renderLastQueryCost(lastQueryCost))
+		})
+	}
 }

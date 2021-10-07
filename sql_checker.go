@@ -43,15 +43,9 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 	return false, refs, nil
 }
 func (check DefaultSQLChecker) TrackFail(err error, reviews []string, query string, refs string) {
-	defer debug.PrintStack()
-	if err != nil {
-		DefaultLog.Print(err)
-		return
-	}
-	message := "query:\n" + query + "\n" +
-		       "reviews:\n" + strings.Join(reviews, "\n")+ "\n" +
-		       "refs:\n" + refs
-	DefaultLog.Print(message)
+	defer func() { _, _ = DefaultLog.Writer().Write(debug.Stack()) }()
+	if err != nil { DefaultLog.Printf("%+v", err);return }
+	DefaultLog.Print(renderReview(query, reviews, refs))
 }
 
 type defaultSQLCheckerDifferent struct {

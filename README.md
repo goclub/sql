@@ -64,7 +64,7 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 ## Query 
 
 > 使用 Query 查询单条数据
-> 使用 QueryList 查询多条数据
+> 使用 QuerySlice 查询多条数据
 
 [Query](./example/internal/query/main.go?embed)
 
