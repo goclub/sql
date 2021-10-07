@@ -581,3 +581,20 @@ func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Stateme
 	}
 	return
 }
+func (db *Database) LastQueryCost(ctx context.Context) (lastQueryCost float64, err error){
+	return coreLastQueryCost(ctx, db)
+}
+func (tx *Transaction) LastQueryCost(ctx context.Context) (lastQueryCost float64, err error){
+	return coreLastQueryCost(ctx, tx)
+}
+func coreLastQueryCost(ctx context.Context, storager Storager) (lastQueryCost float64, err error) {
+	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+	rows := storager.getCore().QueryRowx(`show status like "last_query_cost"`) ; if err != nil {
+	    return
+	}
+	var name string
+	err = rows.Scan(&name, &lastQueryCost) ; if err != nil {
+	    return
+	}
+	return
+}

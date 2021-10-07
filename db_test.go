@@ -1342,3 +1342,20 @@ func TestErrTransactionIsRollback(t *testing.T) {
 	})
 	assert.Equal(t,xerr.Is(err, sq.ErrTransactionIsRollback), true)
 }
+
+func TestLastQueryCost(t *testing.T) {
+	ctx := context.Background()
+	{
+		err := testDB.BeginTransaction(ctx, sq.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+			cost, err := tx.LastQueryCost(ctx) ; if err != nil {
+				return tx.RollbackWithError(err)
+			}
+			_=cost
+			return tx.Commit()
+		}) ; assert.NoError(t, err)
+	}
+	{
+		cost, err := testDB.LastQueryCost(ctx)  ; assert.NoError(t, err)
+		_=cost
+	}
+}
