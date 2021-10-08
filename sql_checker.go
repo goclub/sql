@@ -10,7 +10,7 @@ import (
 
 type SQLChecker interface {
 	Check(checkSQL []string, execSQL string) (pass bool, refs string, err error)
-	TrackFail (err error, reviews []string, query string, refs string)
+	TrackFail (debugID uint64, err error, reviews []string, query string, refs string)
 }
 
 type DefaultSQLChecker struct {
@@ -42,10 +42,10 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 	}
 	return false, refs, nil
 }
-func (check DefaultSQLChecker) TrackFail(err error, reviews []string, query string, refs string) {
+func (check DefaultSQLChecker) TrackFail(debugID uint64, err error, reviews []string, query string, refs string) {
 	defer func() { _, _ = DefaultLog.Writer().Write(debug.Stack()) }()
 	if err != nil { DefaultLog.Printf("%+v", err);return }
-	DefaultLog.Print(renderReview(query, reviews, refs))
+	DefaultLog.Print(renderReview(debugID, query, reviews, refs))
 }
 
 type defaultSQLCheckerDifferent struct {

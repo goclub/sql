@@ -17,34 +17,33 @@ func init () {
 	renderStyle.Format.Header = text.FormatDefault
 	renderStyle.Color.RowAlternate = renderStyle.Color.Row
 }
-func renderLastQueryCost(lastQueryCost float64) (render string) {
+func renderLastQueryCost(debugID uint64, lastQueryCost float64) (render string) {
 	t := prettyTable.NewWriter()
-
-	t.AppendHeader(prettyTable.Row{"LastQueryCost"})
+	t.AppendHeader(prettyTable.Row{"LastQueryCost" + " (" +strconv.FormatUint(debugID, 10) + ")"})
 	t.AppendRow([]interface{}{strconv.FormatFloat(lastQueryCost,'f', -1, 64)})
 	t.SetStyle(renderStyle)
 	return "\n" + t.Render()
 }
-func renderRunTime(duration time.Duration) (render string) {
+func renderRunTime(debugID uint64, duration time.Duration) (render string) {
 	t := prettyTable.NewWriter()
-	t.AppendHeader(prettyTable.Row{"RunTime"})
+	t.AppendHeader(prettyTable.Row{"RunTime" + " (" +strconv.FormatUint(debugID, 10) + ")"})
 	t.AppendRow([]interface{}{duration.String()})
 	t.SetStyle(renderStyle)
 	return"\n" + t.Render()
 }
-func renderSQL(query string, values []interface{}) (render string) {
+func renderSQL(debugID uint64, query string, values []interface{}) (render string) {
 	var printValues string
 	for _, value := range values {
 		printValues =  printValues + fmt.Sprintf("%T(%#+v) ", value, value) + " "
 	}
 	t := prettyTable.NewWriter()
-	t.AppendHeader(prettyTable.Row{"PrintSQL"}, prettyTable.RowConfig{AutoMerge: true})
+	t.AppendHeader(prettyTable.Row{"PrintSQL" + " (" +strconv.FormatUint(debugID, 10) + ")"}, prettyTable.RowConfig{AutoMerge: true})
 	t.AppendRow(prettyTable.Row{query}, prettyTable.RowConfig{AutoMerge: true})
 	t.AppendRow([]interface{}{printValues})
 	t.SetStyle(renderStyle)
 	return "\n" + t.Render()
 }
-func renderExplain(row *sqlx.Row) (render string) {
+func renderExplain(debugID uint64, row *sqlx.Row) (render string) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -52,7 +51,7 @@ func renderExplain(row *sqlx.Row) (render string) {
 		}
 	}()
 	t := prettyTable.NewWriter()
-	t.AppendHeader(prettyTable.Row{"Explain"}, prettyTable.RowConfig{AutoMerge: true})
+	t.AppendHeader(prettyTable.Row{"Explain" + " (" +strconv.FormatUint(debugID, 10) + ")"}, prettyTable.RowConfig{AutoMerge: true})
 	t.AppendRow(prettyTable.Row{"id", "select_type", "table", "partitions",
 		"type", "possible_keys", "key", "key_len", "ref",
 		"rows", "filtered", "Extra"})
@@ -77,11 +76,11 @@ func renderExplain(row *sqlx.Row) (render string) {
 	t.SetStyle(renderStyle)
 	return "\n" + t.Render()
 }
-func renderReview(query string, reviews []string, refs string) (render string) {
+func renderReview(debugID uint64, query string, reviews []string, refs string) (render string) {
 	{
 		t := prettyTable.NewWriter()
 		t.SetStyle(renderStyle)
-		t.AppendHeader(prettyTable.Row{"Review"}, prettyTable.RowConfig{AutoMerge: true})
+		t.AppendHeader(prettyTable.Row{"Review" + " (" +strconv.FormatUint(debugID, 10) + ")"}, prettyTable.RowConfig{AutoMerge: true})
 		render = render + "\n" + t.Render()
 	}
 	{

@@ -2,8 +2,10 @@ package sq
 
 import (
 	"context"
+	"crypto/rand"
 	xerr "github.com/goclub/error"
 	"log"
+	"math/big"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -104,6 +106,7 @@ type QB struct {
 	Raw Raw
 
 	Debug bool
+	debugData struct{id uint64}
 	PrintSQL bool
 	Explain bool
 	RunTime bool
@@ -430,10 +433,10 @@ func (qb QB) SQL(statement Statement) Raw {
 		}
 		if len(qb.Reviews) != 0 && qb.disableSQLChecker == false{
 			matched, refs, err := qb.SQLChecker.Check(qb.Reviews, query) ; if err != nil {
-				qb.SQLChecker.TrackFail(err, qb.Reviews, query, "")
+				qb.SQLChecker.TrackFail(qb.debugData.id, err, qb.Reviews, query, "")
 			} else {
 				if matched == false {
-					qb.SQLChecker.TrackFail(err, qb.Reviews, query, refs)
+					qb.SQLChecker.TrackFail(qb.debugData.id, err, qb.Reviews, query, refs)
 				}
 			}
 		}
@@ -471,7 +474,12 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 			DefaultLog.Printf("%+v", err)
 		}
 	}()
-	if qb.Debug == false {
+	debugID, err := rand.Int(rand.Reader, new(big.Int).SetUint64(9999)) ; if err != nil {
+		// 这个错误故意不处理
+		log.Print(err)
+	}
+	qb.debugData.id = debugID.Uint64()
+	if qb.Debug {
 		DefaultLog.Print("Debug:")
 		qb.PrintSQL = true
 		qb.Explain = true
@@ -485,14 +493,14 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	// PrintSQL
 	if qb.PrintSQL {
 		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderSQL(raw.Query, raw.Values))
+			logger.Print(renderSQL(qb.debugData.id, raw.Query, raw.Values))
 		})
 	}
 	// EXPLAIN
 	if qb.Explain {
 		row := core.QueryRowxContext(ctx, "EXPLAIN " + raw.Query, raw.Values...)
 		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderExplain(row))
+			logger.Print(renderExplain(qb.debugData.id, row))
 		})
 	}
 	if qb.RunTime {
@@ -510,7 +518,7 @@ func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement S
 	}()
 	if qb.RunTime {
 		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderRunTime(time.Now().Sub(qb.elapsedTimeData.startTime)))
+			logger.Print(renderRunTime(qb.debugData.id, time.Now().Sub(qb.elapsedTimeData.startTime)))
 		})
 	}
 	if qb.LastQueryCost {
@@ -519,7 +527,7 @@ func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement S
 		    return
 		}
 		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderLastQueryCost(lastQueryCost))
+			logger.Print(renderLastQueryCost(qb.debugData.id, lastQueryCost))
 		})
 	}
 }
