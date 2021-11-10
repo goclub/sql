@@ -288,13 +288,31 @@ func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error
 	var i int
 	return coreQueryRowScan(ctx, storager, qb, []interface{}{&i})
 }
-func (db *Database) Sum(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
-	return coreSum(ctx, db,  column, qb)
+func (db *Database) SumInt64(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
+	err = coreSum(ctx, db,  column, qb, &value) ; if err != nil {
+	    return
+	}
+	return value, err
 }
-func (tx *Transaction) Sum(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
-	return coreSum(ctx, tx, column, qb)
+func (tx *Transaction) SumInt64(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
+	err = coreSum(ctx, tx,  column, qb, &value) ; if err != nil {
+		return
+	}
+	return value, err
 }
-func coreSum(ctx context.Context, storager Storager, column Column ,qb QB) (value sql.NullInt64, err error) {
+func (db *Database) SumFloat64(ctx context.Context,  column Column ,qb QB) (value sql.NullFloat64, err error) {
+	err = coreSum(ctx, db,  column, qb, &value) ; if err != nil {
+		return
+	}
+	return value, err
+}
+func (tx *Transaction) SumFloat64(ctx context.Context,  column Column ,qb QB) (value sql.NullFloat64, err error) {
+	err = coreSum(ctx, tx,  column, qb, &value) ; if err != nil {
+		return
+	}
+	return value, err
+}
+func coreSum(ctx context.Context, storager Storager, column Column ,qb QB, valuePtr interface{}) (err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.SelectRaw = []Raw{{"SUM(" + column.wrapField() + ")", nil}}
@@ -302,7 +320,7 @@ func coreSum(ctx context.Context, storager Storager, column Column ,qb QB) (valu
 	qb.limitRaw.Limit = 0
 	qb.execDebugBefore(ctx, storager, StatementSelect)
 	defer qb.execDebugAfter(ctx, storager, StatementSelect)
-	_, err = coreQueryRowScan(ctx, storager, qb, []interface{}{&value}) ; if err != nil {
+	_, err = coreQueryRowScan(ctx, storager, qb, []interface{}{valuePtr}) ; if err != nil {
 		return
 	}
 	return

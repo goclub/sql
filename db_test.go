@@ -1,6 +1,7 @@
 package sq_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
@@ -9,6 +10,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"log"
 	"strconv"
 	"testing"
 	"time"
@@ -17,7 +19,8 @@ import (
 
 var testDB *sq.Database
 func init () {
-	// sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
+	log.Print("test change default log")
+	sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
 		Password:"somepass",
@@ -442,7 +445,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
@@ -460,7 +463,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
@@ -478,7 +481,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
@@ -496,7 +499,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.Sum(context.TODO(), userCol.Age, sq.QB{
+		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
 			From: &User{},
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},

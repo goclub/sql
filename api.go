@@ -37,8 +37,8 @@ type API interface {
 	Count(ctx context.Context, qb QB) (count uint64, err error)
 	// 查询数据是否存在(单条数据是否存在不建议使用 count 而是使用 Exist)
 	Has(ctx context.Context, qb QB) (has bool, err error)
-	// sum
-	Sum(ctx context.Context, column Column,  qb QB) (value sql.NullInt64, err error)
+	SumInt64(ctx context.Context, column Column,  qb QB) (value sql.NullInt64, err error)
+	SumFloat64(ctx context.Context, column Column,  qb QB) (value sql.NullFloat64, err error)
 	// 查询单条数据并转换为 Model
 
 	// 更新
