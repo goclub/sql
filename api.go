@@ -49,8 +49,8 @@ type API interface {
 
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
 	ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error)
-	// 基于 Model 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
-	ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error)
+	// // 基于 Model 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
+	// ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error)
 
 	// 硬删除（不可恢复）
 	HardDelete(ctx context.Context, qb QB) (result sql.Result, err error)
@@ -102,9 +102,9 @@ func (onlyDB) Close() error  {
 func (onlyDB) ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return
 }
-func (onlyDB) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
-	return
-}
+// func (onlyDB) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
+// 	return
+// }
 func (onlyDB) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
 	return
 }

@@ -361,13 +361,13 @@ func (db *Database) ClearTestData(ctx context.Context, qb QB) (result sql.Result
 	}
 	return db.HardDelete(ctx, qb)
 }
-func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
-	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	err = db.checkIsTestDatabase(ctx) ; if err != nil {
-		return
-	}
-	return db.hardDeleteModel(ctx, model, qb)
-}
+// func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
+// 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+// 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
+// 		return
+// 	}
+// 	return db.hardDeleteModel(ctx, model, qb)
+// }
 func (db *Database) HardDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return coreHardDelete(ctx, db, qb)
 }
@@ -380,32 +380,32 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLDelete()
 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 }
-func (db *Database) hardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
-	return coreHardDeleteModel(ctx,db, ptr, qb)
-}
+// func (db *Database) hardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+// 	return coreHardDeleteModel(ctx,db, ptr, qb)
+// }
 // func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
 // 	return coreHardDeleteModel(ctx, tx, ptr, qb)
 // }
-func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
-	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	rValue := reflect.ValueOf(ptr)
-	rType := rValue.Type()
-	if rType.Kind() != reflect.Ptr {
-		return result, xerr.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
-	}
-	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
-		return
-	}
-	qb.From = ptr
-	qb.Where = primaryKey
-	qb.Limit = 1
-
-	qb.SQLChecker = storager.getSQLChecker()
-	raw := qb.SQLDelete()
-	qb.execDebugBefore(ctx, storager, StatementUpdate)
-	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
-	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
-}
+// func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+// 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+// 	rValue := reflect.ValueOf(ptr)
+// 	rType := rValue.Type()
+// 	if rType.Kind() != reflect.Ptr {
+// 		return result, xerr.New("UpdateModel(ctx, ptr) " + rType.String() + " must be ptr")
+// 	}
+// 	primaryKey, err := safeGetPrimaryKey(ptr); if err != nil {
+// 		return
+// 	}
+// 	qb.From = ptr
+// 	qb.Where = primaryKey
+// 	qb.Limit = 1
+//
+// 	qb.SQLChecker = storager.getSQLChecker()
+// 	raw := qb.SQLDelete()
+// 	qb.execDebugBefore(ctx, storager, StatementUpdate)
+// 	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
+// 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
+// }
 func (db *Database) SoftDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
 	return coreSoftDelete(ctx, db, qb)
 }

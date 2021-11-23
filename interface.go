@@ -55,7 +55,6 @@ type Raw struct {
 }
 type Model interface {
 	Tabler
-	PrimaryKey() []Condition
 	BeforeCreate() error
 	AfterCreate(result sql.Result) error
 	BeforeUpdate() error
