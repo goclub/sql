@@ -156,12 +156,12 @@ sq.QB{
     Review: "select * from user where id in {#IN#}"
 }
 ```
-### 忽略
 
-```
-# 语法
-{{#任意字符#}}
-```
+## 零次一次
+
+语法
+
+<code><span>{</span>{#任意字符#}<span>}</span></code>
  
 如果你使用了 `sq.Ignore` 你可能需要用到 Reviews
 
@@ -177,20 +177,22 @@ sq.QB{
 }
 ```
 
-```
-你可以使用 `{{# and name = ?#}}` 代替多个 review
-建议将空格前置:使用 `{{# and name = ?#}}`, 而不是 `{{#and name = ? #}}`
-```
 
-```go
+
+你可以使用 <code><span>{</span>{# and name = ?#}<span>}</span></code> 代替多个 review
+建议将空格前置:使用 <code><span>{</span>{# and name = ?#}<span>}</span></code>, 而不是 <code><span>{</span>{#and name = ? #}<span>}</span></code>`
+
+<pre>
+<code>
 sq.QB{
     From: &User{},
     Select: []sq.Column{"id"},
     Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
-    Review: "SELECT `id` FROM `user` WHERE{{# `name` = ?#}} AND `deleted_at` IS NULL",
+    Review: "SELECT `id` FROM `user` WHERE<span>{</span>{# and name = ?#}<span>}</span> AND `deleted_at` IS NULL",
     },
 }
-```
+</code>
+</pre>
 
 ### {#VALUES#}
 
