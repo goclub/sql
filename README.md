@@ -156,9 +156,12 @@ sq.QB{
     Review: "select * from user where id in {#IN#}"
 }
 ```
-### {{# and name = ?#}}
+### 忽略
 
-> 语法: `{{#任意字符#}}` 
+```
+# 语法
+{{#任意字符#}}
+```
  
 如果你使用了 `sq.Ignore` 你可能需要用到 Reviews
 
@@ -174,9 +177,10 @@ sq.QB{
 }
 ```
 
+```
 你可以使用 `{{# and name = ?#}}` 代替多个 review
-
-> 建议将空格前置:使用 `{{# and name = ?#}}`, 而不是 `{{#and name = ? #}}`
+建议将空格前置:使用 `{{# and name = ?#}}`, 而不是 `{{#and name = ? #}}`
+```
 
 ```go
 sq.QB{
