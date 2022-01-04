@@ -2,7 +2,6 @@ package sq
 
 import (
 	"database/sql"
-	xerr "github.com/goclub/error"
 	"strings"
 )
 
@@ -69,10 +68,10 @@ func CheckRowScanErr(scanErr error) (has bool, err error) {
 	}
 	return
 }
-func safeGetPrimaryKey(ptr Model) (primaryKey []Condition, err error){
-	primaryKey = ptr.PrimaryKey()
-	if len(primaryKey) == 0 {
-		return nil, xerr.New("goclub/sql: PrimaryKey() can not return empty []sq.Condition")
-	}
-	return
-}
+// func safeGetPrimaryKey(ptr Model) (primaryKey []Condition, err error){
+// 	primaryKey = ptr.PrimaryKey()
+// 	if len(primaryKey) == 0 {
+// 		return nil, xerr.New("goclub/sql: PrimaryKey() can not return empty []sq.Condition")
+// 	}
+// 	return
+// }
