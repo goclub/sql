@@ -64,7 +64,7 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 [Update](./example/internal/update/main.go?embed)
 
-> goclub/sql 故意没有提供 UpdateModel 方法, 使用 `db.Update(ctx, sq.QB{...})` 精准的更新数据
+> goclub/sql 故意没有提供 UpdateModel 方法, 因为使用 UpdateModel 性能并不好,会修改一下原本不需要修改的数据. 使用 `db.Update(ctx, sq.QB{...})` 可以"精准"的更新数据
 
 ## Query 
 
@@ -73,7 +73,7 @@ goclub/sql 与 database/sql 连接方式相同，只是多返回了 dbClose 函�
 
 [Query](./example/internal/query/main.go?embed)
 
-> goclub/sql 故意没有提供 QueryModel 方法, 使用 `db.Query(ctx, &user, sq.QB{ Where: sq.And(col.ID, sq.Equal(userID)) })` 可以查询 Model
+> goclub/sql 特意没有提供 QueryModel 方法, 使用 `db.Query(ctx, &user, sq.QB{ Where: sq.And(col.ID, sq.Equal(userID)) })` 可以查询 Model
  
 ## SoftDelete HardDelete
 
