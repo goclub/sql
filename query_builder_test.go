@@ -862,6 +862,16 @@ func (suite TestQBSuite) TestUpdate() {
 	assert.Equal(t, "UPDATE IGNORE `user` SET `age`= ? WHERE `id` = ? AND `deleted_at` IS NULL", raw.Query)
 	assert.Equal(t, []interface{}{2, 1}, raw.Values)
 }
+func (suite TestQBSuite) TestSetMap() {
+	t := suite.T()
+	assert.Equal(t, sq.SetMap(map[sq.Column]interface{}{
+		sq.Column("age"): "a",
+		sq.Column("id"): "c",
+	}), sq.OnlyUseInTestToUpdates(t, []sq.Update{
+		{Column: "age", Value: "a"},
+		{Column: "id", Value: "c"},
+	}))
+}
 func (suite TestQBSuite) TestDebug() {
 	t := suite.T()
 	qb := sq.QB{

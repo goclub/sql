@@ -7,7 +7,9 @@ import (
 	"log"
 	"math/big"
 	"runtime/debug"
+	"sort"
 	"strings"
+	"testing"
 	"time"
 )
 
@@ -18,6 +20,9 @@ type Update struct {
 	Raw Raw
 }
 type updates []Update
+func OnlyUseInTestToUpdates (t *testing.T, list []Update) updates {
+	return list
+}
 func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
@@ -45,6 +50,19 @@ func (u updates) SetRaw(query string, values ...interface{}) updates {
 }
 func Set(column Column, value interface{}) updates {
 	return updates{}.Set(column, value)
+}
+func SetMap(data map[Column]interface{}) updates {
+	var list []Update
+	for column, value := range data {
+		list = append(list, Update{
+			Column: column,
+			Value:  value,
+		})
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return strings.Compare(list[i].Column.String(), list[j].Column.String()) == -1
+	})
+	return list
 }
 func SetRaw(query string, value ...interface{}) updates {
 	return updates{}.SetRaw(query, value...)
