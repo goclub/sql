@@ -1,3 +1,8 @@
+---
+permalink: /
+sidebarBasedOnContent: true
+---
+
 # goclub/sql
 [![Go Reference](https://pkg.go.dev/badge/github.com/goclub/sql.svg)](https://pkg.go.dev/github.com/goclub/sql)
 
