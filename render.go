@@ -34,7 +34,7 @@ func renderRunTime(debugID uint64, duration time.Duration) (render string) {
 func renderSQL(debugID uint64, query string, values []interface{}) (render string) {
 	var printValues string
 	for _, value := range values {
-		printValues =  printValues + fmt.Sprintf("%T(%#+v) ", value, value) + " "
+		printValues =  printValues + fmt.Sprintf("%T(%v) ", value, value) + " "
 	}
 	t := prettyTable.NewWriter()
 	t.AppendHeader(prettyTable.Row{"PrintSQL" + " (" +strconv.FormatUint(debugID, 10) + ")"}, prettyTable.RowConfig{AutoMerge: true})
