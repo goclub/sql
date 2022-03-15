@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	xerr "github.com/goclub/error"
 	"github.com/jmoiron/sqlx"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -47,7 +46,7 @@ func (db *Database) Close() error {
 	if db.Core != nil {
 		return db.Core.Close()
 	}
-	log.Print("Database is nil,maybe you forget sq.Open()")
+	DefaultLog.Print("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
 var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
@@ -78,7 +77,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = ptr.BeforeCreate() ; if err != nil {return}
 	if qb.From != nil {
-		log.Print("InsertModelBaseOnQB(ctx, qb, model) qb.From need be nil")
+		DefaultLog.Print("InsertModel(ctx, qb, model) qb.From need be nil")
 	}
 	qb.From = ptr
 	qb.SQLChecker = storager.getSQLChecker()

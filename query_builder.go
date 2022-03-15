@@ -114,9 +114,9 @@ type QB struct {
 	Having []Condition
 	HavingRaw Raw
 
-	Limit int
+	Limit uint64
 	limitRaw limitRaw
-	Offset int
+	Offset uint64
 
 	Lock SelectLock
 
@@ -189,7 +189,7 @@ func (union UnionTable) SQLSelect() (raw Raw) {
 }
 type limitRaw struct {
 	Valid bool
-	Limit int
+	Limit uint64
 }
 type JoinType string
 func (t JoinType) String() string {
@@ -261,14 +261,26 @@ func (qb QB) SQL(statement Statement) Raw {
 		if qb.UnionTable.Tables == nil {
 			sqlList.Push("SELECT")
 			if qb.SelectRaw == nil {
-				if qb.From != nil && len(qb.Select) == 0 {
+				inputSelectLen := len(qb.Select)
+				if qb.From != nil && inputSelectLen == 0 {
 					qb.Select = TagToColumns(qb.From)
 				}
-				if len(qb.Select) == 0 {
-					return Raw{Query: "goclub/sql: if qb.SelectRaw is nil or qb.Form is nil then qb.Select can not be nil or empty slice"}
+				newSelectLen := len(qb.Select)
+				if newSelectLen == 0 {
+					var warning string
+					if qb.From != nil {
+						warning = "goclub/sql: (NO SELECT FIELD) qb.From field does not have db struct tag( XXX string `db:\"name\"` ), or you forget set qb.Select"
+					} else {
+						warning = "goclub/sql: (NO SELECT FIELD) qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
+					}
+					_, writeErr := DefaultLog.Writer().Write(debug.Stack())
+					_=writeErr
+					DefaultLog.Print(warning)
+					return Raw{Query: warning}
 				} else {
-					sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
+
 				}
+				sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
 			} else{
 				var rawColumns []string
 				for _, raws := range qb.SelectRaw {
@@ -473,13 +485,13 @@ func (qb QB) SQLUpdate() Raw {
 func (qb QB) SQLDelete() Raw {
 	return qb.SQL(StatementDelete)
 }
-func (qb QB) Paging(page int, perPage int) QB {
+func (qb QB) Paging(page uint64, perPage uint64) QB {
 	if page == 0 {
 		page = 1
 	}
 	if perPage == 0 {
 		perPage = 10
-		log.Print("goclub/sql: Paging(page, perPage) alert perPage is 0 ,perPage can't be 0 . gofree will set perPage 10. but you need check your code.")
+		DefaultLog.Print("goclub/sql: Paging(page, perPage) alert perPage is 0 ,perPage can't be 0 . gofree will set perPage 10. but you need check your code.")
 	}
 	qb.Offset = (page - 1) * perPage
 	qb.Limit = perPage
@@ -494,7 +506,7 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	}()
 	debugID, err := rand.Int(rand.Reader, new(big.Int).SetUint64(9999)) ; if err != nil {
 		// 这个错误故意不处理
-		log.Print(err)
+		DefaultLog.Printf("%+v", err)
 	}
 	qb.debugData.id = debugID.Uint64()
 	if qb.Debug {

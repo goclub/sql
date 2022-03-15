@@ -45,7 +45,7 @@ func (suite TestQBSuite) TestTableRaw() {
 			},
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-		assert.Equal(t, "goclub/sql: if qb.SelectRaw is nil or qb.Form is nil then qb.Select can not be nil or empty slice", query)
+		assert.Equal(t, "goclub/sql: (NO SELECT FIELD) qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select", query)
 		assert.Equal(t, []interface{}(nil), values)
 	}
 
@@ -151,7 +151,7 @@ func (suite TestQBSuite) TestSelect() {
 			},
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-		assert.Equal(t, "goclub/sql: if qb.SelectRaw is nil or qb.Form is nil then qb.Select can not be nil or empty slice", query)
+		assert.Equal(t, "goclub/sql: (NO SELECT FIELD) qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select", query)
 		assert.Nil(t, values)
 	}
 	{
@@ -658,7 +658,7 @@ func (suite TestQBSuite) TestLimit() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL LIMIT ?")
-		assert.Equal(t, []interface{}{1}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(1)}, raw.Values)
 	}
 	{
 		qb := sq.QB{
@@ -678,7 +678,7 @@ func (suite TestQBSuite) TestOffset() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL OFFSET ?")
-		assert.Equal(t, []interface{}{100}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(100)}, raw.Values)
 	}
 	{
 		qb := sq.QB{
@@ -699,7 +699,7 @@ func (suite TestQBSuite) TestLimitOffset() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL LIMIT ? OFFSET ?")
-		assert.Equal(t, []interface{}{2, 100}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(2), uint64(100)}, raw.Values)
 	}
 }
 func (suite TestQBSuite) TestLock() {
@@ -712,7 +712,7 @@ func (suite TestQBSuite) TestLock() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL LIMIT ? FOR SHARE")
-		assert.Equal(t, []interface{}{1}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(1)}, raw.Values)
 	}
 	{
 		qb := sq.QB{
@@ -770,7 +770,7 @@ func (suite TestQBSuite) TestOrderBy() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL ORDER BY `name` ASC LIMIT ? OFFSET ?")
-		assert.Equal(t, []interface{}{2,10}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(2),uint64(10)}, raw.Values)
 	}
 	{
 		qb := sq.QB{
@@ -781,7 +781,7 @@ func (suite TestQBSuite) TestOrderBy() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL ORDER BY `name` DESC LIMIT ? OFFSET ?")
-		assert.Equal(t, []interface{}{2,10}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(2), uint64(10)}, raw.Values)
 	}
 	{
 		qb := sq.QB{
@@ -792,7 +792,7 @@ func (suite TestQBSuite) TestOrderBy() {
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL ORDER BY `name` DESC, `age` ASC LIMIT ? OFFSET ?")
-		assert.Equal(t, []interface{}{2,10}, raw.Values)
+		assert.Equal(t, []interface{}{uint64(2),uint64(10)}, raw.Values)
 	}
 }
 func (suite TestQBSuite) TestUnsafeDelete() {

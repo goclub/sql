@@ -19,7 +19,7 @@ import (
 
 var testDB *sq.Database
 func init () {
-	log.Print("test change default log")
+	log.Print("db_test.go: test change default log")
 	sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
