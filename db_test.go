@@ -1362,3 +1362,27 @@ func TestLastQueryCost(t *testing.T) {
 	}
 	testDB.PrintLastQueryCost(ctx)
 }
+
+func TestParseTime(t *testing.T) {
+	func() struct{} {
+	    // -------------
+		ctx := context.Background()
+		_, err := testDB.Exec(ctx, `
+		CREATE TABLE IF NOT EXISTS time (
+		  id int(11) unsigned NOT NULL AUTO_INCREMENT,
+		  datetime datetime NOT NULL,
+		  PRIMARY KEY (id)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+		`, nil) ; assert.NoError(t, err)
+		result, err := testDB.Exec(ctx, "INSERT INTO `time` (`datetime`) VALUES ('2022-01-01 00:00:00')", nil) ; assert.NoError(t, err)
+		newID, err := result.LastInsertId() ; assert.NoError(t, err)
+		var value time.Time
+		has, err := testDB.QueryRowScan(ctx, sq.QB{Raw: sq.Raw{
+			`select datetime from time where id = ?`, []interface{}{newID},
+		}}, []interface{}{&value}) ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t,value.String(), "2022-01-01 00:00:00 +0800 CST")
+	    // -------------
+	    return struct{}{}
+	}()
+}

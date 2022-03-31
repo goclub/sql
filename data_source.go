@@ -37,7 +37,7 @@ func (config MysqlDataSource) FormatDSN() (dataSourceName string) {
 	configList = append(configList)
 	if config.Query == nil {
 		config.Query = map[string]string{
-				"charset": "utf8",
+				"charset": "utf8mb4",
 				"parseTime": "True",
 				"loc": "Local",
 			}
