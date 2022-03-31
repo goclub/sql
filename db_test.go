@@ -27,6 +27,11 @@ func init () {
 		Host: "127.0.0.1",
 		Port:"3306",
 		DB: "test_goclub_sql",
+		Query: map[string]string{
+			"charset": "utf8mb4",
+			"parseTime": "True",
+			"loc": "Local",
+		},
 	}.FormatDSN()) ; if err != nil {
 		panic(err)
 	}
@@ -1374,14 +1379,26 @@ func TestParseTime(t *testing.T) {
 		  PRIMARY KEY (id)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 		`, nil) ; assert.NoError(t, err)
-		result, err := testDB.Exec(ctx, "INSERT INTO `time` (`datetime`) VALUES ('2022-01-01 00:00:00')", nil) ; assert.NoError(t, err)
-		newID, err := result.LastInsertId() ; assert.NoError(t, err)
-		var value time.Time
-		has, err := testDB.QueryRowScan(ctx, sq.QB{Raw: sq.Raw{
-			`select datetime from time where id = ?`, []interface{}{newID},
-		}}, []interface{}{&value}) ; assert.NoError(t, err)
-		assert.Equal(t,has, true)
-		assert.Equal(t,value.String(), "2022-01-01 00:00:00 +0800 CST")
+		{
+			result, err := testDB.Exec(ctx, "INSERT INTO `time` (`datetime`) VALUES ('2022-01-01 00:00:00')", nil) ; assert.NoError(t, err)
+			newID, err := result.LastInsertId() ; assert.NoError(t, err)
+			var value time.Time
+			has, err := testDB.QueryRowScan(ctx, sq.QB{Raw: sq.Raw{
+				`select datetime from time where id = ?`, []interface{}{newID},
+			}}, []interface{}{&value}) ; assert.NoError(t, err)
+			assert.Equal(t,has, true)
+			assert.Equal(t,value.String(), "2022-01-01 00:00:00 +0800 CST")
+		}
+		{
+			result, err := testDB.Exec(ctx, "INSERT INTO `time` (`datetime`) VALUES (?)", []interface{}{time.Date(2022,01,01,0,0,0,0,time.UTC)}) ; assert.NoError(t, err)
+			newID, err := result.LastInsertId() ; assert.NoError(t, err)
+			var value time.Time
+			has, err := testDB.QueryRowScan(ctx, sq.QB{Raw: sq.Raw{
+				`select datetime from time where id = ?`, []interface{}{newID},
+			}}, []interface{}{&value}) ; assert.NoError(t, err)
+			assert.Equal(t,has, true)
+			assert.Equal(t,value.String(), "2022-01-01 08:00:00 +0800 CST")
+		}
 	    // -------------
 	    return struct{}{}
 	}()
