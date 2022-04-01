@@ -39,7 +39,7 @@ func (Transaction) Rollback() TxResult {
 func (Transaction) RollbackWithError(err error) TxResult {
 	return TxResult{
 		isCommit: false,
-		withError: err,
+		withError: xerr.WithStack(err),
 	}
 }
 // 给 TxResult 增加 Error 接口是为了避出现类似  tx.Rollback() 前面没有 return 的错误
@@ -62,13 +62,13 @@ type BeginTransactionOpt interface {
 }
 var ErrTransactionIsRollback = errors.New("goclub/sql: transaction rollback")
 
-func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
+func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error) {
 	return db.BeginTransactionOpt(ctx, sql.TxOptions{
 		Isolation: level,
 		ReadOnly: false,
 	}, handle)
 }
-func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) ( err error) {
+func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (rollbackNoError bool,err error) {
 	coreTx, err := db.Core.BeginTxx(ctx, &opt) ; if err != nil {
 		return
 	}
@@ -81,12 +81,14 @@ func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, 
 		return
 	} else {
 		err = tx.Core.Rollback() ; if err != nil {
-			return err
+			return
 		}
 		if txResult.withError != nil {
-			return txResult.withError
+			err = txResult.withError
+			return
 		}
-		return xerr.WithStack(ErrTransactionIsRollback)
+		rollbackNoError = true
+		return
 	}
 }
 const (

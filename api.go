@@ -69,8 +69,8 @@ type API interface {
 	Exec(ctx context.Context, query string, values []interface{}) (result sql.Result, err error)
 
 	// 开启事务
-	BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error)
-	BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error)
+	BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error)
+	BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error)
 	// show status like "last_query_cost"
 	LastQueryCost(ctx context.Context) (lastQueryCost float64, err error)
 	// 打印 show status like "last_query_cost" 的结果
@@ -105,9 +105,9 @@ func (onlyDB) ClearTestData(ctx context.Context, qb QB) (result sql.Result, err 
 // func (onlyDB) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
 // 	return
 // }
-func (onlyDB) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (err error) {
+func (onlyDB) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error) {
 	return
 }
-func (onlyDB) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error) {
+func (onlyDB) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error) {
 	return
 }
