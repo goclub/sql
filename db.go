@@ -95,8 +95,8 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	}
 	raw := qb.SQLInsert()
 	query, values := raw.Query, raw.Values
-	qb.execDebugBefore(ctx, storager, StatementSelect)
-	defer qb.execDebugAfter(ctx, storager, StatementSelect)
+	qb.execDebugBefore(ctx, storager, StatementInsert)
+	defer qb.execDebugAfter(ctx, storager, StatementInsert)
 	result, err = storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {
 		return
 	}

@@ -30,7 +30,7 @@ func init () {
 		Query: map[string]string{
 			"charset": "utf8mb4",
 			"parseTime": "True",
-			"loc": "Local",
+			"loc": "Asia/Shanghai",
 		},
 	}.FormatDSN()) ; if err != nil {
 		panic(err)
