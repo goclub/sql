@@ -6,11 +6,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-
-
 // sq.Table("user",nil, nil)
 // sq.Table("user", sq.Raw{"`deleted_at` IS NULL", nil}, sq.Raw{"`deleted_at` = ?" ,[]interface{}{time.Now()}})
-func Table(tableName string, softDeleteWhere func() Raw, softDeleteSet func()Raw) Tabler {
+func Table(tableName string, softDeleteWhere func() Raw, softDeleteSet func() Raw) Tabler {
 	if softDeleteWhere == nil {
 		softDeleteWhere = func() Raw {
 			return Raw{}
@@ -22,9 +20,9 @@ func Table(tableName string, softDeleteWhere func() Raw, softDeleteSet func()Raw
 		}
 	}
 	return table{
-		tableName: tableName,
+		tableName:       tableName,
 		softDeleteWhere: softDeleteWhere,
-		softDeleteSet: softDeleteSet,
+		softDeleteSet:   softDeleteSet,
 	}
 }
 
@@ -33,12 +31,14 @@ type Tabler interface {
 	SoftDeleteWhere() Raw
 	SoftDeleteSet() Raw
 }
+
 // 供 relation sq.Table() 使用
 type table struct {
-	tableName string
+	tableName       string
 	softDeleteWhere func() Raw
-	softDeleteSet func() Raw
+	softDeleteSet   func() Raw
 }
+
 func (t table) TableName() string {
 	return t.tableName
 }
@@ -50,33 +50,33 @@ func (t table) SoftDeleteSet() Raw {
 }
 
 type Raw struct {
-	Query string
+	Query  string
 	Values []interface{}
 }
 type Model interface {
 	Tabler
-	BeforeCreate() error
-	AfterCreate(result sql.Result) error
+	BeforeInsert() error
+	AfterInsert(result sql.Result) error
 	BeforeUpdate() error
 	AfterUpdate() error
 }
 type Relation interface {
 	TableName() string
 	SoftDeleteWhere() Raw
-	RelationJoin () []Join
+	RelationJoin() []Join
 }
 
 type DefaultLifeCycle struct {
-
 }
-func (v *DefaultLifeCycle) BeforeCreate() error {return nil}
-func (v *DefaultLifeCycle) AfterCreate(result sql.Result) error {return nil}
-func (v *DefaultLifeCycle) BeforeUpdate() error {return nil}
-func (v *DefaultLifeCycle) AfterUpdate() error {return nil}
+
+func (v *DefaultLifeCycle) BeforeInsert() error                 { return nil }
+func (v *DefaultLifeCycle) AfterInsert(result sql.Result) error { return nil }
+func (v *DefaultLifeCycle) BeforeUpdate() error                 { return nil }
+func (v *DefaultLifeCycle) AfterUpdate() error                  { return nil }
 
 type Storager interface {
 	getCore() StoragerCore
-	getSQLChecker () SQLChecker
+	getSQLChecker() SQLChecker
 }
 type StoragerCore interface {
 	sqlx.Queryer

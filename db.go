@@ -75,7 +75,7 @@ func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (resul
 
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	err = ptr.BeforeCreate() ; if err != nil {return}
+	err = ptr.BeforeInsert() ; if err != nil {return}
 	if qb.From != nil {
 		DefaultLog.Print("InsertModel(ctx, qb, model) qb.From need be nil")
 	}
@@ -100,7 +100,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	result, err = storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {
 		return
 	}
-	err = ptr.AfterCreate(result) ; if err != nil {
+	err = ptr.AfterInsert(result) ; if err != nil {
 		return
 	}
 	return

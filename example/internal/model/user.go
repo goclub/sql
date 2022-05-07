@@ -32,7 +32,7 @@ func (v User) PrimaryKey() []sq.Condition {
 	)
 }
 
-func (v *User) AfterCreate(result sql.Result) error {
+func (v *User) AfterInsert(result sql.Result) error {
 	id, err := result.LastInsertId(); if err != nil {
 		return err
 	}
