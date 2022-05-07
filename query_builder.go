@@ -491,7 +491,6 @@ func (qb QB) Paging(page uint64, perPage uint64) QB {
 	}
 	if perPage == 0 {
 		perPage = 10
-		DefaultLog.Print("goclub/sql: Paging(page, perPage) alert perPage is 0 ,perPage can't be 0 . gofree will set perPage 10. but you need check your code.")
 	}
 	qb.Offset = (page - 1) * perPage
 	qb.Limit = perPage

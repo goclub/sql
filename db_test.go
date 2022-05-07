@@ -361,8 +361,7 @@ func (suite TestDBSuite) TestCount() {
 		assert.NoError(t, err)
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From: &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 		})
 		assert.NoError(t, err)
@@ -375,8 +374,7 @@ func (suite TestDBSuite) TestCount() {
 		assert.NoError(t, err)
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From: &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 		})
 		assert.NoError(t, err)
@@ -388,8 +386,7 @@ func (suite TestDBSuite) TestCount() {
 		assert.NoError(t, err)
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From: &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 		})
 		assert.NoError(t, err)
@@ -410,8 +407,7 @@ func (suite TestDBSuite) TestHas() {
 		assert.NoError(t, err)
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From: &User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
 			Reviews: []string{"SELECT 1 FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?"},
 		})
@@ -425,8 +421,7 @@ func (suite TestDBSuite) TestHas() {
 		assert.NoError(t, err)
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From: &User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestHas")),
 			Review: " SELECT 1 FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL LIMIT ?",
 		})
@@ -450,8 +445,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
-			From: &User{},
+		value, err := testDB.SumInt64(context.TODO(), &User{}, userCol.Age, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -468,8 +462,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
-			From: &User{},
+		value, err := testDB.SumInt64(context.TODO(), &User{}, userCol.Age, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -486,8 +479,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
-			From: &User{},
+		value, err := testDB.SumInt64(context.TODO(), &User{}, userCol.Age, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -504,8 +496,7 @@ func (suite TestDBSuite) TestSum() {
 		assert.NoError(t, err)
 	}
 	{
-		value, err := testDB.SumInt64(context.TODO(), userCol.Age, sq.QB{
-			From: &User{},
+		value, err := testDB.SumInt64(context.TODO(), &User{}, userCol.Age, sq.QB{
 			Where: sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"SELECT SUM(`age`) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -778,8 +769,7 @@ func (suite TestDBSuite) TestHardDelete() {
 
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -803,8 +793,7 @@ func (suite TestDBSuite) TestHardDelete() {
 		assert.Equal(t, affected, int64(1))
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -824,8 +813,7 @@ func (suite TestDBSuite) TestHardDelete() {
 		assert.Equal(t, affected, int64(1))
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -852,8 +840,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -878,8 +865,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 		assert.Equal(t, affected, int64(1))
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			DisableSoftDelete: true,
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestHardDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ?"},
@@ -936,8 +922,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 		assert.Equal(t, affected, int64(1))
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -960,8 +945,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 		assert.Equal(t, affected, int64(1))
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -1021,8 +1005,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 		assert.Equal(t, affected, int64(1))
 	}
 	{
-		count, err := testDB.Count(context.TODO(), sq.QB{
-			From:             &User{},
+		count, err := testDB.Count(context.TODO(), &User{}, sq.QB{
 			Where:             sq.And(userCol.Name, sq.LikeLeft("TestSoftDeleteModel")),
 			Reviews:          []string{"SELECT COUNT(*) FROM `user` WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
@@ -1097,8 +1080,7 @@ func (suite TestDBSuite) TestTransaction() {
 		assert.NoError(t, err)
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From:&User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And("name", sq.Equal("TestTransaction_1")),
 		})
 		assert.NoError(t, err)
@@ -1117,16 +1099,14 @@ func (suite TestDBSuite) TestTransaction() {
 		assert.Equal(t, rollbackNoError, false)
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From:&User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And("name", sq.Equal("TestTransaction_1")),
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, has, true)
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From:&User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And("name", sq.Equal("TestTransaction_2")),
 		})
 		assert.NoError(t, err)
@@ -1146,8 +1126,7 @@ func (suite TestDBSuite) TestTransaction() {
 
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From:&User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And("name", sq.Equal("TestTransaction_2")),
 		})
 		assert.NoError(t, err)
@@ -1155,8 +1134,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From:&User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And("name", sq.Equal("TestTransaction_3")),
 		})
 		assert.NoError(t, err)
@@ -1175,8 +1153,7 @@ func (suite TestDBSuite) TestTransaction() {
 		assert.Equal(t,rollbackNoError, false)
 	}
 	{
-		has, err := testDB.Has(context.TODO(), sq.QB{
-			From:&User{},
+		has, err := testDB.Has(context.TODO(), &User{}, sq.QB{
 			Where: sq.And("name", sq.Equal("TestTransaction_3")),
 		})
 		assert.NoError(t, err)

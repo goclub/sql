@@ -246,15 +246,16 @@ func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}
 	defer qb.execDebugAfter(ctx, storager, StatementSelect)
 	return storager.getCore().SelectContext(ctx, slicePtr, query, values...)
 }
-func (db *Database) Count(ctx context.Context, qb QB) (count uint64, err error){
+func (db *Database) Count(ctx context.Context, from Tabler, qb QB) (count uint64, err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreCount(ctx, db, qb)
+	return coreCount(ctx, db, from, qb)
 }
-func (tx *Transaction) Count(ctx context.Context, qb QB) (count uint64, err error){
-	return coreCount(ctx, tx, qb)
+func (tx *Transaction) Count(ctx context.Context, from Tabler, qb QB) (count uint64, err error){
+	return coreCount(ctx, tx, from, qb)
 }
-func coreCount(ctx context.Context, storager Storager, qb QB) (count uint64, err error) {
+func coreCount(ctx context.Context, storager Storager, from Tabler, qb QB) (count uint64, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+	qb.From = from
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.SelectRaw = []Raw{{"COUNT(*)", nil}}
 	qb.limitRaw = limitRaw{Valid: true, Limit: 0}
@@ -270,15 +271,16 @@ func coreCount(ctx context.Context, storager Storager, qb QB) (count uint64, err
 	return
 }
 // if you need query data exited SELECT "has" FROM user WHERE id = ? better than SELECT count(*) FROM user where id = ?
-func (db *Database) Has(ctx context.Context, qb QB) (has bool, err error){
+func (db *Database) Has(ctx context.Context,from Tabler, qb QB) (has bool, err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
-	return coreHas(ctx, db, qb)
+	return coreHas(ctx, db, from, qb)
 }
-func (tx *Transaction) Has(ctx context.Context, qb QB) (has bool, err error){
-	return coreHas(ctx, tx, qb)
+func (tx *Transaction) Has(ctx context.Context,from Tabler, qb QB) (has bool, err error){
+	return coreHas(ctx, tx, from, qb)
 }
-func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error) {
+func coreHas(ctx context.Context, storager Storager, from Tabler, qb QB) (has bool, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+	qb.From = from
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.SelectRaw = []Raw{{`1`, nil}}
 	qb.Limit = 1
@@ -287,32 +289,33 @@ func coreHas(ctx context.Context, storager Storager, qb QB) (has bool, err error
 	var i int
 	return coreQueryRowScan(ctx, storager, qb, []interface{}{&i})
 }
-func (db *Database) SumInt64(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
-	err = coreSum(ctx, db,  column, qb, &value) ; if err != nil {
+func (db *Database) SumInt64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullInt64, err error) {
+	err = coreSum(ctx, db, from, column, qb, &value) ; if err != nil {
 	    return
 	}
 	return value, err
 }
-func (tx *Transaction) SumInt64(ctx context.Context,  column Column ,qb QB) (value sql.NullInt64, err error) {
-	err = coreSum(ctx, tx,  column, qb, &value) ; if err != nil {
+func (tx *Transaction) SumInt64(ctx context.Context, from Tabler, column Column ,qb QB) (value sql.NullInt64, err error) {
+	err = coreSum(ctx, tx, from, column, qb, &value) ; if err != nil {
 		return
 	}
 	return value, err
 }
-func (db *Database) SumFloat64(ctx context.Context,  column Column ,qb QB) (value sql.NullFloat64, err error) {
-	err = coreSum(ctx, db,  column, qb, &value) ; if err != nil {
+func (db *Database) SumFloat64(ctx context.Context, from Tabler, column Column ,qb QB) (value sql.NullFloat64, err error) {
+	err = coreSum(ctx, db, from, column, qb, &value) ; if err != nil {
 		return
 	}
 	return value, err
 }
-func (tx *Transaction) SumFloat64(ctx context.Context,  column Column ,qb QB) (value sql.NullFloat64, err error) {
-	err = coreSum(ctx, tx,  column, qb, &value) ; if err != nil {
+func (tx *Transaction) SumFloat64(ctx context.Context, from Tabler, column Column ,qb QB) (value sql.NullFloat64, err error) {
+	err = coreSum(ctx, tx, from, column, qb, &value) ; if err != nil {
 		return
 	}
 	return value, err
 }
-func coreSum(ctx context.Context, storager Storager, column Column ,qb QB, valuePtr interface{}) (err error) {
+func coreSum(ctx context.Context, storager Storager, from Tabler, column Column ,qb QB, valuePtr interface{}) (err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+	qb.From = from
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.SelectRaw = []Raw{{"SUM(" + column.wrapField() + ")", nil}}
 	qb.limitRaw.Valid = true

@@ -33,12 +33,12 @@ type API interface {
 	// 查询多条数据并转换为 Relation slice
 	QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error)
 
-	// count
-	Count(ctx context.Context, qb QB) (count uint64, err error)
+	// Count
+	Count(ctx context.Context, from Tabler, qb QB) (count uint64, err error)
 	// 查询数据是否存在(单条数据是否存在不建议使用 count 而是使用 Exist)
-	Has(ctx context.Context, qb QB) (has bool, err error)
-	SumInt64(ctx context.Context, column Column,  qb QB) (value sql.NullInt64, err error)
-	SumFloat64(ctx context.Context, column Column,  qb QB) (value sql.NullFloat64, err error)
+	Has(ctx context.Context, from Tabler, qb QB) (has bool, err error)
+	SumInt64(ctx context.Context, from Tabler, column Column,  qb QB) (value sql.NullInt64, err error)
+	SumFloat64(ctx context.Context, from Tabler, column Column,  qb QB) (value sql.NullFloat64, err error)
 	// 查询单条数据并转换为 Model
 
 	// 更新
