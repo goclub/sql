@@ -197,3 +197,9 @@ func Ignore(shouldIgnore bool, op OP) OP {
 	}
 	return op
 }
+func IF(condition bool, op OP) OP {
+	if condition == false {
+		op.Ignore = true
+	}
+	return op
+}

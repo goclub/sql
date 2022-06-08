@@ -50,7 +50,7 @@ func (db *Database) Close() error {
 	return nil
 }
 var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
-var updateTimeField = []string{"UpdatedAt", "GMTUpdate","UpdateTime",}
+var updateTimeField = []string{"UpdatedAt", "GMTModified","UpdateTime",}
 var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
 func (db *Database) Insert(ctx context.Context, qb QB) (result sql.Result, err error){
 	return coreInsert(ctx, db, qb)

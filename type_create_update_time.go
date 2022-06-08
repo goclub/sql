@@ -16,7 +16,7 @@ type CreateTimeUpdateTime struct {
 }
 type GMTCreateGMTUpdate struct {
 	GMTCreate time.Time `db:"gmt_create"`
-	GMTUpdate time.Time `db:"gmt_update"`
+	GMTModified time.Time `db:"gmt_modified"`
 }
 func setTimeNow (fieldValue reflect.Value, fieldType reflect.StructField) {
 	if fieldValue.IsZero() {
