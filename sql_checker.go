@@ -2,7 +2,6 @@ package sq
 
 import (
 	xerr "github.com/goclub/error"
-	"github.com/sergi/go-diff/diffmatchpatch"
 	"regexp"
 	"runtime/debug"
 	"strings"
@@ -14,13 +13,7 @@ type SQLChecker interface {
 }
 
 type DefaultSQLChecker struct {
-	dmp *diffmatchpatch.DiffMatchPatch
-}
-func (check DefaultSQLChecker) getDmp() *diffmatchpatch.DiffMatchPatch {
-	if check.dmp == nil {
-		check.dmp = diffmatchpatch.New()
-	}
-	return check.dmp
+
 }
 func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool, refs string, err error){
 	if len(reviews) == 0 {
