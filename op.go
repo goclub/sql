@@ -191,12 +191,6 @@ func Multiple(ops []OP) OP {
 		Multiple: ops,
 	}
 }
-func Ignore(shouldIgnore bool, op OP) OP {
-	if shouldIgnore {
-		op.Ignore = true
-	}
-	return op
-}
 func IF(condition bool, op OP) OP {
 	if condition == false {
 		op.Ignore = true
