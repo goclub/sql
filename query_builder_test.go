@@ -279,8 +279,8 @@ func (suite TestQBSuite) TestWhereOR() {
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
 				OrGroup(
-					sq.Condition{"name", sq.Ignore(false, sq.Like("nimo"))},
-					sq.Condition{"mobile", sq.Ignore(true, sq.Like("13611112222"))},
+					sq.Condition{"name", sq.IF(true, sq.Like("nimo"))},
+					sq.Condition{"mobile", sq.IF(false, sq.Like("13611112222"))},
 			).
 			And("role_id", sq.Equal("1")),
 		}
@@ -295,8 +295,8 @@ func (suite TestQBSuite) TestWhereOR() {
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
 				OrGroup(
-					sq.Condition{"name", sq.Ignore(true, sq.Like("nimo"))},
-					sq.Condition{"mobile", sq.Ignore(false, sq.Like("13611112222"))},
+					sq.Condition{"name", sq.IF(false, sq.Like("nimo"))},
+					sq.Condition{"mobile", sq.IF(true, sq.Like("13611112222"))},
 				).
 				And("role_id", sq.Equal("1")),
 		}
@@ -311,8 +311,8 @@ func (suite TestQBSuite) TestWhereOR() {
 			// WHERE (`name` LIKE ? OR `mobile` LIKE ?) AND `role_id` = ?
 			Where: sq.
 				OrGroup(
-					sq.Condition{"name", sq.Ignore(true, sq.Like("nimo"))},
-					sq.Condition{"mobile", sq.Ignore(true, sq.Like("13611112222"))},
+					sq.Condition{"name", sq.IF(false, sq.Like("nimo"))},
+					sq.Condition{"mobile", sq.IF(false, sq.Like("13611112222"))},
 				).
 				And("role_id", sq.Equal("1")),
 		}
@@ -597,7 +597,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 		qb := sq.QB{
 			From: &User{},
 			Select: []sq.Column{"id"},
-			Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
+			Where: sq.And("name", sq.IF(searchName != "", sq.Equal(searchName))),
 			Reviews: []string{
 				"SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL",
 				"SELECT `id` FROM `user` WHERE `deleted_at` IS NULL",
@@ -613,7 +613,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 	{
 		raw := sq.QB{
 			From: &User{},
-			Where: sq.And("name", sq.Ignore(true, sq.Equal("nimo"))),
+			Where: sq.And("name", sq.IF(false, sq.Equal("nimo"))),
 			DisableSoftDelete: true,
 		}.SQLSelect()
 		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user`", raw.Query)
@@ -622,7 +622,7 @@ func (suite TestQBSuite) TestWhereIgnore() {
 	{
 		raw := sq.QB{
 			From: &User{},
-			Where: sq.And("name", sq.Ignore(true, sq.Equal("nimo"))).And("age", sq.Ignore(true, sq.Equal(1))),
+			Where: sq.And("name", sq.IF(false, sq.Equal("nimo"))).And("age", sq.IF(false, sq.Equal(1))),
 			DisableSoftDelete: true,
 		}.SQLSelect()
 		assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user`", raw.Query)
