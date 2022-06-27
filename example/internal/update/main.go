@@ -37,5 +37,10 @@ func example(ctx context.Context) (err error) {
 	    return
 	}
 	log.Print("affected:", affected)
+
+	// 你可以直接简写成
+	// affected, err := sq.RowsAffected(db.Update(ctx, qb)) ; if err != nil {
+	// 	return
+	// }
 	return
 }

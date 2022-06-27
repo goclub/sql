@@ -52,13 +52,13 @@ func (db *Database) Close() error {
 var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
 var updateTimeField = []string{"UpdatedAt", "GMTModified","UpdateTime",}
 var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
-func (db *Database) Insert(ctx context.Context, qb QB) (result sql.Result, err error){
+func (db *Database) Insert(ctx context.Context, qb QB) (result Result, err error){
 	return coreInsert(ctx, db, qb)
 }
-func (tx *Transaction) Insert(ctx context.Context, qb QB) (result sql.Result, err error){
+func (tx *Transaction) Insert(ctx context.Context, qb QB) (result Result, err error){
 	return coreInsert(ctx, tx, qb)
 }
-func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+func coreInsert(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.execDebugBefore(ctx, storager, StatementInsert)
@@ -66,14 +66,14 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result sql.Resul
 	return coreExecQB(ctx, storager, qb, StatementInsert)
 }
 
-func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error) {
+func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
 	return coreInsertModel(ctx, db, ptr,  qb)
 }
-func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error) {
+func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
 	return coreInsertModel(ctx, tx, ptr, qb)
 }
 
-func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = ptr.BeforeInsert() ; if err != nil {return}
 	if qb.From != nil {
@@ -97,7 +97,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	query, values := raw.Query, raw.Values
 	qb.execDebugBefore(ctx, storager, StatementInsert)
 	defer qb.execDebugAfter(ctx, storager, StatementInsert)
-	result, err = storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {
+	result.core, err = storager.getCore().ExecContext(ctx, query, values...) ; if err != nil {
 		return
 	}
 	err = ptr.AfterInsert(result) ; if err != nil {
@@ -328,18 +328,18 @@ func coreSum(ctx context.Context, storager Storager, from Tabler, column Column 
 	return
 }
 
-func (db *Database) Update(ctx context.Context, qb QB) (result sql.Result, err error){
+func (db *Database) Update(ctx context.Context, qb QB) (result Result, err error){
 	return coreUpdate(ctx, db, qb)
 }
-func (tx *Transaction) Update(ctx context.Context, qb QB) (result sql.Result, err error){
+func (tx *Transaction) Update(ctx context.Context, qb QB) (result Result, err error){
 	return coreUpdate(ctx, tx, qb)
 }
-func coreUpdate(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+func coreUpdate(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
-	result, err = storager.getCore().ExecContext(ctx, query, values...)
+	result.core, err = storager.getCore().ExecContext(ctx, query, values...)
 	qb.execDebugBefore(ctx, storager, StatementUpdate)
 	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
 	if err != nil {return result, err}
@@ -356,39 +356,42 @@ func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	}
 	return
 }
-func (db *Database) ClearTestData(ctx context.Context, qb QB) (result sql.Result, err error) {
+func (db *Database) ClearTestData(ctx context.Context, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
 		return
 	}
 	return db.HardDelete(ctx, qb)
 }
-// func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result sql.Result, err error) {
+// func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result Result, err error) {
 // 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 // 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
 // 		return
 // 	}
 // 	return db.hardDeleteModel(ctx, model, qb)
 // }
-func (db *Database) HardDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
+func (db *Database) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreHardDelete(ctx, db, qb)
 }
-func (tx *Transaction) HardDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
+func (tx *Transaction) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreHardDelete(ctx, tx, qb)
 }
-func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLDelete()
-	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
+	result.core, err = storager.getCore().ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
+	    return
+	}
+	return
 }
-// func (db *Database) hardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+// func (db *Database) hardDeleteModel(ctx context.Context, ptr Model, qb QB) (result Result, err error){
 // 	return coreHardDeleteModel(ctx,db, ptr, qb)
 // }
-// func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result sql.Result, err error){
+// func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result Result, err error){
 // 	return coreHardDeleteModel(ctx, tx, ptr, qb)
 // }
-// func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result sql.Result, err error) {
+// func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result Result, err error) {
 // 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 // 	rValue := reflect.ValueOf(ptr)
 // 	rType := rValue.Type()
@@ -408,13 +411,13 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 // 	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
 // 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 // }
-func (db *Database) SoftDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
+func (db *Database) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreSoftDelete(ctx, db, qb)
 }
-func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result sql.Result, err error) {
+func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreSoftDelete(ctx, tx, qb)
 }
-func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.Result, err error) {
+func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	softDeleteWhere := qb.From.SoftDeleteWhere()
 	if softDeleteWhere.Query == "" {
@@ -433,7 +436,10 @@ func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result sql.R
 	raw := qb.SQLUpdate()
 	qb.execDebugBefore(ctx, storager, StatementUpdate)
 	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
-	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
+	result.core, err = storager.getCore().ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
+	    return
+	}
+	return
 }
 func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has bool, err error){
 	err = qb.mustInTransaction() ; if err != nil {return}
@@ -509,27 +515,30 @@ func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlic
 	return
 }
 
-func (db *Database) Exec(ctx context.Context, query string, values []interface{}) (result sql.Result, err error) {
+func (db *Database) Exec(ctx context.Context, query string, values []interface{}) (result Result, err error) {
 	return coreExec(ctx, db, query, values)
 }
-func (tx *Transaction) Exec(ctx context.Context, query string, values []interface{}) (result sql.Result, err error) {
+func (tx *Transaction) Exec(ctx context.Context, query string, values []interface{}) (result Result, err error) {
 	return coreExec(ctx, tx, query, values)
 }
-func coreExec(ctx context.Context, storager Storager, query string, values []interface{}) (result sql.Result, err error) {
+func coreExec(ctx context.Context, storager Storager, query string, values []interface{}) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	return storager.getCore().ExecContext(ctx, query, values... )
+	result.core, err = storager.getCore().ExecContext(ctx, query, values... ) ; if err != nil {
+	    return
+	}
+	return
 }
-func (db *Database) ExecQB(ctx context.Context, qb QB, statement Statement) (result sql.Result, err error){
+func (db *Database) ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error){
 	return coreExecQB(ctx, db, qb, statement)
 }
-func (tx *Transaction) ExecQB(ctx context.Context, qb QB, statement Statement) (result sql.Result, err error){
+func (tx *Transaction) ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error){
 	return coreExecQB(ctx, tx, qb, statement)
 }
-func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Statement) (result sql.Result, err error) {
+func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Statement) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQL(statement)
-	result, err = storager.getCore().ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
+	result.core, err = storager.getCore().ExecContext(ctx, raw.Query, raw.Values...) ; if err != nil {
 		return
 	}
 	return
@@ -542,7 +551,7 @@ func (tx *Transaction) LastQueryCost(ctx context.Context) (lastQueryCost float64
 }
 func coreLastQueryCost(ctx context.Context, storager Storager) (lastQueryCost float64, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-	rows := storager.getCore().QueryRowxContext(ctx, `show status like "last_query_cost"`) ; if err != nil {
+	rows := storager.getCore().QueryRowxContext(ctx, `show status like 'last_query_cost'`) ; if err != nil {
 	    return
 	}
 	var name string

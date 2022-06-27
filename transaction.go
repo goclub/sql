@@ -3,7 +3,6 @@ package sq
 import (
 	"context"
 	"database/sql"
-	"errors"
 	xerr "github.com/goclub/error"
 	"github.com/jmoiron/sqlx"
 )
@@ -60,9 +59,8 @@ type BeginTransaction interface {
 type BeginTransactionOpt interface {
 	BeginTransactionOpt (ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error)
 }
-var ErrTransactionIsRollback = errors.New("goclub/sql: transaction rollback")
 
-func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error) {
+func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackButNoError bool, err error) {
 	return db.BeginTransactionOpt(ctx, sql.TxOptions{
 		Isolation: level,
 		ReadOnly: false,

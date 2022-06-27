@@ -2,7 +2,6 @@ package sq
 
 import (
 	"context"
-	"database/sql"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -56,7 +55,7 @@ type Raw struct {
 type Model interface {
 	Tabler
 	BeforeInsert() error
-	AfterInsert(result sql.Result) error
+	AfterInsert(result Result) error
 	BeforeUpdate() error
 	AfterUpdate() error
 }
@@ -70,7 +69,7 @@ type DefaultLifeCycle struct {
 }
 
 func (v *DefaultLifeCycle) BeforeInsert() error                 { return nil }
-func (v *DefaultLifeCycle) AfterInsert(result sql.Result) error { return nil }
+func (v *DefaultLifeCycle) AfterInsert(result Result) error { return nil }
 func (v *DefaultLifeCycle) BeforeUpdate() error                 { return nil }
 func (v *DefaultLifeCycle) AfterUpdate() error                  { return nil }
 

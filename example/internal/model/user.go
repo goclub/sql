@@ -1,7 +1,7 @@
 // Generate by https://goclub.run
 package m
+
 import (
-	"database/sql"
 	sq "github.com/goclub/sql"
 )
 
@@ -26,17 +26,13 @@ type User struct {
 	sq.CreatedAtUpdatedAt
 	sq.DefaultLifeCycle
 }
-func (v User) PrimaryKey() []sq.Condition {
-	return sq.And(
-		v.Column().ID, sq.Equal(v.ID),
-	)
-}
 
-func (v *User) AfterInsert(result sql.Result) error {
-	id, err := result.LastInsertId(); if err != nil {
+
+func (v *User) AfterInsert(result sq.Result) error {
+	id, err := result.LastInsertUint64Id(); if err != nil {
 		return err
 	}
-	v.ID = IDUser(uint64(id))
+	v.ID = NewIDUser(id)
 	return nil
 }
 
