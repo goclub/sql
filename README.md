@@ -168,13 +168,13 @@ sq.QB{
 
 <code><span>{</span>{#任意字符#}<span>}</span></code>
  
-如果你使用了 `sq.Ignore` 你可能需要用到 Reviews
+如果你使用了 `sq.IF` 你可能需要用到 Reviews
 
 ```go
 sq.QB{
     From: &User{},
     Select: []sq.Column{"id"},
-    Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
+    Where: sq.And("name", sq.IF(searchName != "", sq.Equal(searchName))),
     Reviews: []string{
         "SELECT `id` FROM `user` WHERE `name` = ? AND `deleted_at` IS NULL",
         "SELECT `id` FROM `user` WHERE `deleted_at` IS NULL",
@@ -191,7 +191,7 @@ sq.QB{
 sq.QB{
     From: &User{},
     Select: []sq.Column{"id"},
-    Where: sq.And("name", sq.Ignore(searchName == "", sq.Equal(searchName))),
+    Where: sq.And("name", sq.IF(searchName != "", sq.Equal(searchName))),
     Review: "SELECT `id` FROM `user` WHERE<span>{</span>{# and name = ?#}<span>}</span> AND `deleted_at` IS NULL",
     },
 }
