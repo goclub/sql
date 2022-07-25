@@ -21,7 +21,7 @@ func example(ctx context.Context) (err error) {
 	qb := sq.QB{
 		From: &m.TableUser{},
 		// 可以使用 sq.SetMap/sq.Set/sq.SetRaw
-		Update: sq.SetMap(map[sq.Column]interface{}{
+		Set: sq.SetMap(map[sq.Column]interface{}{
 			col.Name: "tim",
 			col.Mobile: "13022228888",
 		}),
@@ -39,7 +39,7 @@ func example(ctx context.Context) (err error) {
 	log.Print("affected:", affected)
 
 	// 你可以直接简写成
-	// affected, err := sq.RowsAffected(db.Update(ctx, qb)) ; if err != nil {
+	// affected, err := sq.RowsAffected(db.Set(ctx, qb)) ; if err != nil {
 	// 	return
 	// }
 	return

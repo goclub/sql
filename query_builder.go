@@ -93,7 +93,7 @@ type QB struct {
 
 	Index string
 
-	Update []Update
+	Set []Update
 	// UPDATE IGNORE
 	UseUpdateIgnore bool
 	Insert Values
@@ -309,7 +309,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push(qb.from)
 		sqlList.Push("SET")
 		var sets  []string
-		for _, data := range qb.Update {
+		for _, data := range qb.Set {
 			if len(data.Raw.Query) !=0  {
 				sets = append(sets, data.Raw.Query)
 				values = append(values, data.Raw.Values...)
@@ -318,7 +318,7 @@ func (qb QB) SQL(statement Statement) Raw {
 				values = append(values, data.Value)
 			}
 		}
-		sqlList.Push(strings.Join(sets, ","))
+		sqlList.Push(strings.Join(sets, ", "))
 	case StatementDelete:
 		sqlList.Push("DELETE FROM")
 		sqlList.Push(qb.from)

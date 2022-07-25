@@ -430,7 +430,7 @@ func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result Resul
 		err = xerr.New("goclub/sql: SoftDelete()" + qb.From.TableName() + "without soft delete set")
 		return
 	}
-	qb.Update = []Update{
+	qb.Set = []Update{
 		{Raw: softDeleteSet,},
 	}
 	raw := qb.SQLUpdate()

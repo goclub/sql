@@ -653,9 +653,9 @@ func (suite TestDBSuite) TestUpdate() {
 	time.Sleep(time.Second)
 	{
 		result, err := testDB.Update(context.TODO(), sq.QB{
-				From: &User{},
-				Where: sq.And(userCol.ID, sq.Equal(newID)),
-				Update: sq.Set(userCol.Name, "TestUpdate_changed"),
+				From:    &User{},
+				Where:   sq.And(userCol.ID, sq.Equal(newID)),
+				Set:     sq.Set(userCol.Name, "TestUpdate_changed"),
 				Reviews: []string{"UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
@@ -728,7 +728,7 @@ func (suite TestDBSuite) TestUpdateModel() {
 	// 		ID: IDUser(newID),
 	// 		Name: "",
 	// 	}
-	// 	result, err := testDB.UpdateModel(context.TODO(), &user, []sq.Update{
+	// 	result, err := testDB.UpdateModel(context.TODO(), &user, []sq.Set{
 	// 		sq.Set(userCol.Name, "TestUpdateModel_changed"),
 	// 	}, sq.QB{
 	// 		Review: "UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL",
@@ -1057,8 +1057,8 @@ func (suite TestDBSuite) TestExecQB() {
 		assert.Equal(t, affected, int64(1))
 	}
 	result, err := testDB.ExecQB(context.TODO(), sq.QB{
-		From: &User{},
-		Update: sq.Set("name", "TestExecQB_changed"),
+		From:  &User{},
+		Set:   sq.Set("name", "TestExecQB_changed"),
 		Where: sq.And("name", sq.LikeLeft("TestExecQB")),
 	}, sq.StatementUpdate)
 	assert.NoError(t, err)

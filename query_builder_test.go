@@ -853,10 +853,10 @@ func (suite TestQBSuite) TestInsertMultiple() {
 func (suite TestQBSuite) TestUpdate() {
 	t := suite.T()
 	qb := sq.QB{
-		From: &User{},
+		From:            &User{},
 		UseUpdateIgnore: true,
-		Update: sq.Set("age", 2),
-		Where:  sq.And("id", sq.Equal(1)),
+		Set:             sq.Set("age", 2),
+		Where:           sq.And("id", sq.Equal(1)),
 	}
 	raw := qb.SQLUpdate()
 	assert.Equal(t, "UPDATE IGNORE `user` SET `age`= ? WHERE `id` = ? AND `deleted_at` IS NULL", raw.Query)
