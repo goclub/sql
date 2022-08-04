@@ -314,7 +314,7 @@ func (qb QB) SQL(statement Statement) Raw {
 				sets = append(sets, data.Raw.Query)
 				values = append(values, data.Raw.Values...)
 			} else {
-				sets = append(sets, data.Column.wrapField()+"= ?")
+				sets = append(sets, data.Column.wrapField()+" = ?")
 				values = append(values, data.Value)
 			}
 		}
@@ -347,10 +347,23 @@ func (qb QB) SQL(statement Statement) Raw {
 		for _, value := range qb.InsertMultiple.Values {
 			var rowPlaceholder []string
 			for _, v := range value {
-				rowPlaceholder = append(rowPlaceholder, "?")
-				values = append(values, v)
+				var insertRaw Raw
+				var hasInsertRaw bool
+				switch item := v.(type) {
+				case sqlInsertRawer:
+					insertRaw = item.SQLInsertRaw()
+					hasInsertRaw = true
+				}
+				if hasInsertRaw {
+					rowPlaceholder = append(rowPlaceholder, insertRaw.Query)
+					values = append(values, insertRaw.Values...)
+				} else {
+					rowPlaceholder = append(rowPlaceholder, "?")
+					values = append(values, v)
+				}
 			}
 			allPlaceholders = append(allPlaceholders, "("+strings.Join(rowPlaceholder, ",")+")")
+
 		}
 		sqlList.Push("(" + strings.Join(columns, ",") + ")")
 		sqlList.Push("VALUES")

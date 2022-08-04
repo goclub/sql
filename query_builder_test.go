@@ -859,7 +859,7 @@ func (suite TestQBSuite) TestUpdate() {
 		Where:           sq.And("id", sq.Equal(1)),
 	}
 	raw := qb.SQLUpdate()
-	assert.Equal(t, "UPDATE IGNORE `user` SET `age`= ? WHERE `id` = ? AND `deleted_at` IS NULL", raw.Query)
+	assert.Equal(t, "UPDATE IGNORE `user` SET `age` = ? WHERE `id` = ? AND `deleted_at` IS NULL", raw.Query)
 	assert.Equal(t, []interface{}{2, 1}, raw.Values)
 }
 func (suite TestQBSuite) TestSetMap() {

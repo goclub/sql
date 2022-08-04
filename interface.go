@@ -86,3 +86,7 @@ type StoragerCore interface {
 	sqlx.PreparerContext
 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }
+
+type sqlInsertRawer interface {
+	SQLInsertRaw() (raw Raw)
+}
