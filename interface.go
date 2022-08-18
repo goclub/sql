@@ -88,5 +88,5 @@ type StoragerCore interface {
 }
 
 type sqlInsertRawer interface {
-	SQLInsertRaw() (raw Raw)
+	SQLInsertRaw() (query string, values []interface{})
 }

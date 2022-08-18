@@ -351,7 +351,7 @@ func (qb QB) SQL(statement Statement) Raw {
 				var hasInsertRaw bool
 				switch item := v.(type) {
 				case sqlInsertRawer:
-					insertRaw = item.SQLInsertRaw()
+					insertRaw.Query, insertRaw.Values = item.SQLInsertRaw()
 					hasInsertRaw = true
 				}
 				if hasInsertRaw {
