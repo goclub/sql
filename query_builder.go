@@ -498,15 +498,15 @@ func (qb QB) SQLUpdate() Raw {
 func (qb QB) SQLDelete() Raw {
 	return qb.SQL(StatementDelete)
 }
-func (qb QB) Paging(page uint64, perPage uint64) QB {
+func (qb QB) Paging(page uint64, perPage uint32) QB {
 	if page == 0 {
 		page = 1
 	}
 	if perPage == 0 {
 		perPage = 10
 	}
-	qb.Offset = (page - 1) * perPage
-	qb.Limit = perPage
+	qb.Offset = (page - 1) * uint64(perPage)
+	qb.Limit = uint64(perPage)
 	return qb
 }
 func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement Statement){
