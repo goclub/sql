@@ -257,7 +257,9 @@ func coreCount(ctx context.Context, storager Storager, from Tabler, qb QB) (coun
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.From = from
 	qb.SQLChecker = storager.getSQLChecker()
-	qb.SelectRaw = []Raw{{"COUNT(*)", nil}}
+	if len(qb.SelectRaw) == 0 {
+		qb.SelectRaw = []Raw{{"COUNT(*)", nil}}
+	}
 	qb.limitRaw = limitRaw{Valid: true, Limit: 0}
 	qb.execDebugBefore(ctx, storager, StatementSelect)
 	defer qb.execDebugAfter(ctx, storager, StatementSelect)
