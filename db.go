@@ -197,7 +197,9 @@ func coreQuery(ctx context.Context, storager Storager, ptr Tabler, qb QB)  (has 
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	qb.SQLChecker = storager.getSQLChecker()
 	qb.Limit = 1
-	qb.From = ptr
+	if qb.From == nil {
+		qb.From = ptr
+	}
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
 	row := storager.getCore().QueryRowxContext(ctx, query, values...)
