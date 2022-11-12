@@ -107,78 +107,44 @@ func LikeRight(s string) OP {
 		Values: []interface{}{"%" + s},
 	}
 }
-func GtInt(i int) OP {
+func Between(begin interface{}, end interface{}) OP {
+	return OP {
+		Symbol: "BETWEEN",
+		Values: []interface{}{begin, end},
+		Placeholder: `? AND ?`,
+	}
+}
+func NotBetween(begin interface{}, end interface{}) OP {
+	return OP {
+		Symbol: "NOT BETWEEN",
+		Values: []interface{}{begin, end},
+		Placeholder: `? AND ?`,
+	}
+}
+func GT(v interface{}) OP {
 	return OP {
 		Symbol: ">",
-		Values: []interface{}{i},
+		Values: []interface{}{v},
 	}
 }
-func GtOrEqualInt(i int) OP {
+func GTE(v interface{}) OP {
 	return OP {
 		Symbol: ">=",
-		Values: []interface{}{i},
+		Values: []interface{}{v},
 	}
 }
-func LtInt(i int) OP {
+func LT(v interface{}) OP {
 	return OP {
 		Symbol: "<",
-		Values: []interface{}{i},
+		Values: []interface{}{v},
 	}
 }
-func LtOrEqualInt(i int) OP {
+func LTE(v interface{}) OP {
 	return OP {
 		Symbol: "<=",
-		Values: []interface{}{i},
+		Values: []interface{}{v},
 	}
 }
-func GtFloat(i float64) OP {
-	return OP {
-		Symbol: ">",
-		Values: []interface{}{i},
-	}
-}
-func GtOrEqualFloat(i float64) OP {
-	return OP {
-		Symbol: ">=",
-		Values: []interface{}{i},
-	}
-}
-func LtFloat(i float64) OP {
-	return OP {
-		Symbol: "<",
-		Values: []interface{}{i},
-	}
-}
-func LtOrEqualFloat(i float64) OP {
-	return OP {
-		Symbol: "<=",
-		Values: []interface{}{i},
-	}
-}
-// func GtTime(t time.Time) OP {
-// 	return OP {
-// 		Symbol: ">",
-// 		Values: []interface{}{t},
-// 	}
-// }
-// func GtOrEqualTime(t time.Time) OP {
-// 	return OP {
-// 		Symbol: ">=",
-// 		Values: []interface{}{t},
-// 	}
-// }
-// func LtTime(t time.Time) OP {
-// 	return OP {
-// 		Symbol: "<",
-// 		Values: []interface{}{t},
-// 	}
-// }
-// func LtOrEqualTime(t time.Time) OP {
-// 	return OP {
-// 		Symbol: "<=",
-// 		Values: []interface{}{t},
-// 	}
-// }
 
 func IsNull() OP {
 	return OP{
