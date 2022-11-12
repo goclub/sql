@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
-	"encoding/binary"
-	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	xerr "github.com/goclub/error"
 	sq "github.com/goclub/sql"
@@ -13,7 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"log"
-	"math"
 	"strconv"
 	"testing"
 	"time"
@@ -1383,109 +1380,6 @@ func TestParseTime(t *testing.T) {
 			assert.Equal(t,has, true)
 			assert.Equal(t,value.String(), "2022-01-01 08:00:00 +0800 CST")
 		}
-	    // -------------
-	    return struct{}{}
-	}()
-}
-type TestPoint struct {
-	ID    uint64                `db:"id"`
-	Point PointTestSQLInsertRaw `db:"point"`
-	sq.DefaultLifeCycle
-	sq.WithoutSoftDelete
-}
-func (v *TestPoint) AfterInsert(result sq.Result) (err error) {
-	v.ID, err = result.LastInsertUint64Id() // indivisible begin
-	if err != nil { // indivisible end
-	    return
-	}
-	return
-}
-func (TestPoint) TableName() string {
-	return "point"
-}
-// 正式项目可直接使用 https://github.com/goclub/geo 的 xgeo.PointJSON
-type PointTestSQLInsertRaw struct {
-	Lat float64 `json:"lat"`
-	Lng float64 `json:"lng"`
-}
-func (p PointTestSQLInsertRaw) SQLInsertRaw() (raw sq.Raw) {
-	return sq.Raw{
-		Query: "ST_GeomFromText(?)",
-		Values: []interface{}{fmt.Sprintf("POINT(%f %f)", p.Lat, p.Lng)},
-	}
-}
-
-func (p *PointTestSQLInsertRaw) Scan(val interface{}) (err error) {
-	b, ok := val.([]byte)
-	if !ok {
-		return fmt.Errorf("goclub/sql: cannot scan type into bytes: %T", b)
-	}
-
-	// MySQL bug, it returns the internal representation with 4 zero bytes before
-	// the value: https://bugs.mysql.com/bug.php?id=69798
-	b = b[4:]
-
-	r := bytes.NewReader(b)
-
-	var wkbByteOrder uint8
-	if err := binary.Read(r, binary.LittleEndian, &wkbByteOrder); err != nil {
-		return err
-	}
-
-	var byteOrder binary.ByteOrder
-	switch wkbByteOrder {
-	case 0:
-		byteOrder = binary.BigEndian
-	case 1:
-		byteOrder = binary.LittleEndian
-	default:
-		return fmt.Errorf("geo: invalid byte order %v", wkbByteOrder)
-	}
-
-	var wkbGeometryType uint32
-	if err := binary.Read(r, byteOrder, &wkbGeometryType); err != nil {
-		return err
-	}
-
-	if wkbGeometryType != 1 {
-		return fmt.Errorf("geo: unexpected geometry type: wanted 1 (point), got %d", wkbGeometryType)
-	}
-
-	if err := binary.Read(r, byteOrder, p); err != nil {
-		return err
-	}
-
-	return nil
-}
-func TestSQLInsertRaw(t *testing.T) {
-	func() struct{} {
-	    // -------------
-	    var err error ; _=err
-	    ctx := context.Background() ; _ = ctx
-	    _, err = testDB.Exec(ctx, `CREATE TABLE IF NOT EXISTS point (
-  id int(11) unsigned NOT NULL AUTO_INCREMENT,
-  point point NOT NULL,
-  PRIMARY KEY (id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`, nil)                     // indivisible begin
-	assert.NoError(t, err) // indivisible end
-	newData := TestPoint{
-		Point:            PointTestSQLInsertRaw{
-			Lat: 23.67471284,
-			Lng: 114.45281982,
-		},
-	}
-		_, err = testDB.InsertModel(ctx, &newData, sq.QB{
-			Review: "a",
-		})                     // indivisible begin
-		assert.NoError(t, err) // indivisible end
-		queryData := TestPoint{}
-		has, err := testDB.Query(ctx, &queryData, sq.QB{
-			Where: sq.And("id", sq.Equal(newData.ID)),
-		})                     // indivisible begin
-		assert.NoError(t, err) // indivisible end
-		assert.Equal(t,has ,true)
-		assert.Less(t, math.Abs(queryData.Point.Lat - newData.Point.Lat), 0.00002)
-		assert.Less(t, math.Abs(queryData.Point.Lng - newData.Point.Lng), 0.00002)
 	    // -------------
 	    return struct{}{}
 	}()

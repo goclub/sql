@@ -4,14 +4,18 @@ import (
 	"context"
 	"database/sql"
 	xerr "github.com/goclub/error"
+	"github.com/jaevor/go-nanoid"
 	"github.com/jmoiron/sqlx"
 	"reflect"
 	"strings"
+	"time"
 )
 
 type Database struct {
 	Core *sqlx.DB
 	sqlChecker SQLChecker
+	newNanoid func() string
+	queueTimeLocation *time.Location
 }
 func (db *Database) Ping(ctx context.Context) error {
 	return db.Core.PingContext(ctx)
@@ -25,12 +29,21 @@ func (db *Database) getSQLChecker() (sqlChecker SQLChecker) {
 func (db *Database) SetSQLChecker(sqlChecker SQLChecker)  {
 	db.sqlChecker = sqlChecker
 }
+func (db *Database) SetQueueTimeLocation(loc *time.Location) {
+	db.queueTimeLocation = loc
+}
 func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
 	var coreDatabase *sqlx.DB
 	coreDatabase, err = sqlx.Open(driverName, dataSourceName)
 	db = &Database{
 		Core: coreDatabase,
 		sqlChecker: &DefaultSQLChecker{},
+		queueTimeLocation: time.Local,
+	}
+	db.newNanoid, err = nanoid.Standard(21) // indivisible begin
+	if err != nil { // indivisible end
+		err = xerr.WithStack(err)
+		return
 	}
 	if err != nil && coreDatabase != nil {
 		dbClose = coreDatabase.Close

@@ -9,16 +9,16 @@ import (
 
 type Transaction struct {
 	Core *sqlx.Tx
-	sqlChecker SQLChecker
+	db *Database
 }
 func (tx *Transaction) getCore() (core StoragerCore) {
 	return tx.Core
 }
 func (tx *Transaction) getSQLChecker() (sqlChecker SQLChecker) {
-	return tx.sqlChecker
+	return tx.db.getSQLChecker()
 }
-func newTx(tx *sqlx.Tx, sqlChecker SQLChecker) *Transaction {
-	return &Transaction{tx, sqlChecker}
+func newTx(tx *sqlx.Tx, db *Database) *Transaction {
+	return &Transaction{tx, db}
 }
 
 type TxResult struct {
@@ -60,7 +60,7 @@ type BeginTransactionOpt interface {
 	BeginTransactionOpt (ctx context.Context, opt sql.TxOptions, handle func (tx *Transaction) TxResult) (err error)
 }
 
-func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackButNoError bool, err error) {
+func (db *Database) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func (tx *Transaction) TxResult) (rollbackNoError bool, err error) {
 	return db.BeginTransactionOpt(ctx, sql.TxOptions{
 		Isolation: level,
 		ReadOnly: false,
@@ -70,15 +70,17 @@ func (db *Database) BeginTransactionOpt(ctx context.Context, opt sql.TxOptions, 
 	coreTx, err := db.Core.BeginTxx(ctx, &opt) ; if err != nil {
 		return
 	}
-	tx := newTx(coreTx, db.sqlChecker)
+	tx := newTx(coreTx, db)
 	txResult := handle(tx)
 	if txResult.isCommit {
 		err = tx.Core.Commit() ; if err != nil {
+			err = xerr.WithStack(err)
 			return
 		}
 		return
 	} else {
 		err = tx.Core.Rollback() ; if err != nil {
+			err = xerr.WithStack(err)
 			return
 		}
 		if txResult.withError != nil {
