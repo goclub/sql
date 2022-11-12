@@ -15,8 +15,12 @@ type API interface {
 
 	// 插入数据
 	Insert(ctx context.Context, qb QB) (result Result, err error)
+	// 插入数据(返回影响行数)
+	InsertAffected(ctx context.Context, qb QB) (affected int64, err error)
 	// 基于 Model 创建数据, 根据 Model 字段自动填充 qb.Insert
 	InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error)
+	// 基于 Model 创建数据 (返回影响行数)
+	InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error)
 	// 查询单行多列 类似 sql.Row{}.Scan()
 	QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error)
 	// 查询单行多列并转换为结构体
@@ -40,9 +44,9 @@ type API interface {
 
 	// 更新
 	Update(ctx context.Context, qb QB) (result Result, err error)
-	// 暂时取消 QueryModel 因为容易产生歧义
-	// // 基于 Model 的 PrimaryKey 更新数据 并自动处理 create update 字段
-	// UpdateModel(ctx context.Context, ptr Model, updateData []Set, qb QB) (result Result, err error)
+	// 更新(返回影响行数)
+	UpdateAffected(ctx context.Context, qb QB) (affected int64, err error)
+
 
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
 	ClearTestData(ctx context.Context, qb QB) (result Result, err error)
@@ -51,12 +55,17 @@ type API interface {
 
 	// 硬删除（不可恢复）
 	HardDelete(ctx context.Context, qb QB) (result Result, err error)
-
+	// 硬删除（不可恢复）(返回影响行数)
+	HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error)
 	// 软删除（可恢复）
 	SoftDelete(ctx context.Context, qb QB) (result Result, err error)
+	// 软删除（可恢复）(返回影响行数)
+	SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error)
 
 	// 执行QB
 	ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error)
+	// 执行QB(返回影响行数)
+	ExecQBAffected(ctx context.Context, qb QB, statement Statement) (affected int64, err error)
 	// 执行
 	Exec(ctx context.Context, query string, values []interface{}) (result Result, err error)
 

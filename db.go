@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	xerr "github.com/goclub/error"
-	"github.com/jaevor/go-nanoid"
 	"github.com/jmoiron/sqlx"
 	"reflect"
 	"strings"
@@ -14,7 +13,6 @@ import (
 type Database struct {
 	Core *sqlx.DB
 	sqlChecker SQLChecker
-	newNanoid func() string
 	queueTimeLocation *time.Location
 }
 func (db *Database) Ping(ctx context.Context) error {
@@ -40,11 +38,6 @@ func Open(driverName string, dataSourceName string) (db *Database, dbClose func(
 		sqlChecker: &DefaultSQLChecker{},
 		queueTimeLocation: time.Local,
 	}
-	db.newNanoid, err = nanoid.Standard(21) // indivisible begin
-	if err != nil { // indivisible end
-		err = xerr.WithStack(err)
-		return
-	}
 	if err != nil && coreDatabase != nil {
 		dbClose = coreDatabase.Close
 	} else {
@@ -68,8 +61,14 @@ var createAndUpdateTimeField = append(createTimeField, updateTimeField...)
 func (db *Database) Insert(ctx context.Context, qb QB) (result Result, err error){
 	return coreInsert(ctx, db, qb)
 }
+func (db *Database) InsertAffected(ctx context.Context, qb QB) (affected int64, err error){
+	return RowsAffected(db.Insert(ctx, qb))
+}
 func (tx *Transaction) Insert(ctx context.Context, qb QB) (result Result, err error){
 	return coreInsert(ctx, tx, qb)
+}
+func (tx *Transaction) InsertAffected(ctx context.Context, qb QB) (affected int64, err error){
+	return RowsAffected(tx.Insert(ctx, qb))
 }
 func coreInsert(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
@@ -82,8 +81,14 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result Result, e
 func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
 	return coreInsertModel(ctx, db, ptr,  qb)
 }
+func (db *Database) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
+	return RowsAffected(coreInsertModel(ctx, db, ptr,  qb))
+}
 func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
 	return coreInsertModel(ctx, tx, ptr, qb)
+}
+func (tx *Transaction) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
+	return RowsAffected(coreInsertModel(ctx, tx, ptr,  qb))
 }
 
 func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result Result, err error) {
@@ -142,7 +147,6 @@ func insertEachField(elemValue reflect.Value, elemType reflect.Type, handle func
 		handle(column, fieldType, fieldValue)
 	}
 }
-// QueryRowScan
 func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
 	err = qb.mustInTransaction() ; if err != nil {return}
 	return coreQueryRowScan(ctx, db, qb, desc)
@@ -348,8 +352,14 @@ func coreSum(ctx context.Context, storager Storager, from Tabler, column Column 
 func (db *Database) Update(ctx context.Context, qb QB) (result Result, err error){
 	return coreUpdate(ctx, db, qb)
 }
+func (db *Database) UpdateAffected(ctx context.Context, qb QB) (affected int64, err error){
+	return RowsAffected(coreUpdate(ctx, db, qb))
+}
 func (tx *Transaction) Update(ctx context.Context, qb QB) (result Result, err error){
 	return coreUpdate(ctx, tx, qb)
+}
+func (tx *Transaction) UpdateAffected(ctx context.Context, qb QB) (affected int64, err error){
+	return RowsAffected(coreUpdate(ctx, tx, qb))
 }
 func coreUpdate(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
@@ -390,8 +400,14 @@ func (db *Database) ClearTestData(ctx context.Context, qb QB) (result Result, er
 func (db *Database) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreHardDelete(ctx, db, qb)
 }
+func (db *Database) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
+	return RowsAffected(coreHardDelete(ctx, db, qb))
+}
 func (tx *Transaction) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreHardDelete(ctx, tx, qb)
+}
+func (tx *Transaction) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
+	return RowsAffected(coreHardDelete(ctx, tx, qb))
 }
 func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
@@ -431,8 +447,15 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Resul
 func (db *Database) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreSoftDelete(ctx, db, qb)
 }
+func (db *Database) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
+	return RowsAffected(coreSoftDelete(ctx, db, qb))
+}
+
 func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreSoftDelete(ctx, tx, qb)
+}
+func (tx *Transaction) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
+	return RowsAffected(coreSoftDelete(ctx, tx, qb))
 }
 func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
@@ -548,8 +571,14 @@ func coreExec(ctx context.Context, storager Storager, query string, values []int
 func (db *Database) ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error){
 	return coreExecQB(ctx, db, qb, statement)
 }
+func (db *Database) ExecQBAffected(ctx context.Context, qb QB, statement Statement) (affected int64, err error){
+	return RowsAffected(coreExecQB(ctx, db, qb, statement))
+}
 func (tx *Transaction) ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error){
 	return coreExecQB(ctx, tx, qb, statement)
+}
+func (tx *Transaction) ExecQBAffected(ctx context.Context, qb QB, statement Statement) (affected int64, err error){
+	return RowsAffected(coreExecQB(ctx, tx, qb, statement))
 }
 func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Statement) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()

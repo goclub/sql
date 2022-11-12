@@ -129,7 +129,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 	if len(queueIDs) == 0 {
 		return
 	}
-		updateID := db.newNanoid()
+		updateID := NanoID21()
 	// 通过更新并发安全的标记数据 (使用where id = 进行更新,避免并发事务死锁)
 	change, err := RowsAffected(db.Update(ctx, QB{
 		From: &message,
