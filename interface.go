@@ -52,6 +52,9 @@ type Raw struct {
 	Query  string
 	Values []interface{}
 }
+func (r Raw) IsZero() bool {
+	return r.Query == ""
+}
 type Model interface {
 	Tabler
 	BeforeInsert() error

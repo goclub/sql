@@ -2,7 +2,9 @@ package sq_test
 
 import (
 	sq "github.com/goclub/sql"
-	
+	"log"
+	"os"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"testing"
@@ -930,4 +932,15 @@ func (suite TestQBSuite) TestNotBetween() {
 	raw := qb.SQLSelect()
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `age` NOT BETWEEN ? AND ? AND `deleted_at` IS NULL", raw.Query)
 	assert.Equal(t,raw.Values, []interface{}{1,2})
+}
+func (suite TestQBSuite) TestWhereAllowEmpty() {
+	oldLog := sq.DefaultLog
+	sq.DefaultLog = log.New(os.Stdout, "goclub/sql: ", log.Ldate|log.Ltime)
+	t := suite.T()
+	qb := sq.QB{
+		From: &User{},
+	}
+	raw := qb.SQLSelect()
+	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL", raw.Query)
+	sq.DefaultLog = oldLog
 }

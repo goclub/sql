@@ -104,6 +104,7 @@ type QB struct {
 	Where []Condition
 	WhereOR [][]Condition
 	WhereRaw Raw
+	WhereAllowEmpty bool
 
 	OrderBy []OrderBy
 	OrderByRaw Raw
@@ -229,8 +230,19 @@ const StatementInsert Statement = "INSERT"
 func (s Statement) String() string { return string(s)}
 
 func (qb QB) SQL(statement Statement) Raw {
+	originQB := qb
 	if len(qb.Raw.Query) != 0 {
 		return qb.Raw
+	}
+	if statement != StatementInsert && qb.whereIsEmpty() && qb.WhereAllowEmpty == false {
+		cloneQB := originQB
+		cloneQB.WhereAllowEmpty = true
+
+		warning := "Maybe you forget qb.Where"+ "\n" +
+			"query:"+"\n"+
+			"\t" + cloneQB.SQL(statement).Query + "\n" +
+			"If you need where is empty, set qb.WhereAllowEmpty = true"
+		DefaultLog.Print(warning)
 	}
 	var values []interface{}
 	var sqlList stringQueue
@@ -572,4 +584,8 @@ func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement S
 			logger.Print(renderLastQueryCost(qb.debugData.id, lastQueryCost))
 		})
 	}
+}
+
+func (qb QB) whereIsEmpty () bool {
+	return qb.Raw.IsZero() && len(qb.Where) == 0 && len(qb.WhereOR) == 0 && qb.WhereRaw.IsZero()
 }
