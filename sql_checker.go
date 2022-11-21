@@ -3,7 +3,6 @@ package sq
 import (
 	xerr "github.com/goclub/error"
 	"regexp"
-	"runtime/debug"
 	"strings"
 )
 
@@ -36,9 +35,7 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 	return false, refs, nil
 }
 func (check DefaultSQLChecker) TrackFail(debugID uint64, err error, reviews []string, query string, refs string) {
-	_, _ = DefaultLog.Writer().Write(debug.Stack())
-	if err != nil { DefaultLog.Printf("%+v", err);return }
-	DefaultLog.Print(renderReview(debugID, query, reviews, refs))
+	DefaultWarning("DefaultSQLChecker Fail", renderReview(debugID, query, reviews, refs))
 }
 
 type defaultSQLCheckerDifferent struct {

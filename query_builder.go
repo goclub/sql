@@ -238,12 +238,10 @@ func (qb QB) SQL(statement Statement) Raw {
 		cloneQB := originQB
 		cloneQB.WhereAllowEmpty = true
 
-		warning := "Maybe you forget qb.Where"+ "\n" +
-			"query:"+"\n"+
+		warning := "query:"+"\n"+
 			"\t" + cloneQB.SQL(statement).Query + "\n" +
 			"If you need where is empty, set qb.WhereAllowEmpty = true"
-		_, _ = DefaultLog.Writer().Write(debug.Stack())
-		DefaultLog.Print(warning)
+		DefaultWarning("Maybe you forget qb.Where", warning)
 	}
 	var values []interface{}
 	var sqlList stringQueue
@@ -280,16 +278,15 @@ func (qb QB) SQL(statement Statement) Raw {
 				}
 				newSelectLen := len(qb.Select)
 				if newSelectLen == 0 {
+					warningTitle := "goclub/sql: (NO SELECT FIELD)"
 					var warning string
 					if qb.From != nil {
-						warning = "goclub/sql: (NO SELECT FIELD) qb.From field does not have db struct tag( XXX string `db:\"name\"` ), or you forget set qb.Select"
+						warning = "qb.From field does not have db struct tag( XXX string `db:\"name\"` ), or you forget set qb.Select"
 					} else {
-						warning = "goclub/sql: (NO SELECT FIELD) qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
+						warning = "qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
 					}
-					_, writeErr := DefaultLog.Writer().Write(debug.Stack())
-					_=writeErr
-					DefaultLog.Print(warning)
-					return Raw{Query: warning}
+					DefaultWarning(warningTitle, warning)
+					return Raw{Query: warningTitle + " " + warning}
 				} else {
 
 				}
