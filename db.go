@@ -52,7 +52,7 @@ func (db *Database) Close() error {
 	if db.Core != nil {
 		return db.Core.Close()
 	}
-	DefaultLog.Print("Database is nil,maybe you forget sq.Open()")
+	Log.Print("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
 var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
@@ -95,7 +95,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = ptr.BeforeInsert() ; if err != nil {return}
 	if qb.From != nil {
-		DefaultLog.Print("InsertModel(ctx, qb, model) qb.From need be nil")
+		Log.Print("InsertModel(ctx, qb, model) qb.From need be nil")
 	}
 	qb.From = ptr
 	qb.SQLChecker = storager.getSQLChecker()
@@ -614,7 +614,7 @@ func (tx *Transaction) PrintLastQueryCost(ctx context.Context){
 }
 func corePrintLastQueryCost(ctx context.Context, storager Storager){
 	cost, err := coreLastQueryCost(ctx, storager) ; if err != nil {
-		DefaultLog.Printf("%+v", err)
+		Log.Printf("%+v", err)
 	}
-	DefaultLog.Print("last_query_cost: ", cost)
+	Log.Print("last_query_cost: ", cost)
 }

@@ -6,19 +6,19 @@ import (
 	"runtime/debug"
 )
 
-var DefaultLog = log.New(os.Stdout, "goclub/sql: ", log.Ldate|log.Ltime)
+var Log = log.New(os.Stdout, "goclub/sql: ", log.Ldate|log.Ltime)
 
 func cleanPrint(run func(logger *log.Logger)) {
-	flags := DefaultLog.Flags()
-	prefix := DefaultLog.Prefix()
-	DefaultLog.SetPrefix("")
-	DefaultLog.SetFlags(0)
-	run(DefaultLog)
-	DefaultLog.SetPrefix(prefix)
-	DefaultLog.SetFlags(flags)
+	flags := Log.Flags()
+	prefix := Log.Prefix()
+	Log.SetPrefix("")
+	Log.SetFlags(0)
+	run(Log)
+	Log.SetPrefix(prefix)
+	Log.SetFlags(flags)
 }
 
-var DefaultWarning  = func(title string, message string) {
+var Warning = func(title string, message string) {
 	debug.PrintStack()
 	log.Print(title, message)
 }

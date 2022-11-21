@@ -20,6 +20,7 @@ func (suite TestQBSuite) TestTable() {
 	t := suite.T()
 	qb := sq.QB{
 		From: &User{},
+		WhereAllowEmpty: true,
 	}
 	raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL", query)
@@ -30,6 +31,7 @@ func (suite TestQBSuite) TestTableRaw() {
 	{
 		qb := sq.QB{
 			SelectRaw: []sq.Raw{{Query: "*"}},
+			WhereAllowEmpty: true,
 			FromRaw: sq.FromRaw{
 				TableName:       sq.Raw{"(SELECT * FROM `user` WHERE `name` like ?) as user", []interface{}{"%tableRaw%"}},
 				SoftDeleteWhere: sq.Raw{},
@@ -38,17 +40,6 @@ func (suite TestQBSuite) TestTableRaw() {
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 		assert.Equal(t, "SELECT * FROM (SELECT * FROM `user` WHERE `name` like ?) as user", query)
 		assert.Equal(t, []interface{}{"%tableRaw%"}, values)
-	}
-	{
-		qb := sq.QB{
-			FromRaw: sq.FromRaw{
-				TableName:       sq.Raw{"(SELECT * FROM `user` WHERE `name` like ?) as user", []interface{}{"%tableRaw%"}},
-				SoftDeleteWhere: sq.Raw{},
-			},
-		}
-		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
-		assert.Equal(t, "goclub/sql: (NO SELECT FIELD) qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select", query)
-		assert.Equal(t, []interface{}(nil), values)
 	}
 
 }
@@ -66,6 +57,7 @@ func (suite TestQBSuite) TestDisableSoftDelete() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 			DisableSoftDelete: false,
 		}
 		raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
@@ -210,6 +202,7 @@ func (suite TestQBSuite) TestIndex() {
 	qb := sq.QB{
 		From: &User{},
 		Index: "USE INDEX(PRIMARY)",
+		WhereAllowEmpty: true,
 	}
 	raw := qb.SQLSelect(); query, values :=  raw.Query, raw.Values
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` USE INDEX(PRIMARY) WHERE `deleted_at` IS NULL", query)
@@ -371,6 +364,7 @@ func (suite TestQBSuite) TestWhereSubQuery() {
 			Where: []sq.Condition{
 				{"id", sq.SubQuery("IN", sq.QB{
 					From: &User{},
+					WhereAllowEmpty: true,
 					Select: []sq.Column{"id"},
 				})},
 			},
@@ -657,6 +651,7 @@ func (suite TestQBSuite) TestLimit() {
 		qb := sq.QB{
 			From: &User{},
 			Limit: 1,
+			WhereAllowEmpty: true,
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL LIMIT ?")
@@ -665,6 +660,7 @@ func (suite TestQBSuite) TestLimit() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL")
@@ -676,6 +672,7 @@ func (suite TestQBSuite) TestOffset() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 			Offset: 100,
 		}
 		raw := qb.SQLSelect()
@@ -685,6 +682,7 @@ func (suite TestQBSuite) TestOffset() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 		}
 		raw := qb.SQLSelect()
 		assert.Equal(t, raw.Query, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL")
@@ -696,6 +694,7 @@ func (suite TestQBSuite) TestLimitOffset() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 			Limit:2,
 			Offset: 100,
 		}
@@ -710,6 +709,7 @@ func (suite TestQBSuite) TestLock() {
 		qb := sq.QB{
 			From: &User{},
 			Lock: sq.FORSHARE,
+			WhereAllowEmpty: true,
 			Limit: 1,
 		}
 		raw := qb.SQLSelect()
@@ -719,6 +719,7 @@ func (suite TestQBSuite) TestLock() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 			Lock: sq.FORUPDATE,
 		}
 		raw := qb.SQLSelect()
@@ -766,6 +767,7 @@ func (suite TestQBSuite) TestOrderBy() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 			Limit: 2,
 			Offset:10,
 			OrderBy: []sq.OrderBy{{Column: "name"}},
@@ -777,6 +779,7 @@ func (suite TestQBSuite) TestOrderBy() {
 	{
 		qb := sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 			Limit: 2,
 			Offset:10,
 			OrderBy: []sq.OrderBy{{"name", sq.DESC}},
@@ -801,6 +804,7 @@ func (suite TestQBSuite) TestUnsafeDelete() {
 	t := suite.T()
 	qb := sq.QB{
 		From: &User{},
+		WhereAllowEmpty: true,
 	}
 	raw := qb.SQLDelete()
 	assert.Equal(t, "goclub/sql:(MAYBE_FORGET_WHERE)", raw.Query)
@@ -810,6 +814,7 @@ func (suite TestQBSuite) TestHaving() {
 	t := suite.T()
 	qb := sq.QB{
 		From: &User{},
+		WhereAllowEmpty: true,
 		SelectRaw: []sq.Raw{
 			{"`name`", nil},
 			{"count(*) AS count", nil},
@@ -904,6 +909,7 @@ func (suite TestQBSuite) TestGroupByOrderBy() {
 	qb := sq.QB{
 		From: &User{},
 		GroupBy: []sq.Column{"date"},
+		WhereAllowEmpty: true,
 		OrderBy: []sq.OrderBy{
 			{"date", sq.DESC,},
 		},
@@ -934,13 +940,14 @@ func (suite TestQBSuite) TestNotBetween() {
 	assert.Equal(t,raw.Values, []interface{}{1,2})
 }
 func (suite TestQBSuite) TestWhereAllowEmpty() {
-	oldLog := sq.DefaultLog
-	sq.DefaultLog = log.New(os.Stdout, "goclub/sql: ", log.Ldate|log.Ltime)
+	oldLog := sq.Log
+	sq.Log = log.New(os.Stdout, "goclub/sql: ", log.Ldate|log.Ltime)
 	t := suite.T()
 	qb := sq.QB{
 		From: &User{},
+		WhereAllowEmpty: true,
 	}
 	raw := qb.SQLSelect()
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL", raw.Query)
-	sq.DefaultLog = oldLog
+	sq.Log = oldLog
 }

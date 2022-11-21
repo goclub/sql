@@ -20,7 +20,7 @@ import (
 var testDB *sq.Database
 func init () {
 	log.Print("db_test.go: test change default log")
-	sq.DefaultLog = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
+	sq.Log = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
 		Password:"somepass",
@@ -656,7 +656,7 @@ func (suite TestDBSuite) TestUpdate() {
 				From:    &User{},
 				Where:   sq.And(userCol.ID, sq.Equal(newID)),
 				Set:     sq.Set(userCol.Name, "TestUpdate_changed"),
-				Reviews: []string{"UPDATE `user` SET `name`= ? WHERE `id` = ? AND `deleted_at` IS NULL"},
+				Reviews: []string{"UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
 		affected, err := result.RowsAffected()
@@ -966,6 +966,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	{
 		_, err := testDB.SoftDelete(context.TODO(), sq.QB{
 			From: &User{},
+			WhereAllowEmpty: true,
 		})
 		assert.EqualError(t, err, "Error 1064: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'goclub/sql:(MAYBE_FORGET_WHERE)' at line 1")
 	}

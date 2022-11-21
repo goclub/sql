@@ -26,8 +26,8 @@ func OnlyUseInTestToUpdates (t *testing.T, list []Update) updates {
 func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
-		DefaultLog.Print("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-		DefaultLog.Print(string(debug.Stack()))
+		Log.Print("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+		Log.Print(string(debug.Stack()))
 	}
 	u = append(u, Update{
 		Column: column,
@@ -39,8 +39,8 @@ func (u updates) SetRaw(query string, values ...interface{}) updates {
 	for i, value := range values {
 		if op, ok := value.(OP); ok {
 			values[i] = op.Values[0]
-			DefaultLog.Print("sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-			DefaultLog.Print(string(debug.Stack()))
+			Log.Print("sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+			Log.Print(string(debug.Stack()))
 		}
 	}
 	u = append(u, Update{
@@ -241,7 +241,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		warning := "query:"+"\n"+
 			"\t" + cloneQB.SQL(statement).Query + "\n" +
 			"If you need where is empty, set qb.WhereAllowEmpty = true"
-		DefaultWarning("Maybe you forget qb.Where", warning)
+		Warning("Maybe you forget qb.Where", warning)
 	}
 	var values []interface{}
 	var sqlList stringQueue
@@ -285,7 +285,7 @@ func (qb QB) SQL(statement Statement) Raw {
 					} else {
 						warning = "qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
 					}
-					DefaultWarning(warningTitle, warning)
+					Warning(warningTitle, warning)
 					return Raw{Query: warningTitle + " " + warning}
 				} else {
 
@@ -523,16 +523,16 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	var err error
 	defer func() {
 		if err != nil {
-			DefaultLog.Printf("%+v", err)
+			Log.Printf("%+v", err)
 		}
 	}()
 	debugID, err := rand.Int(rand.Reader, new(big.Int).SetUint64(9999)) ; if err != nil {
 		// 这个错误故意不处理
-		DefaultLog.Printf("%+v", err)
+		Log.Printf("%+v", err)
 	}
 	qb.debugData.id = debugID.Uint64()
 	if qb.Debug {
-		DefaultLog.Print("Debug:")
+		Log.Print("Debug:")
 		qb.PrintSQL = true
 		qb.Explain = true
 		qb.RunTime = true
@@ -565,7 +565,7 @@ func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement S
 	var err error
 	defer func() {
 		if err != nil {
-			DefaultLog.Printf("%+v", err)
+			Log.Printf("%+v", err)
 		}
 	}()
 	if qb.RunTime {
