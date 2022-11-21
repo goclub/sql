@@ -242,6 +242,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			"query:"+"\n"+
 			"\t" + cloneQB.SQL(statement).Query + "\n" +
 			"If you need where is empty, set qb.WhereAllowEmpty = true"
+		_, _ = DefaultLog.Writer().Write(debug.Stack())
 		DefaultLog.Print(warning)
 	}
 	var values []interface{}
