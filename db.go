@@ -11,9 +11,9 @@ import (
 )
 
 type Database struct {
-	Core *sqlx.DB
-	sqlChecker SQLChecker
-	queueTimeLocation *time.Location
+	Core              *sqlx.DB
+	SQLChecker        SQLChecker
+	QueueTimeLocation *time.Location
 }
 func (db *Database) Ping(ctx context.Context) error {
 	return db.Core.PingContext(ctx)
@@ -21,25 +21,23 @@ func (db *Database) Ping(ctx context.Context) error {
 func (db *Database) getCore() (core StoragerCore) {
 	return db.Core
 }
-func (db *Database) getSQLChecker() (sqlChecker SQLChecker) {
-	return db.sqlChecker
-}
-func (db *Database) SetSQLChecker(sqlChecker SQLChecker)  {
-	db.sqlChecker = sqlChecker
-}
-func (db *Database) SetQueueTimeLocation(loc *time.Location) {
-	db.queueTimeLocation = loc
+func(db *Database) getSQLChecker() SQLChecker {
+	return db.SQLChecker
 }
 func Open(driverName string, dataSourceName string) (db *Database, dbClose func() error, err error) {
 	var coreDatabase *sqlx.DB
 	coreDatabase, err = sqlx.Open(driverName, dataSourceName)
 	db = &Database{
-		Core: coreDatabase,
-		sqlChecker: &DefaultSQLChecker{},
-		queueTimeLocation: time.Local,
+		Core:              coreDatabase,
+		SQLChecker:        &DefaultSQLChecker{},
+		QueueTimeLocation: time.Local,
 	}
 	if err != nil && coreDatabase != nil {
-		dbClose = coreDatabase.Close
+		dbClose = func() error {
+			// 忽略 log sync 错误
+			_ = Log.Sync()
+			return coreDatabase.Close()
+		}
 	} else {
 		dbClose = func() error { return nil}
 	}
@@ -52,7 +50,7 @@ func (db *Database) Close() error {
 	if db.Core != nil {
 		return db.Core.Close()
 	}
-	Log.Print("Database is nil,maybe you forget sq.Open()")
+	Log.Warn("Database is nil,maybe you forget sq.Open()")
 	return nil
 }
 var createTimeField = []string{"CreatedAt","GMTCreate","CreateTime",}
@@ -95,7 +93,7 @@ func coreInsertModel(ctx context.Context, storager Storager, ptr Model, qb QB) (
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
 	err = ptr.BeforeInsert() ; if err != nil {return}
 	if qb.From != nil {
-		Log.Print("InsertModel(ctx, qb, model) qb.From need be nil")
+		Log.Warn("InsertModel(ctx, qb, model) qb.From need be nil")
 	}
 	qb.From = ptr
 	qb.SQLChecker = storager.getSQLChecker()
@@ -614,7 +612,7 @@ func (tx *Transaction) PrintLastQueryCost(ctx context.Context){
 }
 func corePrintLastQueryCost(ctx context.Context, storager Storager){
 	cost, err := coreLastQueryCost(ctx, storager) ; if err != nil {
-		Log.Printf("%+v", err)
+		Log.Debug("error", "error", err)
 	}
-	Log.Print("last_query_cost: ", cost)
+	Log.Debug("last_query_cost", "cost", cost)
 }

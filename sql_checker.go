@@ -35,7 +35,7 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 	return false, refs, nil
 }
 func (check DefaultSQLChecker) TrackFail(debugID uint64, err error, reviews []string, query string, refs string) {
-	Warning("DefaultSQLChecker Fail", renderReview(debugID, query, reviews, refs))
+	Log.Warn("DefaultSQLChecker Fail\n" + renderReview(debugID, query, reviews, refs))
 }
 
 type defaultSQLCheckerDifferent struct {

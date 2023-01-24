@@ -1,54 +1,53 @@
 package sq_test
 
-import sq "github.com/goclub/sql"
+import (
+	"context"
+	sq "github.com/goclub/sql"
+)
 
 type Migrate struct {
-
+	db *sq.Database
 }
-func (Migrate) Migrate20201004160444CreateUserTable(mi sq.Migrate) {
-
-	mi.CreateTable(sq.CreateTableQB{
-		TableName: "user",
-		PrimaryKey: []string{"id"},
-		Fields: append([]sq.MigrateField{
-			mi.Field("id").Char(36).DefaultString(""),
-			mi.Field("name").Varchar(255).DefaultString(""),
-			mi.Field("age").Int(11).DefaultInt(0),
-		}, mi.CUDTimestamp()...),
-		Key: map[string][]string{
-			"name": {"name"},
-		},
-		Engine: mi.Engine().InnoDB,
-		Charset: mi.Charset().Utf8mb4,
-		Collate: mi.Utf8mb4_unicode_ci(),
-	})
-	mi.CreateTable(sq.CreateTableQB{
-		TableName: "user_address",
-		PrimaryKey: []string{"user_id"},
-		Fields: append([]sq.MigrateField{
-			mi.Field("user_id").Char(36).DefaultString(""),
-			mi.Field("address").Varchar(255).DefaultString(""),
-		}, mi.CUDTimestamp()...),
-		Key: map[string][]string{
-
-		},
-		Engine: mi.Engine().InnoDB,
-		Charset: mi.Charset().Utf8mb4,
-		Collate: mi.Utf8mb4_unicode_ci(),
-	})
-	mi.CreateTable(sq.CreateTableQB{
-		TableName: "insert",
-		PrimaryKey: []string{"id"},
-		Fields: append([]sq.MigrateField{
-			mi.Field("id").Type("bigint", 20).AutoIncrement().Unsigned(),
-			mi.Field("age").Int(11).Null(),
-		}, mi.CUDTimestamp()...),
-		Key: map[string][]string{
-
-		},
-		Engine: mi.Engine().InnoDB,
-		Charset: mi.Charset().Utf8mb4,
-		Collate: mi.Utf8mb4_unicode_ci(),
-	})
+func (dep Migrate) Migrate20201004160444CreateUserTable()(err error) {
+	ctx := context.Background()
+	if _, err = dep.db.Exec(ctx, `
+	CREATE TABLE user (
+	   id char(36) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+	   name varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+	   age int(11) NOT NULL DEFAULT '0',
+	   created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	   updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+	   deleted_at timestamp NULL DEFAULT NULL,
+	   PRIMARY KEY (id),
+	   KEY name (name)
+	 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`, nil); err != nil {
+	    return
+	}
+	if _, err = dep.db.Exec(ctx, `
+	CREATE TABLE user_address (
+		user_id char(36) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+		address varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '',
+		created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		deleted_at timestamp NULL DEFAULT NULL,
+		PRIMARY KEY (user_id)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`, nil); err != nil {
+		return
+	}
+	if _, err = dep.db.Exec(ctx, `
+	CREATE TABLE insert (
+		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+		age int(11) DEFAULT NULL,
+		created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		deleted_at timestamp NULL DEFAULT NULL,
+		PRIMARY KEY (id)
+	) ENGINE=InnoDB AUTO_INCREMENT=328 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`, nil); err != nil {
+		return
+	}
+	return
 }
 

@@ -4,9 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	xerr "github.com/goclub/error"
-	"log"
 	"math/big"
-	"runtime/debug"
 	"sort"
 	"strings"
 	"testing"
@@ -26,8 +24,7 @@ func OnlyUseInTestToUpdates (t *testing.T, list []Update) updates {
 func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
-		Log.Print("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-		Log.Print(string(debug.Stack()))
+		Log.Warn("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
 	}
 	u = append(u, Update{
 		Column: column,
@@ -39,8 +36,7 @@ func (u updates) SetRaw(query string, values ...interface{}) updates {
 	for i, value := range values {
 		if op, ok := value.(OP); ok {
 			values[i] = op.Values[0]
-			Log.Print("sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
-			Log.Print(string(debug.Stack()))
+			Log.Warn("sq.SetRaw(query, values) values element can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
 		}
 	}
 	u = append(u, Update{
@@ -241,7 +237,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		warning := "query:"+"\n"+
 			"\t" + cloneQB.SQL(statement).Query + "\n" +
 			"If you need where is empty, set qb.WhereAllowEmpty = true"
-		Warning("Maybe you forget qb.Where", warning)
+		Log.Warn("Maybe you forget qb.Where\n" + warning)
 	}
 	var values []interface{}
 	var sqlList stringQueue
@@ -285,7 +281,7 @@ func (qb QB) SQL(statement Statement) Raw {
 					} else {
 						warning = "qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
 					}
-					Warning(warningTitle, warning)
+					Log.Warn(warningTitle + "\n" +warning)
 					return Raw{Query: warningTitle + " " + warning}
 				} else {
 
@@ -523,16 +519,18 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	var err error
 	defer func() {
 		if err != nil {
-			Log.Printf("%+v", err)
+			Log.Debug("error", "error", err)
 		}
 	}()
 	debugID, err := rand.Int(rand.Reader, new(big.Int).SetUint64(9999)) ; if err != nil {
 		// 这个错误故意不处理
-		Log.Printf("%+v", err)
+		Log.Debug("error", "error", err)
+		err = nil
 	}
 	qb.debugData.id = debugID.Uint64()
+	var debugLog  []string
 	if qb.Debug {
-		Log.Print("Debug:")
+		debugLog = append(debugLog, "Debug:")
 		qb.PrintSQL = true
 		qb.Explain = true
 		qb.RunTime = true
@@ -544,19 +542,18 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	core := storager.getCore()
 	// PrintSQL
 	if qb.PrintSQL {
-		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderSQL(qb.debugData.id, raw.Query, raw.Values))
-		})
+		debugLog = append(debugLog, renderSQL(qb.debugData.id, raw.Query, raw.Values))
 	}
 	// EXPLAIN
 	if qb.Explain {
 		row := core.QueryRowxContext(ctx, "EXPLAIN " + raw.Query, raw.Values...)
-		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderExplain(qb.debugData.id, row))
-		})
+		debugLog = append(debugLog, renderExplain(qb.debugData.id, row))
 	}
 	if qb.RunTime {
 		qb.elapsedTimeData.startTime = time.Now()
+	}
+	if len(debugLog) != 0 {
+		Log.Debug(strings.Join(debugLog, "\n"))
 	}
 	return
 }
@@ -565,22 +562,18 @@ func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement S
 	var err error
 	defer func() {
 		if err != nil {
-			Log.Printf("%+v", err)
+			Log.Error("error", "error", err)
 		}
 	}()
 	if qb.RunTime {
-		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderRunTime(qb.debugData.id, time.Now().Sub(qb.elapsedTimeData.startTime)))
-		})
+		Log.Debug(renderRunTime(qb.debugData.id, time.Now().Sub(qb.elapsedTimeData.startTime)))
 	}
 	if qb.LastQueryCost {
 		var lastQueryCost float64
 		lastQueryCost, err = coreLastQueryCost(ctx, storager) ; if err != nil {
 		    return
 		}
-		cleanPrint(func(logger *log.Logger) {
-			logger.Print(renderLastQueryCost(qb.debugData.id, lastQueryCost))
-		})
+		Log.Debug(renderLastQueryCost(qb.debugData.id, lastQueryCost))
 	}
 }
 

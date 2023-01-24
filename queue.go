@@ -24,7 +24,7 @@ func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, pub
 		QueueName:       queueName,
 		BusinessID:      publish.BusinessID,
 		Priority: publish.Priority,
-		NextConsumeTime: time.Now().In(tx.db.queueTimeLocation).Add(publish.NextConsumeTime),
+		NextConsumeTime: time.Now().In(tx.db.QueueTimeLocation).Add(publish.NextConsumeTime),
 		ConsumeChance:   publish.ConsumeChance,
 		UpdateID:        sql.NullString{},
 	}
@@ -41,7 +41,7 @@ type Consume struct {
 	queueTimeLocation *time.Location
 }
 func (data *Consume) initAndCheck (db *Database) (err error) {
-	data.queueTimeLocation = db.queueTimeLocation
+	data.queueTimeLocation = db.QueueTimeLocation
 	if data.NextConsumeTime == nil {
 		data.NextConsumeTime = func(consumeChance uint16) time.Duration {
 			return time.Minute
@@ -116,7 +116,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 	err = db.QuerySliceScaner(ctx, QB{
 		From: &message,
 		Select: []Column{"id"},
-		Where: AndRaw(`next_consume_time <= ?`, time.Now().In(db.queueTimeLocation)).
+		Where: AndRaw(`next_consume_time <= ?`, time.Now().In(db.QueueTimeLocation)).
 			AndRaw(`consume_chance > 0`),
 			OrderBy: []OrderBy{
 				{"priority", DESC},
@@ -137,7 +137,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 		Set: Set("update_id", updateID).
 			SetRaw(`consume_chance = consume_chance - ?`, 1).
 			// 先将下次消费时间固定更新到10分钟后避免后续进程中断或sql执行失败导致被重复消费
-			Set("next_consume_time", time.Now().In(db.queueTimeLocation).Add(time.Minute*10)),
+			Set("next_consume_time", time.Now().In(db.QueueTimeLocation).Add(time.Minute*10)),
 		Where: And("id", In(queueIDs)).AndRaw("consume_chance > 0"),
 		OrderBy: []OrderBy{
 			{"priority", DESC},

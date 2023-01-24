@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "github.com/go-sql-driver/mysql"
+	xerr "github.com/goclub/error"
 	sq "github.com/goclub/sql"
 	"github.com/goclub/sql/example/internal/migrate/migrate"
 )
@@ -24,5 +25,7 @@ func main () {
 	}
 	_=dbClose()
 	// 将包含 MigrateXXX(mi sq.Migrate) 方法的结构体指针传入 sq.ExecMigrate()
-	sq.ExecMigrate(db, &migrate.Migrate{})
+	if err = sq.ExecMigrate(db, &migrate.Migrate{db}); err != nil {
+		xerr.PrintStack(err)
+	}
 }

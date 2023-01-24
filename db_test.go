@@ -1,7 +1,6 @@
 package sq_test
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
@@ -10,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"log"
 	"strconv"
 	"testing"
 	"time"
@@ -19,8 +17,6 @@ import (
 
 var testDB *sq.Database
 func init () {
-	log.Print("db_test.go: test change default log")
-	sq.Log = log.New(bytes.NewBuffer(nil), "", log.Lshortfile)
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		User: "root",
 		Password:"somepass",
@@ -40,7 +36,9 @@ func init () {
 	err = testDB.Core.Ping() ; if err != nil {
 		panic(err)
 	}
-	sq.ExecMigrate(db, &Migrate{})
+	if err = sq.ExecMigrate(db, &Migrate{}); err != nil {
+	    return
+	}
 	_, err = testDB.Exec(context.TODO(), "TRUNCATE TABLE user", nil) ; if err != nil {
 		panic(err)
 	}

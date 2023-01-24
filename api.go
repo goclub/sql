@@ -8,8 +8,6 @@ import (
 type API interface {
 	// 检查连通性
 	Ping(ctx context.Context) error
-	// 配置 SQL 验证器
-	SetSQLChecker(sqlChecker SQLChecker)
 	// 关闭数据库连接
 	Close() error
 
@@ -96,9 +94,6 @@ type onlyDB struct{}
 
 func (onlyDB) Ping(ctx context.Context) error {
 	return nil
-}
-func (onlyDB) SetSQLChecker(sqlChecker SQLChecker) {
-
 }
 func (onlyDB) Close() error {
 	return nil
