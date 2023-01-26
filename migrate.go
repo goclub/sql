@@ -50,8 +50,12 @@ func ExecMigrate(db *Database, ptr interface{}) (err error) {
 		}
 		log.Print("[goclub_sql migrate]exec: " +methodName)
 		out := rValue.MethodByName(methodName).Call([]reflect.Value{})
-		if callError := out[0].Interface().(error); callError != nil {
-		    return callError
+		if len(out) != 1 {
+			return xerr.New(methodName + "() must return error or nil")
+		}
+		errOrNil := out[0].Interface()
+		if errOrNil != nil {
+			return errOrNil.(error)
 		}
 		if _, err = db.Insert(ctx, QB{
  			From: table,
