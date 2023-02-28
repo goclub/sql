@@ -3,10 +3,11 @@ package sq
 import (
 	"context"
 	"database/sql"
+	xerr "github.com/goclub/error"
 	"time"
 )
 
-type MessageQueue struct {
+type Message struct {
 	QueueName string
 	ID        uint64 `db:"id" sq:"ignoreInsert|ignoreUpdate"`
 	BusinessID uint64 `db:"business_id"`
@@ -20,10 +21,10 @@ type MessageQueue struct {
 	DefaultLifeCycle
 	WithoutSoftDelete
 }
-func (message *MessageQueue) TableName () string {
+func (message *Message) TableName () string {
 	return "queue_" + message.QueueName
 }
-func (v *MessageQueue) AfterInsert(result Result) error {
+func (v *Message) AfterInsert(result Result) error {
 	id, err := result.LastInsertUint64Id(); if err != nil {
 		return err
 	}
@@ -51,61 +52,87 @@ func (v *DeadLetterQueueMessage) AfterInsert(result Result) error {
 	v.ID = uint64(id)
 	return nil
 }
-func  (message MessageQueue) Ack(ctx context.Context, tx *Transaction) (err error) {
-	_, err = tx.HardDelete(ctx, QB{
+
+
+
+type MessageResult struct {
+	ack bool
+	requeue bool
+	deadLetter bool
+	deadLetterReason string
+	err error
+}
+func (Message) Ack() MessageResult {
+	return MessageResult{
+		ack: true,
+	}
+}
+func (Message) Requeue(err error) MessageResult {
+	return MessageResult{
+		requeue: true,
+		err: err,
+	}
+}
+func (Message) DeadLetter(reason string, err error) MessageResult {
+	return MessageResult{
+		deadLetter: true,
+		deadLetterReason: reason,
+		err: err,
+	}
+}
+func  (message Message) execAck(db *Database) (err error) {
+	ctx := context.Background()
+	if _, err = db.HardDelete(ctx, QB{
 		From:  &message,
 		Where: And("id", Equal(message.ID)),
 		Limit: 1,
-	}) // indivisible begin
-	if err != nil { // indivisible end
+	}); err != nil {
 		return
 	}
 	return
 }
-func  (message MessageQueue) Requeue(ctx context.Context, tx *Transaction) (err error) {
-	return message.RequeueWithError(ctx, tx, nil)
-}
-func  (message MessageQueue) RequeueWithError(ctx context.Context, tx *Transaction, consumeError error) (err error) {
+
+func  (message Message) execRequeue(db *Database) (err error) {
+	ctx := context.Background()
 	if message.ConsumeChance == message.MaxConsumeChance {
-		return message.DeadLetterWithError(ctx, tx, "consume chance is zero, can not requeue", consumeError)
-	}
-	if consumeError != nil {
-		message.consume.HandleError(consumeError)
+		return message.execDeadLetter(db, "MAX_CONSUME_CHANCE")
 	}
 	nextConsumeDuration := message.consume.NextConsumeTime(message.ConsumeChance, message.MaxConsumeChance)
-	_, err = tx.Update(ctx, QB{
+	if _, err = db.Update(ctx, QB{
 		From: &message,
 		Where: And("id", Equal(message.ID)),
 		Set: Set("next_consume_time", time.Now().In(message.consume.queueTimeLocation).Add(nextConsumeDuration)),
 		Limit: 1,
-	}) // indivisible begin
-	if err != nil { // indivisible end
+	}); err != nil {
 		return
 	}
 	return
 }
-func  (message MessageQueue) DeadLetter(ctx context.Context, tx *Transaction, reason string) (err error) {
-	return message.DeadLetterWithError(ctx, tx, reason, nil)
-}
-func  (message MessageQueue) DeadLetterWithError(ctx context.Context, tx *Transaction, reason string, consumeError error) (err error) {
-	if consumeError != nil {
-		message.consume.HandleError(consumeError)
+func (message Message) execDeadLetter(db *Database, reason string) (err error) {
+	ctx := context.Background()
+	var rollbackNoError bool
+	if rollbackNoError, err = db.BeginTransaction(ctx, sql.LevelReadCommitted, func(tx *Transaction) TxResult {
+ 		if _, err = tx.HardDelete(ctx, QB{
+ 			From:  &message,
+ 			Where: And("id", Equal(message.ID)),
+ 			Limit: 1,
+ 		}) ; err != nil { // indivisible end
+ 			return tx.RollbackWithError(err)
+ 		}
+ 		if _, err = tx.InsertModel(ctx, &DeadLetterQueueMessage{
+ 			QueueName:  message.QueueName,
+ 			BusinessID: message.BusinessID,
+ 			Reason:     reason,
+ 		}, QB{}); err != nil { // indivisible end
+ 			return tx.RollbackWithError(err)
+ 		}
+ 		return tx.Commit()
+ 	}); err != nil {
+	    return
 	}
-	_, err = tx.HardDelete(ctx, QB{
-		From:  &message,
-		Where: And("id", Equal(message.ID)),
-		Limit: 1,
-	})              // indivisible begin
-	if err != nil { // indivisible end
-		return tx.RollbackWithError(err)
-	}
-	_, err = tx.InsertModel(ctx, &DeadLetterQueueMessage{
-		QueueName:  message.QueueName,
-		BusinessID: message.BusinessID,
-		Reason:     reason,
-	}, QB{})        // indivisible begin
-	if err != nil { // indivisible end
-		return tx.RollbackWithError(err)
+	if rollbackNoError {
+		return xerr.New("unexpected rollbackNoError")
 	}
 	return
 }
+

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	xerr "github.com/goclub/error"
+	"strconv"
 	"time"
 )
 
@@ -13,14 +14,17 @@ type Publish struct {
 	BusinessID uint64
 	NextConsumeTime time.Duration
 	MaxConsumeChance uint16
-	Priority uint8
+	Priority uint8 `default:"100"`
 }
-func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, publish Publish) (message MessageQueue, err error) {
+func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
 	if queueName == "" {
 		err = xerr.New("goclub/sql: Transaction{}.PublishMessage(ctx, queueName, publish) queue can not be empty string")
 		return
 	}
-	message = MessageQueue{
+	if publish.Priority == 0 {
+		publish.Priority = 100
+	}
+	message = Message{
 		QueueName:       queueName,
 		BusinessID:      publish.BusinessID,
 		Priority: publish.Priority,
@@ -37,7 +41,7 @@ func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, pub
 type Consume struct {
 	QueueName    string
 	HandleError func(err error)
-	HandleMessage func(message MessageQueue, tx *Transaction)(err error)
+	HandleMessage func(message Message) MessageResult
 	NextConsumeTime func(consumeChance uint16, maxConsumeChance uint16) time.Duration
 	queueTimeLocation *time.Location
 }
@@ -111,7 +115,7 @@ func (db *Database) ConsumeMessage(ctx context.Context, consume Consume) error {
 	}
 }
 func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (consumed bool, err error) {
-	message := MessageQueue{QueueName: consume.QueueName}
+	message := Message{QueueName: consume.QueueName}
 	message.consume = consume
 	var queueIDs []uint64
 	// 查询10个id
@@ -166,17 +170,25 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 		return
 	}
 	consumed = true
-	var txErr error
-	if _, txErr = db.BeginTransaction(ctx, sql.LevelReadCommitted, func(tx *Transaction) TxResult {
- 		handleError := consume.HandleMessage(message, tx) // indivisible begin
- 		if handleError != nil { // indivisible end
- 			return tx.RollbackWithError(handleError)
- 		}
-		 return tx.Commit()
- 	}); txErr != nil {
-		consume.HandleError(txErr)
-	    return
+	mqResult := consume.HandleMessage(message)
+	if mqResult.err != nil {
+		consume.HandleError(err)
 	}
-
+	var execErr error
+	if mqResult.ack {
+		if execErr = message.execAck(db); execErr != nil {
+			consume.HandleError(execErr)
+		}
+	} else if mqResult.requeue {
+		if execErr = message.execRequeue(db); execErr != nil {
+			consume.HandleError(execErr)
+		}
+	} else if mqResult.deadLetter {
+		if execErr = message.execDeadLetter(db, mqResult.deadLetterReason); execErr != nil {
+			consume.HandleError(execErr)
+		}
+	} else {
+		consume.HandleError(xerr.New("consume.HandleMessage not allow return empty MessageRequest,messageID:" + strconv.FormatUint(message.ID, 10)))
+	}
 	return
 }

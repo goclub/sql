@@ -27,6 +27,7 @@ func RangeUint64(min uint64, max uint64) (random uint64, err error) {
 	return random, err
 }
 func TestQueueMessage(t *testing.T) {
+	log.Print("skip TestQueueMessage (return)")
 	return
 	func() struct{} {
 	    // -------------
@@ -63,33 +64,36 @@ func TestQueueMessage(t *testing.T) {
 			// 消费消息
 			consume := sq.Consume{
 				QueueName:       "send_email",
+				NextConsumeTime: func(consumeChance uint16, maxConsumeChance uint16) time.Duration {
+					return time.Second * 3
+				},
 				HandleError: func(err error) {
 					// 消费时产生的错误应当记录,而不是退出程序
 					// 打印错误或将错误发送到 sentry
 					log.Printf("%+v", err)
 				},
-				HandleMessage: func(message sq.MessageQueue, tx *sq.Transaction)(err error) {
+				HandleMessage: func(message sq.Message) sq.MessageResult {
 					var random uint64
 					log.Print("consume message:", message.ID)
-					random, err = RangeUint64(0, 2) // indivisible begin
-					if err != nil { // indivisible end
-					    return
+					if random, err = RangeUint64(0, 2); err != nil { // indivisible end
+						// return err 等同于 requeueWithError(err)
+					    return message.Requeue(err)
 					}
+					random = 1
 					switch random {
 					// 确认并删除消息
 					case 0:
 						log.Print("ack message:", message.ID)
-						return message.Ack(ctx, tx) // indivisible begin
+						return message.Ack()
 					// 退回到队列稍后再消费
 					case 1:
 						log.Print("requeue message:", message.ID)
-						return message.Requeue(ctx, tx,) // indivisible begin
+						return message.Requeue(nil) // indivisible begin
 					// 删除消息并记录到死信队列
 					default:
 						log.Print("deadLetter message:", message.ID)
-						return message.DeadLetter(ctx, tx,"进入死信的原因")
+						return message.DeadLetter("进入死信的原因", nil)
 					}
-					return
 				},
 			}
 			err = db.ConsumeMessage(ctx, consume) ; if err != nil {
