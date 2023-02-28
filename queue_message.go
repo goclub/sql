@@ -12,6 +12,7 @@ type MessageQueue struct {
 	BusinessID uint64 `db:"business_id"`
 	NextConsumeTime time.Time `db:"next_consume_time"`
 	ConsumeChance uint16 `db:"consume_chance"`
+	MaxConsumeChance uint16 `db:"max_consume_chance"`
 	UpdateID sql.NullString `db:"update_id"`
 	Priority uint8 `db:"priority"`
 	CreateTime time.Time `db:"create_time"`
@@ -65,13 +66,13 @@ func  (message MessageQueue) Requeue(ctx context.Context, tx *Transaction) (err 
 	return message.RequeueWithError(ctx, tx, nil)
 }
 func  (message MessageQueue) RequeueWithError(ctx context.Context, tx *Transaction, consumeError error) (err error) {
-	if message.ConsumeChance == 0 {
+	if message.ConsumeChance == message.MaxConsumeChance {
 		return message.DeadLetterWithError(ctx, tx, "consume chance is zero, can not requeue", consumeError)
 	}
 	if consumeError != nil {
 		message.consume.HandleError(consumeError)
 	}
-	nextConsumeDuration := message.consume.NextConsumeTime(message.ConsumeChance)
+	nextConsumeDuration := message.consume.NextConsumeTime(message.ConsumeChance, message.MaxConsumeChance)
 	_, err = tx.Update(ctx, QB{
 		From: &message,
 		Where: And("id", Equal(message.ID)),

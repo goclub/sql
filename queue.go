@@ -12,7 +12,7 @@ import (
 type Publish struct {
 	BusinessID uint64
 	NextConsumeTime time.Duration
-	ConsumeChance uint16
+	MaxConsumeChance uint16
 	Priority uint8
 }
 func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, publish Publish) (message MessageQueue, err error) {
@@ -25,7 +25,8 @@ func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, pub
 		BusinessID:      publish.BusinessID,
 		Priority: publish.Priority,
 		NextConsumeTime: time.Now().In(tx.db.QueueTimeLocation).Add(publish.NextConsumeTime),
-		ConsumeChance:   publish.ConsumeChance,
+		ConsumeChance:   0,
+		MaxConsumeChance: publish.MaxConsumeChance,
 		UpdateID:        sql.NullString{},
 	}
 	_, err = tx.InsertModel(ctx, &message, QB{}) ; if err != nil {
@@ -37,13 +38,13 @@ type Consume struct {
 	QueueName    string
 	HandleError func(err error)
 	HandleMessage func(message MessageQueue, tx *Transaction)(err error)
-	NextConsumeTime func(consumeChance uint16) time.Duration
+	NextConsumeTime func(consumeChance uint16, maxConsumeChance uint16) time.Duration
 	queueTimeLocation *time.Location
 }
 func (data *Consume) initAndCheck (db *Database) (err error) {
 	data.queueTimeLocation = db.QueueTimeLocation
 	if data.NextConsumeTime == nil {
-		data.NextConsumeTime = func(consumeChance uint16) time.Duration {
+		data.NextConsumeTime = func(consumeChance uint16, maxConsumeChance uint16) time.Duration {
 			return time.Minute
 		}
 	}
@@ -62,12 +63,13 @@ func (db *Database) InitQueue (ctx context.Context, queueName string) (err error
 		priority tinyint(3) unsigned NOT NULL,
 		update_id char(21) DEFAULT '',
 		consume_chance smallint(6) unsigned NOT NULL,
+		max_consume_chance smallint(6) unsigned NOT NULL,
 		next_consume_time datetime NOT NULL,
 		create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (id),
 		KEY business_id (business_id),
 		KEY update_id (update_id),
-		KEY next_consume_time__consume_chance__priority (next_consume_time,consume_chance,priority)
+		KEY next_consume_time__consume_chance__priority (next_consume_time,consume_chance,max_consume_chance,priority)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
 	_, err = db.Exec(ctx, createQueueTableSQL, nil) // indivisible begin
 	if err != nil { // indivisible end
@@ -117,7 +119,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 		From: &message,
 		Select: []Column{"id"},
 		Where: AndRaw(`next_consume_time <= ?`, time.Now().In(db.QueueTimeLocation)).
-			AndRaw(`consume_chance > 0`),
+			AndRaw(`consume_chance < max_consume_chance`),
 			OrderBy: []OrderBy{
 				{"priority", DESC},
 			},
@@ -135,10 +137,10 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 		From: &message,
 		Index: "update_id",
 		Set: Set("update_id", updateID).
-			SetRaw(`consume_chance = consume_chance - ?`, 1).
+			SetRaw(`consume_chance = consume_chance + ?`, 1).
 			// 先将下次消费时间固定更新到10分钟后避免后续进程中断或sql执行失败导致被重复消费
 			Set("next_consume_time", time.Now().In(db.QueueTimeLocation).Add(time.Minute*10)),
-		Where: And("id", In(queueIDs)).AndRaw("consume_chance > 0"),
+		Where: And("id", In(queueIDs)).AndRaw("consume_chance < max_consume_chance"),
 		OrderBy: []OrderBy{
 			{"priority", DESC},
 		},
