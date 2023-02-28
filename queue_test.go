@@ -27,7 +27,7 @@ func RangeUint64(min uint64, max uint64) (random uint64, err error) {
 // 	    err = func()(err error){
 // 			db := testDB
 // 			ctx := context.Background()
-// 			db.SetQueueTimeLocation(time.FixedZone("CST", 8*3600))
+// 			db.QueueTimeLocation = time.FixedZone("CST", 8*3600)
 // 			queueName := "send_email"
 // 			err = db.InitQueue(ctx, queueName) // indivisible begin
 // 			if err != nil { // indivisible end
@@ -51,6 +51,7 @@ func RangeUint64(min uint64, max uint64) (random uint64, err error) {
 // 			if rollbackNoError {
 // 				return xerr.New("unexpected rollback no error")
 // 			}
+//
 // 			// 消费消息
 // 			consume := sq.Consume{
 // 				QueueName:       "send_email",
@@ -60,46 +61,26 @@ func RangeUint64(min uint64, max uint64) (random uint64, err error) {
 // 					// 打印错误或将错误发送到 sentry
 // 					log.Printf("%+v", err)
 // 				},
-// 				HandleMessage: func(message sq.MessageQueue)(err error) {
+// 				HandleMessage: func(message sq.MessageQueue, tx *sq.Transaction)(err error) {
 // 					var random uint64
 // 					log.Print("consume message:", message.ID)
-// 					// random, err = RangeUint64(0, 2) // indivisible begin
-// 					// if err != nil { // indivisible end
-// 					//     return
-// 					// }
-// 					random = 2
-// 					// 开启事务确保消费行为与(确认/退回/死信)的原子性
-// 					rollbackNoError, err := db.BeginTransaction(ctx, sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
-// 						switch random {
-// 						// 确认并删除消息
-// 						case 0:
-// 							log.Print("ack message:", message.ID)
-// 							err = message.Ack(ctx, tx) // indivisible begin
-// 							if err != nil { // indivisible end
-// 								return tx.RollbackWithError(err)
-// 							}
-// 						// 退回到队列稍后再消费
-// 						case 1:
-// 							log.Print("requeue message:", message.ID)
-// 							err = message.Requeue(ctx, tx,) // indivisible begin
-// 							if err != nil { // indivisible end
-// 								return tx.RollbackWithError(err)
-// 							}
-// 						// 删除消息并记录到死信队列
-// 						default:
-// 							log.Print("deadLetter message:", message.ID)
-// 							err = message.DeadLetter(ctx, tx,"进入死信的原因") // indivisible begin
-// 							if err != nil { // indivisible end
-// 								return tx.RollbackWithError(err)
-// 							}
-// 						}
-// 						return tx.Commit()
-// 					}) // indivisible begin
+// 					random, err = RangeUint64(0, 2) // indivisible begin
 // 					if err != nil { // indivisible end
-// 						return
+// 					    return
 // 					}
-// 					if rollbackNoError {
-// 						return xerr.New("unexpected rollback no error")
+// 					switch random {
+// 					// 确认并删除消息
+// 					case 0:
+// 						log.Print("ack message:", message.ID)
+// 						return message.Ack(ctx, tx) // indivisible begin
+// 					// 退回到队列稍后再消费
+// 					case 1:
+// 						log.Print("requeue message:", message.ID)
+// 						return message.Requeue(ctx, tx,) // indivisible begin
+// 					// 删除消息并记录到死信队列
+// 					default:
+// 						log.Print("deadLetter message:", message.ID)
+// 						return message.DeadLetter(ctx, tx,"进入死信的原因")
 // 					}
 // 					return
 // 				},

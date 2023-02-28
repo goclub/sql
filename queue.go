@@ -36,7 +36,7 @@ func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, pub
 type Consume struct {
 	QueueName    string
 	HandleError func(err error)
-	HandleMessage func(message MessageQueue)(err error)
+	HandleMessage func(message MessageQueue, tx *Transaction)(err error)
 	NextConsumeTime func(consumeChance uint16) time.Duration
 	queueTimeLocation *time.Location
 }
@@ -164,10 +164,17 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 		return
 	}
 	consumed = true
-	handleError := consume.HandleMessage(message) // indivisible begin
-	if handleError != nil { // indivisible end
-		consume.HandleError(handleError)
+	var txErr error
+	if _, txErr = db.BeginTransaction(ctx, sql.LevelReadCommitted, func(tx *Transaction) TxResult {
+ 		handleError := consume.HandleMessage(message, tx) // indivisible begin
+ 		if handleError != nil { // indivisible end
+ 			return tx.RollbackWithError(handleError)
+ 		}
+		 return tx.Commit()
+ 	}); txErr != nil {
+		consume.HandleError(txErr)
 	    return
 	}
+
 	return
 }
