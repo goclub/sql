@@ -62,6 +62,16 @@ type MessageResult struct {
 	deadLetterReason string
 	err error
 }
+func (v MessageResult) WithError(err error) MessageResult {
+	if err != nil {
+		if v.err == nil {
+			v.err = err
+		} else {
+			v.err = xerr.WrapPrefix(err.Error(), err)
+		}
+	}
+	return v
+}
 func (Message) Ack() MessageResult {
 	return MessageResult{
 		ack: true,
