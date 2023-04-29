@@ -137,8 +137,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 	}
 		updateID := NanoID21()
 	// 通过更新并发安全的标记数据 (使用where id = 进行更新,避免并发事务死锁)
-	change, err := RowsAffected(db.Update(ctx, QB{
-		From: &message,
+	change, err := RowsAffected(db.Update(ctx, &message, QB{
 		Index: "update_id",
 		Set: Set("update_id", updateID).
 			SetRaw(`consume_chance = consume_chance + ?`, 1).

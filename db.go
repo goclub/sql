@@ -347,20 +347,23 @@ func coreSum(ctx context.Context, storager Storager, from Tabler, column Column 
 	return
 }
 
-func (db *Database) Update(ctx context.Context, qb QB) (result Result, err error){
-	return coreUpdate(ctx, db, qb)
+func (db *Database) Update(ctx context.Context, from Tabler, qb QB) (result Result, err error){
+	return coreUpdate(ctx, db, from, qb)
 }
-func (db *Database) UpdateAffected(ctx context.Context, qb QB) (affected int64, err error){
-	return RowsAffected(coreUpdate(ctx, db, qb))
+func (db *Database) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error){
+	return RowsAffected(coreUpdate(ctx, db, from, qb))
 }
-func (tx *Transaction) Update(ctx context.Context, qb QB) (result Result, err error){
-	return coreUpdate(ctx, tx, qb)
+func (tx *Transaction) Update(ctx context.Context, from Tabler, qb QB) (result Result, err error){
+	return coreUpdate(ctx, tx, from, qb)
 }
-func (tx *Transaction) UpdateAffected(ctx context.Context, qb QB) (affected int64, err error){
-	return RowsAffected(coreUpdate(ctx, tx, qb))
+func (tx *Transaction) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error){
+	return RowsAffected(coreUpdate(ctx, tx, from, qb))
 }
-func coreUpdate(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
+func coreUpdate(ctx context.Context, storager Storager, from Tabler, qb QB) (result Result, err error) {
 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
+	if qb.From == nil {
+		qb.From = from
+	}
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLUpdate()
 	query, values := raw.Query, raw.Values
@@ -388,13 +391,6 @@ func (db *Database) ClearTestData(ctx context.Context, qb QB) (result Result, er
 	}
 	return db.HardDelete(ctx, qb)
 }
-// func (db *Database) ClearTestModel(ctx context.Context, model Model, qb QB) (result Result, err error) {
-// 	defer func() { if err != nil { err = xerr.WithStack(err) } }()
-// 	err = db.checkIsTestDatabase(ctx) ; if err != nil {
-// 		return
-// 	}
-// 	return db.hardDeleteModel(ctx, model, qb)
-// }
 func (db *Database) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreHardDelete(ctx, db, qb)
 }

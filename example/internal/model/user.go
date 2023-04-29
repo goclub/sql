@@ -18,7 +18,7 @@ type TableUser struct {
 // 给 TableName 加上指针 * 能避免 db.InsertModel(user) 这种错误， 应当使用 db.InsertModel(&user) 或
 func (*TableUser) TableName() string { return "user" }
 type User struct {
-	ID            IDUser  `db:"id" sq:"ignoreInsert" sq:"ignoreUpdate" `
+	ID            IDUser  `db:"id" sq:"ignoreInsert"`
 	Name          string  `db:"name"`
 	Mobile        string  `db:"mobile"`
 	ChinaIDCardNo string  `db:"china_id_card_no"`

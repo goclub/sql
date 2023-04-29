@@ -2,6 +2,8 @@ package sq
 
 import (
 	"database/sql"
+	xerr "github.com/goclub/error"
+	"reflect"
 	"strings"
 )
 
@@ -68,10 +70,22 @@ func CheckRowScanErr(scanErr error) (has bool, err error) {
 	}
 	return
 }
-// func safeGetPrimaryKey(ptr Model) (primaryKey []Condition, err error){
-// 	primaryKey = ptr.PrimaryKey()
-// 	if len(primaryKey) == 0 {
-// 		return nil, xerr.New("goclub/sql: PrimaryKey() can not return empty []sq.Condition")
-// 	}
-// 	return
-// }
+
+func PlaceholderSlice(slice interface{}) (placeholder string) {
+	var values []interface{}
+	rValue := reflect.ValueOf(slice)
+	if rValue.Type().Kind() != reflect.Slice {
+		panic(xerr.New("sq.PlaceholderIn(" + rValue.Type().Name() + ") slice must be slice"))
+	}
+	if rValue.Len() == 0 {
+		placeholder = "(NULL)"
+	} else {
+		var placeholderList []string
+		for i:=0;i<rValue.Len();i++ {
+			values = append(values, rValue.Index(i).Interface())
+			placeholderList = append(placeholderList, "?")
+		}
+		placeholder = "(" + strings.Join(placeholderList, ",") + ")"
+	}
+	return
+}

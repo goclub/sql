@@ -18,15 +18,6 @@ func (t Tag) IsIgnoreInsert() bool {
 	}
 	return false
 }
-func (t Tag) IsIgnoreUpdate() bool {
-	sqTags := strings.Split(t.Value, "|")
-	for _, tag := range sqTags {
-		if strings.TrimSpace(tag) == "ignoreUpdate" {
-			return true
-		}
-	}
-	return false
-}
 func TagToColumns(v interface{}) (columns []Column) {
 	rValue := reflect.ValueOf(v)
 	rType := rValue.Type()

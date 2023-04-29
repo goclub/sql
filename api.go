@@ -5,7 +5,7 @@ import (
 	"database/sql"
 )
 
-type API interface {
+type Connecter interface {
 	// 检查连通性
 	Ping(ctx context.Context) error
 	// 关闭数据库连接
@@ -38,12 +38,11 @@ type API interface {
 	Has(ctx context.Context, from Tabler, qb QB) (has bool, err error)
 	SumInt64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullInt64, err error)
 	SumFloat64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullFloat64, err error)
-	// 查询单条数据并转换为 Model
 
 	// 更新
-	Update(ctx context.Context, qb QB) (result Result, err error)
+	Update(ctx context.Context, from Tabler, qb QB) (result Result, err error)
 	// 更新(返回影响行数)
-	UpdateAffected(ctx context.Context, qb QB) (affected int64, err error)
+	UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error)
 
 
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
@@ -78,14 +77,14 @@ type API interface {
 
 func verifyDoc() {
 	db := &Database{}
-	func(API) {
+	func(Connecter) {
 
 	}(db)
 	tx := struct {
 		Transaction
 		onlyDB
 	}{}
-	func(API) {
+	func(Connecter) {
 
 	}(&tx)
 }
@@ -101,10 +100,6 @@ func (onlyDB) Close() error {
 func (onlyDB) ClearTestData(ctx context.Context, qb QB) (result Result, err error) {
 	return
 }
-
-// func (onlyDB) ClearTestModel(ctx context.Context, model Model, qb QB) (result Result, err error) {
-// 	return
-// }
 func (onlyDB) BeginTransaction(ctx context.Context, level sql.IsolationLevel, handle func(tx *Transaction) TxResult) (rollbackNoError bool, err error) {
 	return
 }

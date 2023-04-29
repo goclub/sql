@@ -945,3 +945,11 @@ func (suite TestQBSuite) TestWhereAllowEmpty() {
 	raw := qb.SQLSelect()
 	assert.Equal(t, "SELECT `id`, `name`, `age`, `created_at`, `updated_at` FROM `user` WHERE `deleted_at` IS NULL", raw.Query)
 }
+
+
+func (suite TestQBSuite) TestPlaceholderSlice() {
+	t := suite.T()
+	assert.Equal(t, sq.PlaceholderSlice([]string{"a","b"}), "(?,?)")
+	assert.Equal(t, sq.PlaceholderSlice([]string{}), "(NULL)")
+	assert.Equal(t, sq.PlaceholderSlice([]string{}), "(NULL)")
+}

@@ -9,7 +9,7 @@ import (
 
 type Message struct {
 	QueueName string
-	ID        uint64 `db:"id" sq:"ignoreInsert|ignoreUpdate"`
+	ID        uint64 `db:"id" sq:"ignoreInsert"`
 	BusinessID uint64 `db:"business_id"`
 	NextConsumeTime time.Time `db:"next_consume_time"`
 	ConsumeChance uint16 `db:"consume_chance"`
@@ -33,7 +33,7 @@ func (v *Message) AfterInsert(result Result) error {
 }
 type DeadLetterQueueMessage struct {
 	QueueName string
-	ID uint64 `db:"id" sq:"ignoreInsert|ignoreUpdate"`
+	ID uint64 `db:"id" sq:"ignoreInsert"`
 	BusinessID uint64 `db:"business_id"`
 	Reason string `db:"reason"`
 	CreateTime time.Time `db:"create_time"`
@@ -108,8 +108,7 @@ func  (message Message) execRequeue(db *Database) (err error) {
 		return message.execDeadLetter(db, "MAX_CONSUME_CHANCE")
 	}
 	nextConsumeDuration := message.consume.NextConsumeTime(message.ConsumeChance, message.MaxConsumeChance)
-	if _, err = db.Update(ctx, QB{
-		From: &message,
+	if _, err = db.Update(ctx, &message, QB{
 		Where: And("id", Equal(message.ID)),
 		Set: Set("next_consume_time", time.Now().In(message.consume.queueTimeLocation).Add(nextConsumeDuration)),
 		Limit: 1,

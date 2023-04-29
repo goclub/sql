@@ -650,8 +650,7 @@ func (suite TestDBSuite) TestUpdate() {
 	}
 	time.Sleep(time.Second)
 	{
-		result, err := testDB.Update(context.TODO(), sq.QB{
-				From:    &User{},
+		result, err := testDB.Update(context.TODO(), &User{}, sq.QB{
 				Where:   sq.And(userCol.ID, sq.Equal(newID)),
 				Set:     sq.Set(userCol.Name, "TestUpdate_changed"),
 				Reviews: []string{"UPDATE `user` SET `name` = ? WHERE `id` = ? AND `deleted_at` IS NULL"},

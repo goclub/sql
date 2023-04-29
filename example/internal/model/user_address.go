@@ -11,7 +11,7 @@ type TableUserAddress struct {
 // 给 TableName 加上指针 * 能避免 db.InsertModel(user) 这种错误， 应当使用 db.InsertModel(&user) 或
 func (*TableUserAddress) TableName() string { return "user_address" }
 type UserAddress struct {
-	UserID  IDUser  `db:"user_id" sql:"ignoreUpdate"`
+	UserID  IDUser  `db:"user_id"`
 	Address string  `db:"address"`
 	TableUserAddress
 	sq.CreatedAtUpdatedAt
