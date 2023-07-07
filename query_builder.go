@@ -24,7 +24,7 @@ func OnlyUseInTestToUpdates (t *testing.T, list []Update) updates {
 func (u updates) Set(column Column, value interface{}) updates {
 	if op, ok := value.(OP); ok {
 		value = op.Values[0]
-		Log.Warn("sq.Set(column, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set(\"id\", taskID)")
+		Log.Warn(`sq.Set(` + column.String() + `, value) value can not be sq.Equal(v) or sq.OP{}, may be you need use like sq.Set("` + column.String() + `", v)`)
 	}
 	u = append(u, Update{
 		Column: column,

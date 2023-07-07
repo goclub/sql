@@ -14,7 +14,7 @@ type CreateTimeUpdateTime struct {
 	CreateTime time.Time `db:"create_time"`
 	UpdateTime time.Time `db:"update_time"`
 }
-type GMTCreateGMTUpdate struct {
+type GMTCreateGMTModified struct {
 	GMTCreate time.Time `db:"gmt_create"`
 	GMTModified time.Time `db:"gmt_modified"`
 }
