@@ -38,14 +38,14 @@ func (dep Migrate) Migrate20201004160444CreateUserTable() (err error) {
 		return
 	}
 	if _, err = dep.db.Exec(ctx, `
-	CREATE TABLE insert (
+	CREATE TABLE `+"`insert`"+` (
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		age int(11) DEFAULT NULL,
 		created_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		deleted_at timestamp NULL DEFAULT NULL,
 		PRIMARY KEY (id)
-	) ENGINE=InnoDB AUTO_INCREMENT=328 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `, nil); err != nil {
 		return
 	}

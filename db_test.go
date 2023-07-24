@@ -38,8 +38,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	if err = sq.ExecMigrate(db, &Migrate{}); err != nil {
-		return
+	m := &Migrate{db}
+	if err = sq.ExecMigrate(db, m); err != nil {
+		panic(err)
 	}
 	_, err = testDB.Exec(context.TODO(), "TRUNCATE TABLE user", nil)
 	if err != nil {
