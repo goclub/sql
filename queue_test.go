@@ -45,7 +45,7 @@ func TestQueueMessage(t *testing.T) {
 				return err
 			}
 			// 发布消息
-			rollbackNoError, err := db.BeginTransaction(ctx, sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+			rollbackNoError, err := db.Begin(ctx, sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
 				_, err := tx.PublishMessage(ctx, queueName, sq.Publish{
 					NextConsumeTime:  time.Nanosecond,
 					BusinessID:       1,
