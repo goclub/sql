@@ -108,3 +108,8 @@ const (
 	LevelSerializable    sql.IsolationLevel = sql.LevelSerializable
 	LevelLinearizable    sql.IsolationLevel = sql.LevelLinearizable
 )
+
+const (
+	RC sql.IsolationLevel = sql.LevelReadCommitted
+	RR sql.IsolationLevel = sql.LevelRepeatableRead
+)

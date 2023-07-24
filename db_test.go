@@ -1312,7 +1312,7 @@ func TestInsertNullInt(t *testing.T) {
 
 func TestErrTransactionIsRollback(t *testing.T) {
 	ctx := context.Background()
-	rollbackNoError, err := testDB.Begin(ctx, sq.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+	rollbackNoError, err := testDB.Begin(ctx, sq.RC, func(tx *sq.Transaction) sq.TxResult {
 		return tx.Rollback()
 	})
 	assert.NoError(t, err)
