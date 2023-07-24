@@ -65,10 +65,10 @@ func (db *Database) Insert(ctx context.Context, qb QB) (result Result, err error
 func (db *Database) InsertAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(db.Insert(ctx, qb))
 }
-func (tx *Transaction) Insert(ctx context.Context, qb QB) (result Result, err error) {
+func (tx *T) Insert(ctx context.Context, qb QB) (result Result, err error) {
 	return coreInsert(ctx, tx, qb)
 }
-func (tx *Transaction) InsertAffected(ctx context.Context, qb QB) (affected int64, err error) {
+func (tx *T) InsertAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(tx.Insert(ctx, qb))
 }
 func coreInsert(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
@@ -89,10 +89,10 @@ func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result R
 func (db *Database) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
 	return RowsAffected(coreInsertModel(ctx, db, ptr, qb))
 }
-func (tx *Transaction) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
+func (tx *T) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
 	return coreInsertModel(ctx, tx, ptr, qb)
 }
-func (tx *Transaction) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
+func (tx *T) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
 	return RowsAffected(coreInsertModel(ctx, tx, ptr, qb))
 }
 
@@ -174,7 +174,7 @@ func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc []interface{})
 	}
 	return coreQueryRowScan(ctx, db, qb, desc)
 }
-func (tx *Transaction) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
+func (tx *T) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
 	return coreQueryRowScan(ctx, tx, qb, desc)
 }
 func coreQueryRowScan(ctx context.Context, storager Storager, qb QB, desc []interface{}) (has bool, err error) {
@@ -204,7 +204,7 @@ func (db *Database) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) (e
 	}
 	return coreQuerySliceScaner(ctx, db, qb, scan)
 }
-func (tx *Transaction) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) error {
+func (tx *T) QuerySliceScaner(ctx context.Context, qb QB, scan Scaner) error {
 	return coreQuerySliceScaner(ctx, tx, qb, scan)
 }
 func coreQuerySliceScaner(ctx context.Context, storager Storager, qb QB, scan Scaner) (err error) {
@@ -246,7 +246,7 @@ func (db *Database) Query(ctx context.Context, ptr Tabler, qb QB) (has bool, err
 	}
 	return coreQuery(ctx, db, ptr, qb)
 }
-func (tx *Transaction) Query(ctx context.Context, ptr Tabler, qb QB) (has bool, err error) {
+func (tx *T) Query(ctx context.Context, ptr Tabler, qb QB) (has bool, err error) {
 	return coreQuery(ctx, tx, ptr, qb)
 }
 
@@ -281,7 +281,7 @@ func (db *Database) QuerySlice(ctx context.Context, slicePtr interface{}, qb QB)
 	}
 	return coreQuerySlice(ctx, db, slicePtr, qb)
 }
-func (tx *Transaction) QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error) {
+func (tx *T) QuerySlice(ctx context.Context, slicePtr interface{}, qb QB) (err error) {
 	return coreQuerySlice(ctx, tx, slicePtr, qb)
 }
 func coreQuerySlice(ctx context.Context, storager Storager, slicePtr interface{}, qb QB) (err error) {
@@ -324,7 +324,7 @@ func (db *Database) Count(ctx context.Context, from Tabler, qb QB) (count uint64
 	}
 	return coreCount(ctx, db, from, qb)
 }
-func (tx *Transaction) Count(ctx context.Context, from Tabler, qb QB) (count uint64, err error) {
+func (tx *T) Count(ctx context.Context, from Tabler, qb QB) (count uint64, err error) {
 	return coreCount(ctx, tx, from, qb)
 }
 func coreCount(ctx context.Context, storager Storager, from Tabler, qb QB) (count uint64, err error) {
@@ -362,7 +362,7 @@ func (db *Database) Has(ctx context.Context, from Tabler, qb QB) (has bool, err 
 	}
 	return coreHas(ctx, db, from, qb)
 }
-func (tx *Transaction) Has(ctx context.Context, from Tabler, qb QB) (has bool, err error) {
+func (tx *T) Has(ctx context.Context, from Tabler, qb QB) (has bool, err error) {
 	return coreHas(ctx, tx, from, qb)
 }
 func coreHas(ctx context.Context, storager Storager, from Tabler, qb QB) (has bool, err error) {
@@ -387,7 +387,7 @@ func (db *Database) SumInt64(ctx context.Context, from Tabler, column Column, qb
 	}
 	return value, err
 }
-func (tx *Transaction) SumInt64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullInt64, err error) {
+func (tx *T) SumInt64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullInt64, err error) {
 	err = coreSum(ctx, tx, from, column, qb, &value)
 	if err != nil {
 		return
@@ -401,7 +401,7 @@ func (db *Database) SumFloat64(ctx context.Context, from Tabler, column Column, 
 	}
 	return value, err
 }
-func (tx *Transaction) SumFloat64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullFloat64, err error) {
+func (tx *T) SumFloat64(ctx context.Context, from Tabler, column Column, qb QB) (value sql.NullFloat64, err error) {
 	err = coreSum(ctx, tx, from, column, qb, &value)
 	if err != nil {
 		return
@@ -434,10 +434,10 @@ func (db *Database) Update(ctx context.Context, from Tabler, qb QB) (result Resu
 func (db *Database) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
 	return RowsAffected(coreUpdate(ctx, db, from, qb))
 }
-func (tx *Transaction) Update(ctx context.Context, from Tabler, qb QB) (result Result, err error) {
+func (tx *T) Update(ctx context.Context, from Tabler, qb QB) (result Result, err error) {
 	return coreUpdate(ctx, tx, from, qb)
 }
-func (tx *Transaction) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
+func (tx *T) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
 	return RowsAffected(coreUpdate(ctx, tx, from, qb))
 }
 func coreUpdate(ctx context.Context, storager Storager, from Tabler, qb QB) (result Result, err error) {
@@ -490,10 +490,10 @@ func (db *Database) HardDelete(ctx context.Context, qb QB) (result Result, err e
 func (db *Database) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreHardDelete(ctx, db, qb))
 }
-func (tx *Transaction) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
+func (tx *T) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreHardDelete(ctx, tx, qb)
 }
-func (tx *Transaction) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
+func (tx *T) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreHardDelete(ctx, tx, qb))
 }
 func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
@@ -514,7 +514,7 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Resul
 // func (db *Database) hardDeleteModel(ctx context.Context, ptr Model, qb QB) (result Result, err error){
 // 	return coreHardDeleteModel(ctx,db, ptr, qb)
 // }
-// func (tx *Transaction) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result Result, err error){
+// func (tx *T) HardDeleteModel(ctx context.Context, ptr Model, qb QB) (result Result, err error){
 // 	return coreHardDeleteModel(ctx, tx, ptr, qb)
 // }
 // func coreHardDeleteModel(ctx context.Context, storager Storager, ptr Model, qb QB) (result Result, err error) {
@@ -544,10 +544,10 @@ func (db *Database) SoftDeleteAffected(ctx context.Context, qb QB) (affected int
 	return RowsAffected(coreSoftDelete(ctx, db, qb))
 }
 
-func (tx *Transaction) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
+func (tx *T) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
 	return coreSoftDelete(ctx, tx, qb)
 }
-func (tx *Transaction) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
+func (tx *T) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreSoftDelete(ctx, tx, qb))
 }
 func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
@@ -586,7 +586,7 @@ func (db *Database) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has
 	}
 	return coreQueryRelation(ctx, db, ptr, qb)
 }
-func (tx *Transaction) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has bool, err error) {
+func (tx *T) QueryRelation(ctx context.Context, ptr Relation, qb QB) (has bool, err error) {
 	return coreQueryRelation(ctx, tx, ptr, qb)
 }
 func coreQueryRelation(ctx context.Context, storager Storager, ptr Relation, qb QB) (has bool, err error) {
@@ -629,7 +629,7 @@ func (db *Database) QueryRelationSlice(ctx context.Context, relationSlicePtr int
 	}
 	return coreQueryRelationSlice(ctx, db, relationSlicePtr, qb)
 }
-func (tx *Transaction) QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error) {
+func (tx *T) QueryRelationSlice(ctx context.Context, relationSlicePtr interface{}, qb QB) (err error) {
 	return coreQueryRelationSlice(ctx, tx, relationSlicePtr, qb)
 }
 func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlicePtr interface{}, qb QB) (err error) {
@@ -672,7 +672,7 @@ func coreQueryRelationSlice(ctx context.Context, storager Storager, relationSlic
 func (db *Database) Exec(ctx context.Context, query string, values []interface{}) (result Result, err error) {
 	return coreExec(ctx, db, query, values)
 }
-func (tx *Transaction) Exec(ctx context.Context, query string, values []interface{}) (result Result, err error) {
+func (tx *T) Exec(ctx context.Context, query string, values []interface{}) (result Result, err error) {
 	return coreExec(ctx, tx, query, values)
 }
 func coreExec(ctx context.Context, storager Storager, query string, values []interface{}) (result Result, err error) {
@@ -693,10 +693,10 @@ func (db *Database) ExecQB(ctx context.Context, qb QB, statement Statement) (res
 func (db *Database) ExecQBAffected(ctx context.Context, qb QB, statement Statement) (affected int64, err error) {
 	return RowsAffected(coreExecQB(ctx, db, qb, statement))
 }
-func (tx *Transaction) ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error) {
+func (tx *T) ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error) {
 	return coreExecQB(ctx, tx, qb, statement)
 }
-func (tx *Transaction) ExecQBAffected(ctx context.Context, qb QB, statement Statement) (affected int64, err error) {
+func (tx *T) ExecQBAffected(ctx context.Context, qb QB, statement Statement) (affected int64, err error) {
 	return RowsAffected(coreExecQB(ctx, tx, qb, statement))
 }
 func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Statement) (result Result, err error) {
@@ -716,7 +716,7 @@ func coreExecQB(ctx context.Context, storager Storager, qb QB, statement Stateme
 func (db *Database) LastQueryCost(ctx context.Context) (lastQueryCost float64, err error) {
 	return coreLastQueryCost(ctx, db)
 }
-func (tx *Transaction) LastQueryCost(ctx context.Context) (lastQueryCost float64, err error) {
+func (tx *T) LastQueryCost(ctx context.Context) (lastQueryCost float64, err error) {
 	return coreLastQueryCost(ctx, tx)
 }
 func coreLastQueryCost(ctx context.Context, storager Storager) (lastQueryCost float64, err error) {
@@ -739,7 +739,7 @@ func coreLastQueryCost(ctx context.Context, storager Storager) (lastQueryCost fl
 func (db *Database) PrintLastQueryCost(ctx context.Context) {
 	corePrintLastQueryCost(ctx, db)
 }
-func (tx *Transaction) PrintLastQueryCost(ctx context.Context) {
+func (tx *T) PrintLastQueryCost(ctx context.Context) {
 	corePrintLastQueryCost(ctx, tx)
 }
 func corePrintLastQueryCost(ctx context.Context, storager Storager) {

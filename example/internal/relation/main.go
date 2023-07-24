@@ -20,7 +20,7 @@ func example(ctx context.Context) (err error) {
 	// 准备数据
 	var insertUser m.User
 	// 多表插入一定要用事务,否则无法保证数据一致性
-	rollbackNoError, err := db.Begin(ctx, sq.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+	rollbackNoError, err := db.Begin(ctx, sq.LevelReadCommitted, func(tx *sq.T) sq.TxResult {
 		db := false
 		_ = db // 一般情况下事务中都是使用tx所以重新声明变量db 防止在 tx 中使用db
 		insertUser = m.User{

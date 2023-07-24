@@ -1074,7 +1074,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		rollbackNoError, err := testDB.Begin(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		rollbackNoError, err := testDB.Begin(context.TODO(), sql.LevelReadCommitted, func(tx *sq.T) sq.TxResult {
 			execed = true
 			_, err := tx.InsertModel(context.TODO(), &User{Name: "TestTransaction_1"}, sq.QB{Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES {#VALUES#}"}})
 			assert.NoError(t, err)
@@ -1100,7 +1100,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		rollbackNoError, err := testDB.Begin(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		rollbackNoError, err := testDB.Begin(context.TODO(), sql.LevelReadCommitted, func(tx *sq.T) sq.TxResult {
 			execed = true
 			_, err := tx.InsertModel(context.TODO(), &User{Name: "TestTransaction_2"}, sq.QB{Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}})
 			assert.NoError(t, err)
@@ -1128,7 +1128,7 @@ func (suite TestDBSuite) TestTransaction() {
 	}
 	{
 		var execed bool
-		rollbackNoError, err := testDB.Begin(context.TODO(), sql.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		rollbackNoError, err := testDB.Begin(context.TODO(), sql.LevelReadCommitted, func(tx *sq.T) sq.TxResult {
 			execed = true
 			_, err := tx.InsertModel(context.TODO(), &User{Name: "TestTransaction_3"}, sq.QB{Reviews: []string{"INSERT INTO `user` (`id`,`name`,`age`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)"}})
 			assert.NoError(t, err)
@@ -1312,7 +1312,7 @@ func TestInsertNullInt(t *testing.T) {
 
 func TestErrTransactionIsRollback(t *testing.T) {
 	ctx := context.Background()
-	rollbackNoError, err := testDB.Begin(ctx, sq.RC, func(tx *sq.Transaction) sq.TxResult {
+	rollbackNoError, err := testDB.Begin(ctx, sq.RC, func(tx *sq.T) sq.TxResult {
 		return tx.Rollback()
 	})
 	assert.NoError(t, err)
@@ -1322,7 +1322,7 @@ func TestErrTransactionIsRollback(t *testing.T) {
 func TestLastQueryCost(t *testing.T) {
 	ctx := context.Background()
 	{
-		rollbackNoError, err := testDB.Begin(ctx, sq.LevelReadCommitted, func(tx *sq.Transaction) sq.TxResult {
+		rollbackNoError, err := testDB.Begin(ctx, sq.RC, func(tx *sq.T) sq.TxResult {
 			cost, err := tx.LastQueryCost(ctx)
 			if err != nil {
 				return tx.RollbackWithError(err)

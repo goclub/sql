@@ -15,9 +15,9 @@ type Publish struct {
 	Priority         uint8 `default:"100"`
 }
 
-func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
+func (tx *T) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
 	if queueName == "" {
-		err = xerr.New("goclub/sql: Transaction{}.PublishMessage(ctx, queueName, publish) queue can not be empty string")
+		err = xerr.New("goclub/sql: T{}.PublishMessage(ctx, queueName, publish) queue can not be empty string")
 		return
 	}
 	if publish.Priority == 0 {

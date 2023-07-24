@@ -123,7 +123,7 @@ func (message Message) execRequeue(db *Database) (err error) {
 func (message Message) execDeadLetter(db *Database, reason string) (err error) {
 	ctx := context.Background()
 	var rollbackNoError bool
-	if rollbackNoError, err = db.Begin(ctx, sql.LevelReadCommitted, func(tx *Transaction) TxResult {
+	if rollbackNoError, err = db.Begin(ctx, sql.LevelReadCommitted, func(tx *T) TxResult {
 		if _, err = tx.HardDelete(ctx, QB{
 			From:  &message,
 			Where: And("id", Equal(message.ID)),
