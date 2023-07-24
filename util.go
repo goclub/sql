@@ -10,16 +10,19 @@ import (
 type stringQueue struct {
 	Value []string
 }
-func (v *stringQueue) Push(args... string) {
+
+func (v *stringQueue) Push(args ...string) {
 	v.Value = append(v.Value, args...)
 }
 func (v stringQueue) Join(sep string) string {
 	return strings.Join(v.Value, sep)
 }
+
 type stringQueueBindValue struct {
 	Value string
-	Has bool
+	Has   bool
 }
+
 func (sList *stringQueue) PopBind(last *stringQueueBindValue) stringQueue {
 	listLen := len(sList.Value)
 	if listLen == 0 {
@@ -41,13 +44,13 @@ func (sList *stringQueue) PopBind(last *stringQueueBindValue) stringQueue {
 	sList.Value = sList.Value[:listLen-1]
 	return *sList
 }
-func columnsToStrings (columns []Column) (strings []string) {
+func columnsToStrings(columns []Column) (strings []string) {
 	for _, column := range columns {
 		strings = append(strings, column.wrapField())
 	}
 	return
 }
-func columnsToStringsWithAS (columns []Column) (strings []string) {
+func columnsToStringsWithAS(columns []Column) (strings []string) {
 	for _, column := range columns {
 		strings = append(strings, column.wrapFieldWithAS())
 	}
@@ -55,9 +58,10 @@ func columnsToStringsWithAS (columns []Column) (strings []string) {
 }
 
 type primaryIDInfo struct {
-	HasID bool
+	HasID   bool
 	IDValue interface{}
 }
+
 func CheckRowScanErr(scanErr error) (has bool, err error) {
 	if scanErr != nil {
 		if scanErr == sql.ErrNoRows {
@@ -81,7 +85,7 @@ func PlaceholderSlice(slice interface{}) (placeholder string) {
 		placeholder = "(NULL)"
 	} else {
 		var placeholderList []string
-		for i:=0;i<rValue.Len();i++ {
+		for i := 0; i < rValue.Len(); i++ {
 			values = append(values, rValue.Index(i).Interface())
 			placeholderList = append(placeholderList, "?")
 		}

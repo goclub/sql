@@ -8,9 +8,10 @@ import (
 	"log"
 )
 
-func main () {
+func main() {
 	ctx := context.Background()
-	err := example(ctx) ; if err != nil {
+	err := example(ctx)
+	if err != nil {
 		log.Print(err)
 	}
 }
@@ -18,14 +19,15 @@ func example(ctx context.Context) (err error) {
 	db := connectMysql.DB
 	col := m.TableUser{}.Column()
 	// 通过 InsertModel 准备数据
-	insertUser :=  m.User{
-		Name: "delete1",
-		Mobile: "13400001111",
+	insertUser := m.User{
+		Name:          "delete1",
+		Mobile:        "13400001111",
 		ChinaIDCardNo: "340828199912121111",
 	}
 	_, err = db.InsertModel(ctx, &insertUser, sq.QB{
 		UseInsertIgnoreInto: true,
-	}) ; if err != nil {
+	})
+	if err != nil {
 		return
 	}
 	userID := insertUser.ID
@@ -35,8 +37,9 @@ func example(ctx context.Context) (err error) {
 		Where: sq.
 			And(col.ID, sq.Equal(userID)),
 		Review: "TODO",
-		Limit: 1,
-	}) ; if err != nil {
+		Limit:  1,
+	})
+	if err != nil {
 		return
 	}
 	// 你还可以通过 db.HardDelete() 永久删除数据

@@ -52,9 +52,11 @@ type Raw struct {
 	Query  string
 	Values []interface{}
 }
+
 func (r Raw) IsZero() bool {
 	return r.Query == ""
 }
+
 type Model interface {
 	Tabler
 	BeforeInsert() error
@@ -71,10 +73,10 @@ type Relation interface {
 type DefaultLifeCycle struct {
 }
 
-func (v *DefaultLifeCycle) BeforeInsert() error                 { return nil }
+func (v *DefaultLifeCycle) BeforeInsert() error             { return nil }
 func (v *DefaultLifeCycle) AfterInsert(result Result) error { return nil }
-func (v *DefaultLifeCycle) BeforeUpdate() error                 { return nil }
-func (v *DefaultLifeCycle) AfterUpdate() error                  { return nil }
+func (v *DefaultLifeCycle) BeforeUpdate() error             { return nil }
+func (v *DefaultLifeCycle) AfterUpdate() error              { return nil }
 
 type Storager interface {
 	getCore() StoragerCore

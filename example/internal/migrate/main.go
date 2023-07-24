@@ -7,7 +7,7 @@ import (
 	"github.com/goclub/sql/example/internal/migrate/migrate"
 )
 
-func main () {
+func main() {
 	db, dbClose, err := sq.Open("mysql", sq.MysqlDataSource{
 		// 生产环境请使用环境变量或者配置中心配置数据库地址，不要硬编码在代码中
 		User:     "root",
@@ -16,14 +16,15 @@ func main () {
 		Port:     "3306",
 		DB:       "example_goclub_sql",
 		Query: map[string]string{
-			"charset": "utf8",
+			"charset":   "utf8",
 			"parseTime": "True",
-			"loc": "Local",
+			"loc":       "Local",
 		},
-	}.FormatDSN()) ; if err != nil {
-	    panic(err)
+	}.FormatDSN())
+	if err != nil {
+		panic(err)
 	}
-	_=dbClose()
+	_ = dbClose()
 	// 将包含 MigrateXXX(mi sq.Migrate) 方法的结构体指针传入 sq.ExecMigrate()
 	if err = sq.ExecMigrate(db, &migrate.Migrate{db}); err != nil {
 		xerr.PrintStack(err)

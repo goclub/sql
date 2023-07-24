@@ -9,6 +9,7 @@ import (
 type Tag struct {
 	Value string
 }
+
 func (t Tag) IsIgnoreInsert() bool {
 	sqTags := strings.Split(t.Value, "|")
 	for _, tag := range sqTags {
@@ -33,7 +34,7 @@ func scanTagToColumns(rValue reflect.Value, rType reflect.Type, columns *[]Colum
 	if *tier > 10 {
 		panic(xerr.New("goclub/sql: Too many structures are nested"))
 	}
-	for i:=0;i<rType.NumField();i++ {
+	for i := 0; i < rType.NumField(); i++ {
 		structField := rType.Field(i)
 		tag, has := structField.Tag.Lookup("db")
 		if !has {

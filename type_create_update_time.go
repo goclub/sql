@@ -15,10 +15,11 @@ type CreateTimeUpdateTime struct {
 	UpdateTime time.Time `db:"update_time"`
 }
 type GMTCreateGMTModified struct {
-	GMTCreate time.Time `db:"gmt_create"`
+	GMTCreate   time.Time `db:"gmt_create"`
 	GMTModified time.Time `db:"gmt_modified"`
 }
-func setTimeNow (fieldValue reflect.Value, fieldType reflect.StructField) {
+
+func setTimeNow(fieldValue reflect.Value, fieldType reflect.StructField) {
 	if fieldValue.IsZero() {
 		if fieldType.Type.String() == "time.Time" {
 			now := time.Now()

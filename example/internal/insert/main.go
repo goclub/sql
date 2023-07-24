@@ -8,9 +8,10 @@ import (
 	"log"
 )
 
-func main () {
+func main() {
 	ctx := context.Background()
-	err := example(ctx) ; if err != nil {
+	err := example(ctx)
+	if err != nil {
 		log.Print(err)
 	}
 }
@@ -30,7 +31,8 @@ func example(ctx context.Context) (err error) {
 		// Review 的作用是用于审查 sql 或增加代码可读性，可以忽略
 		Review: "INSERT INTO `user` (`name`,`mobile`,`china_id_card_no`) VALUES (?,?,?)",
 	}
-	_, err = db.Insert(ctx, qb) ; if err != nil {
+	_, err = db.Insert(ctx, qb)
+	if err != nil {
 		// 无法处理的错误应当向上传递
 		return err
 	}

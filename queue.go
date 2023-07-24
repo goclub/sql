@@ -8,14 +8,13 @@ import (
 	"time"
 )
 
-
-
 type Publish struct {
-	BusinessID uint64
-	NextConsumeTime time.Duration
+	BusinessID       uint64
+	NextConsumeTime  time.Duration
 	MaxConsumeChance uint16
-	Priority uint8 `default:"100"`
+	Priority         uint8 `default:"100"`
 }
+
 func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
 	if queueName == "" {
 		err = xerr.New("goclub/sql: Transaction{}.PublishMessage(ctx, queueName, publish) queue can not be empty string")
@@ -25,27 +24,30 @@ func (tx *Transaction) PublishMessage(ctx context.Context, queueName string, pub
 		publish.Priority = 100
 	}
 	message = Message{
-		QueueName:       queueName,
-		BusinessID:      publish.BusinessID,
-		Priority: publish.Priority,
-		NextConsumeTime: time.Now().In(tx.db.QueueTimeLocation).Add(publish.NextConsumeTime),
-		ConsumeChance:   0,
+		QueueName:        queueName,
+		BusinessID:       publish.BusinessID,
+		Priority:         publish.Priority,
+		NextConsumeTime:  time.Now().In(tx.db.QueueTimeLocation).Add(publish.NextConsumeTime),
+		ConsumeChance:    0,
 		MaxConsumeChance: publish.MaxConsumeChance,
-		UpdateID:        sql.NullString{},
+		UpdateID:         sql.NullString{},
 	}
-	_, err = tx.InsertModel(ctx, &message, QB{}) ; if err != nil {
-	    return
+	_, err = tx.InsertModel(ctx, &message, QB{})
+	if err != nil {
+		return
 	}
 	return
 }
+
 type Consume struct {
-	QueueName    string
-	HandleError func(err error)
-	HandleMessage func(message Message) MessageResult
-	NextConsumeTime func(consumeChance uint16, maxConsumeChance uint16) time.Duration
+	QueueName         string
+	HandleError       func(err error)
+	HandleMessage     func(message Message) MessageResult
+	NextConsumeTime   func(consumeChance uint16, maxConsumeChance uint16) time.Duration
 	queueTimeLocation *time.Location
 }
-func (data *Consume) initAndCheck (db *Database) (err error) {
+
+func (data *Consume) initAndCheck(db *Database) (err error) {
 	data.queueTimeLocation = db.QueueTimeLocation
 	if data.NextConsumeTime == nil {
 		data.NextConsumeTime = func(consumeChance uint16, maxConsumeChance uint16) time.Duration {
@@ -60,8 +62,8 @@ func (data *Consume) initAndCheck (db *Database) (err error) {
 	}
 	return
 }
-func (db *Database) InitQueue (ctx context.Context, queueName string) (err error) {
-	createQueueTableSQL := "CREATE TABLE IF NOT EXISTS `queue_" + queueName + "` ("+ `
+func (db *Database) InitQueue(ctx context.Context, queueName string) (err error) {
+	createQueueTableSQL := "CREATE TABLE IF NOT EXISTS `queue_" + queueName + "` (" + `
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		business_id bigint(20) unsigned NOT NULL,
 		priority tinyint(3) unsigned NOT NULL,
@@ -76,10 +78,10 @@ func (db *Database) InitQueue (ctx context.Context, queueName string) (err error
 		KEY next_consume_time__consume_chance__priority (next_consume_time,consume_chance,max_consume_chance,priority)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
 	_, err = db.Exec(ctx, createQueueTableSQL, nil) // indivisible begin
-	if err != nil { // indivisible end
+	if err != nil {                                 // indivisible end
 		return err
 	}
-	createDeadLetterTableSQL := "CREATE TABLE IF NOT EXISTS `queue_" + queueName + "_dead_letter` ("+ `
+	createDeadLetterTableSQL := "CREATE TABLE IF NOT EXISTS `queue_" + queueName + "_dead_letter` (" + `
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		business_id bigint(20) unsigned NOT NULL,
 		reason varchar(255) NOT NULL DEFAULT '',
@@ -88,24 +90,24 @@ func (db *Database) InitQueue (ctx context.Context, queueName string) (err error
 		KEY business_id (business_id)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
 	_, err = db.Exec(ctx, createDeadLetterTableSQL, nil) // indivisible begin
-	if err != nil { // indivisible end
+	if err != nil {                                      // indivisible end
 		return err
 	}
 	return
 }
 func (db *Database) ConsumeMessage(ctx context.Context, consume Consume) error {
 	err := consume.initAndCheck(db) // indivisible begin
-	if err != nil { // indivisible end
-	    return err
+	if err != nil {                 // indivisible end
+		return err
 	}
 	readInterval := time.Second
 
 	for {
 		time.Sleep(readInterval)
 		consumed, err := db.tryReadQueueMessage(ctx, consume) // indivisible begin
-		if err != nil { // indivisible end
+		if err != nil {                                       // indivisible end
 			consumed = false
-		    consume.HandleError(err)
+			consume.HandleError(err)
 		}
 		if consumed {
 			readInterval = time.Nanosecond
@@ -120,22 +122,23 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 	var queueIDs []uint64
 	// 查询10个id
 	err = db.QuerySliceScaner(ctx, QB{
-		From: &message,
+		From:   &message,
 		Select: []Column{"id"},
 		Where: AndRaw(`next_consume_time <= ?`, time.Now().In(db.QueueTimeLocation)).
 			AndRaw(`consume_chance < max_consume_chance`),
-			OrderBy: []OrderBy{
-				{"priority", DESC},
-			},
+		OrderBy: []OrderBy{
+			{"priority", DESC},
+		},
 		Limit: 10,
-	},ScanUint64s(&queueIDs)) ; if err != nil {
+	}, ScanUint64s(&queueIDs))
+	if err != nil {
 		return
 	}
 	// 无结果则退出更新
 	if len(queueIDs) == 0 {
 		return
 	}
-		updateID := NanoID21()
+	updateID := NanoID21()
 	// 通过更新并发安全的标记数据 (使用where id = 进行更新,避免并发事务死锁)
 	change, err := RowsAffected(db.Update(ctx, &message, QB{
 		Index: "update_id",
@@ -162,10 +165,10 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 		Limit: 1,
 	}) // indivisible begin
 	if err != nil { // indivisible end
-	    return
+		return
 	}
 	if hasUpdateMessage == false {
-		err = xerr.New("goclub/sql: unexpected: Database{}.ConsumeMessage(): update_id("+ updateID +") should has")
+		err = xerr.New("goclub/sql: unexpected: Database{}.ConsumeMessage(): update_id(" + updateID + ") should has")
 		return
 	}
 	consumed = true

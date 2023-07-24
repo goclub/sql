@@ -6,14 +6,15 @@ import (
 )
 
 type OP struct {
-	Query string
-	Values []interface{}
-	Symbol string
+	Query       string
+	Values      []interface{}
+	Symbol      string
 	Placeholder string
-	Multiple []OP
-	OrGroup []Condition
-	Ignore bool
+	Multiple    []OP
+	OrGroup     []Condition
+	Ignore      bool
 }
+
 func (op OP) sql(column Column, values *[]interface{}) string {
 	var and stringQueue
 	if len(op.OrGroup) != 0 {
@@ -46,7 +47,7 @@ func (op OP) sql(column Column, values *[]interface{}) string {
 	return and.Join(" ")
 }
 func Equal(v interface{}) OP {
-	return OP {
+	return OP{
 		Symbol: "=",
 		Values: []interface{}{v},
 	}
@@ -60,14 +61,14 @@ func NotEqual(v interface{}) OP {
 func SubQuery(symbol string, qb QB) OP {
 	raw := qb.SQLSelect()
 	query, values := raw.Query, raw.Values
-	return OP {
+	return OP{
 		Placeholder: "(" + query + ")",
-		Symbol: symbol,
-		Values: values,
+		Symbol:      symbol,
+		Values:      values,
 	}
 }
 func Like(s string) OP {
-	return OP {
+	return OP{
 		Symbol: "LIKE",
 		Values: []interface{}{"%" + s + "%"},
 	}
@@ -83,7 +84,7 @@ func In(slice interface{}) OP {
 		placeholder = "(NULL)"
 	} else {
 		var placeholderList stringQueue
-		for i:=0;i<rValue.Len();i++ {
+		for i := 0; i < rValue.Len(); i++ {
 			values = append(values, rValue.Index(i).Interface())
 			placeholderList.Push(sqlPlaceholder)
 		}
@@ -96,51 +97,51 @@ func In(slice interface{}) OP {
 	}
 }
 func LikeLeft(s string) OP {
-	return OP {
+	return OP{
 		Symbol: "LIKE",
 		Values: []interface{}{s + "%"},
 	}
 }
 func LikeRight(s string) OP {
-	return OP {
+	return OP{
 		Symbol: "LIKE",
 		Values: []interface{}{"%" + s},
 	}
 }
 func Between(begin interface{}, end interface{}) OP {
-	return OP {
-		Symbol: "BETWEEN",
-		Values: []interface{}{begin, end},
+	return OP{
+		Symbol:      "BETWEEN",
+		Values:      []interface{}{begin, end},
 		Placeholder: `? AND ?`,
 	}
 }
 func NotBetween(begin interface{}, end interface{}) OP {
-	return OP {
-		Symbol: "NOT BETWEEN",
-		Values: []interface{}{begin, end},
+	return OP{
+		Symbol:      "NOT BETWEEN",
+		Values:      []interface{}{begin, end},
 		Placeholder: `? AND ?`,
 	}
 }
 func GT(v interface{}) OP {
-	return OP {
+	return OP{
 		Symbol: ">",
 		Values: []interface{}{v},
 	}
 }
 func GTE(v interface{}) OP {
-	return OP {
+	return OP{
 		Symbol: ">=",
 		Values: []interface{}{v},
 	}
 }
 func LT(v interface{}) OP {
-	return OP {
+	return OP{
 		Symbol: "<",
 		Values: []interface{}{v},
 	}
 }
 func LTE(v interface{}) OP {
-	return OP {
+	return OP{
 		Symbol: "<=",
 		Values: []interface{}{v},
 	}

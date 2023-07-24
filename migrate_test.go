@@ -8,7 +8,8 @@ import (
 type Migrate struct {
 	db *sq.Database
 }
-func (dep Migrate) Migrate20201004160444CreateUserTable()(err error) {
+
+func (dep Migrate) Migrate20201004160444CreateUserTable() (err error) {
 	ctx := context.Background()
 	if _, err = dep.db.Exec(ctx, `
 	CREATE TABLE user (
@@ -22,7 +23,7 @@ func (dep Migrate) Migrate20201004160444CreateUserTable()(err error) {
 	   KEY name (name)
 	 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `, nil); err != nil {
-	    return
+		return
 	}
 	if _, err = dep.db.Exec(ctx, `
 	CREATE TABLE user_address (
@@ -50,4 +51,3 @@ func (dep Migrate) Migrate20201004160444CreateUserTable()(err error) {
 	}
 	return
 }
-

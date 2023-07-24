@@ -6,11 +6,11 @@ import (
 )
 
 type MysqlDataSource struct {
-	User string `yaml:"user"`
+	User     string `yaml:"user"`
 	Password string `yaml:"password"`
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
-	DB string `yaml:"db"`
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	DB       string `yaml:"db"`
 	// DefaultQuery
 	// 	map[string]string{
 	// 	"charset": "utf8",
@@ -19,6 +19,7 @@ type MysqlDataSource struct {
 	// }
 	Query map[string]string `yaml:"query"`
 }
+
 func (config MysqlDataSource) FormatDSN() (dataSourceName string) {
 	configList := []string{
 		config.User,
@@ -37,15 +38,15 @@ func (config MysqlDataSource) FormatDSN() (dataSourceName string) {
 	configList = append(configList)
 	if config.Query == nil {
 		config.Query = map[string]string{
-				"charset": "utf8mb4",
-				"parseTime": "True",
-				"loc": "Local",
-			}
+			"charset":   "utf8mb4",
+			"parseTime": "True",
+			"loc":       "Local",
+		}
 	}
 	values := url.Values{}
 	for key, value := range config.Query {
 		values.Set(key, value)
 	}
-	dataSourceName = strings.Join(configList,"") + values.Encode()
+	dataSourceName = strings.Join(configList, "") + values.Encode()
 	return
 }

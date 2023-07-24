@@ -8,13 +8,13 @@ import (
 
 type SQLChecker interface {
 	Check(checkSQL []string, execSQL string) (pass bool, refs string, err error)
-	TrackFail (debugID uint64, err error, reviews []string, query string, refs string)
+	TrackFail(debugID uint64, err error, reviews []string, query string, refs string)
 }
 
 type DefaultSQLChecker struct {
-
 }
-func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool, refs string, err error){
+
+func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool, refs string, err error) {
 	if len(reviews) == 0 {
 		return true, "", nil
 	}
@@ -24,8 +24,9 @@ func (check DefaultSQLChecker) Check(reviews []string, query string) (pass bool,
 		}
 	}
 	for _, format := range reviews {
-		matched, ref, err := check.match(query, format) ; if err != nil {
-		    return false, refs, err
+		matched, ref, err := check.match(query, format)
+		if err != nil {
+			return false, refs, err
 		}
 		refs += ref
 		if matched == true {
@@ -39,10 +40,11 @@ func (check DefaultSQLChecker) TrackFail(debugID uint64, err error, reviews []st
 }
 
 type defaultSQLCheckerDifferent struct {
-	match bool
-	trimmedSQL string
+	match         bool
+	trimmedSQL    string
 	trimmedFormat string
 }
+
 func (check DefaultSQLChecker) match(query string, format string) (matched bool, ref string, err error) {
 	trimmedFormat := format
 
@@ -50,28 +52,31 @@ func (check DefaultSQLChecker) match(query string, format string) (matched bool,
 	// remove {#VALUES#} 和 (?,?),(?,?) 和 (?,?)
 	{
 		var reg *regexp.Regexp
-		reg, err = regexp.Compile(`VALUES \(.*\)`) ; if err != nil {
-		return
-	}
-		trimmedSQL = reg.ReplaceAllString(trimmedSQL,"VALUES ")
+		reg, err = regexp.Compile(`VALUES \(.*\)`)
+		if err != nil {
+			return
+		}
+		trimmedSQL = reg.ReplaceAllString(trimmedSQL, "VALUES ")
 		trimmedFormat = strings.Replace(trimmedFormat, "{#VALUES#}", "", -1)
 	}
 	// remove  {#IN#} 和 (?,?)
 	{
 		var reg *regexp.Regexp
-		reg, err = regexp.Compile(`\(\?(,\?)*?\)`) ; if err != nil {
-		return
-	}
-		trimmedSQL = reg.ReplaceAllString(trimmedSQL,"")
+		reg, err = regexp.Compile(`\(\?(,\?)*?\)`)
+		if err != nil {
+			return
+		}
+		trimmedSQL = reg.ReplaceAllString(trimmedSQL, "")
 		trimmedFormat = strings.Replace(trimmedFormat, "{#IN#}", "", -1)
 	}
-	optional, err := check.matchCheckSQLOptional(trimmedFormat) ; if err != nil {
+	optional, err := check.matchCheckSQLOptional(trimmedFormat)
+	if err != nil {
 		return
 	}
-	for _,optionalItem := range optional {
+	for _, optionalItem := range optional {
 		trimmedFormat = strings.Replace(trimmedFormat, "{#"+optionalItem+"#}", "", 1)
 	}
-	for _,optionalItem := range optional {
+	for _, optionalItem := range optional {
 		trimmedSQL = strings.Replace(trimmedSQL, optionalItem, "", 1)
 	}
 	trimmedFormat = strings.TrimSpace(trimmedFormat)
@@ -79,23 +84,26 @@ func (check DefaultSQLChecker) match(query string, format string) (matched bool,
 	if trimmedSQL == trimmedFormat {
 		return true, "", nil
 	}
-	ref = "\n   sql: \"" + trimmedSQL + "\"\nformat: \"" + trimmedFormat +"\""
+	ref = "\n   sql: \"" + trimmedSQL + "\"\nformat: \"" + trimmedFormat + "\""
 	return
 }
+
 // 匹配 QB{}.Review 中的 {# AND `name` = ?#} 部分并返回
-func (check DefaultSQLChecker)  matchCheckSQLOptional(str string) (optional []string, err error) {
-	strLen :=len(str)
+func (check DefaultSQLChecker) matchCheckSQLOptional(str string) (optional []string, err error) {
+	strLen := len(str)
 	type Position struct {
 		Start int
-		End int
-		Done bool
+		End   int
+		Done  bool
 	}
 	data := []Position{}
 	for index, s := range str {
 		switch s {
 		case []rune("{")[0]:
 			// last rune
-			if index == strLen - 1 { continue }
+			if index == strLen-1 {
+				continue
+			}
 			nextRune := str[index+1]
 			if nextRune == []byte("#")[0] {
 				// 检查之前是否出现 {# 但没有 #} 这种错误
@@ -113,10 +121,12 @@ func (check DefaultSQLChecker)  matchCheckSQLOptional(str string) (optional []st
 			}
 		case []rune("#")[0]:
 			// last rune
-			if index == strLen - 1 { continue }
+			if index == strLen-1 {
+				continue
+			}
 			nextRune := str[index+1]
 			if nextRune == []byte("}")[0] {
-				endIndex := index+2
+				endIndex := index + 2
 				// 检查 #} 之前必须存在 {#
 				if len(data) == 0 {
 					return nil, xerr.New("goclub/sq;: SQLCheck missing {#\n" + str + "\n" +

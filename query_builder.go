@@ -14,11 +14,12 @@ import (
 // sq.Set(column, value)
 type Update struct {
 	Column Column
-	Value interface{}
-	Raw Raw
+	Value  interface{}
+	Raw    Raw
 }
 type updates []Update
-func OnlyUseInTestToUpdates (t *testing.T, list []Update) updates {
+
+func OnlyUseInTestToUpdates(t *testing.T, list []Update) updates {
 	return list
 }
 func (u updates) Set(column Column, value interface{}) updates {
@@ -28,7 +29,7 @@ func (u updates) Set(column Column, value interface{}) updates {
 	}
 	u = append(u, Update{
 		Column: column,
-		Value: value,
+		Value:  value,
 	})
 	return u
 }
@@ -63,6 +64,7 @@ func SetMap(data map[Column]interface{}) updates {
 func SetRaw(query string, value ...interface{}) updates {
 	return updates{}.SetRaw(query, value...)
 }
+
 type InsertMultiple struct {
 	Column []Column
 	Values [][]interface{}
@@ -71,19 +73,19 @@ type Values []Insert
 
 type Insert struct {
 	Column Column
-	Value interface{}
+	Value  interface{}
 }
 
 type QB struct {
-	Select []Column
+	Select    []Column
 	SelectRaw []Raw
 
-	From Tabler
-		from string
+	From    Tabler
+	from    string
 	FromRaw FromRaw
 
 	DisableSoftDelete bool
-		softDelete Raw
+	softDelete        Raw
 
 	UnionTable UnionTable
 
@@ -92,50 +94,50 @@ type QB struct {
 	Set []Update
 	// UPDATE IGNORE
 	UseUpdateIgnore bool
-	Insert Values
-	InsertMultiple InsertMultiple
+	Insert          Values
+	InsertMultiple  InsertMultiple
 	// INSERT IGNORE INTO
 	UseInsertIgnoreInto bool
 
-	Where []Condition
-	WhereOR [][]Condition
-	WhereRaw Raw
+	Where           []Condition
+	WhereOR         [][]Condition
+	WhereRaw        Raw
 	WhereAllowEmpty bool
 
-	OrderBy []OrderBy
+	OrderBy    []OrderBy
 	OrderByRaw Raw
 
-	GroupBy []Column
+	GroupBy    []Column
 	GroupByRaw Raw
 
-	Having []Condition
+	Having    []Condition
 	HavingRaw Raw
 
-	Limit uint64
+	Limit    uint64
 	limitRaw limitRaw
-	Offset uint64
+	Offset   uint64
 
 	Lock SelectLock
 
 	Join []Join
-	Raw Raw
+	Raw  Raw
 
-	Debug bool
-	debugData struct{id uint64}
-	PrintSQL bool
-	Explain bool
-	RunTime bool
-	elapsedTimeData struct{
+	Debug           bool
+	debugData       struct{ id uint64 }
+	PrintSQL        bool
+	Explain         bool
+	RunTime         bool
+	elapsedTimeData struct {
 		startTime time.Time
 	}
 	LastQueryCost bool
 
-	Review string
-	Reviews []string
-	SQLChecker SQLChecker
+	Review            string
+	Reviews           []string
+	SQLChecker        SQLChecker
 	disableSQLChecker bool
-
 }
+
 func (qb QB) mustInTransaction() error {
 	if len(qb.Lock) == 0 {
 		return nil
@@ -144,54 +146,62 @@ func (qb QB) mustInTransaction() error {
 }
 
 type FromRaw struct {
-	TableName Raw
+	TableName       Raw
 	SoftDeleteWhere Raw
 }
 type OrderBy struct {
 	Column Column
-	Type orderByType
+	Type   orderByType
 }
 type orderByType uint8
+
 const (
 	// 默认降序
 	ASC orderByType = iota
 	DESC
 )
+
 type SelectLock string
+
 func (s SelectLock) String() string {
 	return string(s)
 }
+
 const FORSHARE SelectLock = "FOR SHARE"
 const FORUPDATE SelectLock = "FOR UPDATE"
 
 type UnionTable struct {
-	Tables []QB
+	Tables   []QB
 	UnionAll bool
 }
+
 func (union UnionTable) SQLSelect() (raw Raw) {
 	var sqlList stringQueue
 	var subQueryList []string
 	for _, table := range union.Tables {
 		subQV := table.SQLSelect()
-		subQueryList = append(subQueryList, "(" + subQV.Query + ")")
+		subQueryList = append(subQueryList, "("+subQV.Query+")")
 		raw.Values = append(raw.Values, subQV.Values...)
 	}
 	unionText := "UNION"
 	if union.UnionAll {
 		unionText += " ALL"
 	}
-	sqlList.Push(strings.Join(subQueryList, " "+ unionText+ " "))
+	sqlList.Push(strings.Join(subQueryList, " "+unionText+" "))
 	raw.Query = sqlList.Join(" ")
 	return
 }
+
 type limitRaw struct {
 	Valid bool
 	Limit uint64
 }
 type JoinType string
+
 func (t JoinType) String() string {
 	return string(t)
 }
+
 const InnerJoin JoinType = "INNER JOIN"
 const LeftJoin JoinType = "LEFT JOIN"
 const RightJoin JoinType = "RIGHT JOIN"
@@ -199,12 +209,13 @@ const FullOuterJoin JoinType = "FULL OUTER JOIN"
 const CrossJoin JoinType = "CROSS JOIN"
 
 type Join struct {
-	Type JoinType
+	Type      JoinType
 	TableName string
-	On string
+	On        string
 }
 type Column string
-func (c Column) String() string { return string(c)}
+
+func (c Column) String() string { return string(c) }
 func (c Column) wrapField() string {
 	s := c.String()
 	return "`" + strings.ReplaceAll(s, ".", "`.`") + "`"
@@ -217,13 +228,15 @@ func (c Column) wrapFieldWithAS() string {
 	}
 	return column
 }
+
 type Statement string
+
 const StatementSelect Statement = "SELECT"
 const StatementUpdate Statement = "UPDATE"
 const StatementDelete Statement = "DELETE"
 const StatementInsert Statement = "INSERT"
 
-func (s Statement) String() string { return string(s)}
+func (s Statement) String() string { return string(s) }
 
 func (qb QB) SQL(statement Statement) Raw {
 	originQB := qb
@@ -234,14 +247,14 @@ func (qb QB) SQL(statement Statement) Raw {
 		cloneQB := originQB
 		cloneQB.WhereAllowEmpty = true
 
-		warning := "query:"+"\n"+
+		warning := "query:" + "\n" +
 			"\t" + cloneQB.SQL(statement).Query + "\n" +
 			"If you need where is empty, set qb.WhereAllowEmpty = true"
 		Log.Warn("Maybe you forget qb.Where\n" + warning)
 	}
 	var values []interface{}
 	var sqlList stringQueue
-	if statement == StatementSelect && qb.UnionTable.Tables != nil{
+	if statement == StatementSelect && qb.UnionTable.Tables != nil {
 		unionRaw := qb.UnionTable.SQLSelect()
 		sqlList.Push(unionRaw.Query)
 		values = append(values, unionRaw.Values...)
@@ -258,7 +271,7 @@ func (qb QB) SQL(statement Statement) Raw {
 			panic(xerr.New("statement can not be " + statement.String()))
 		}
 	}
-	if qb.FromRaw.TableName.Query != ""{
+	if qb.FromRaw.TableName.Query != "" {
 		qb.from = qb.FromRaw.TableName.Query
 		values = append(values, qb.FromRaw.TableName.Values...)
 		qb.softDelete = qb.FromRaw.SoftDeleteWhere
@@ -281,13 +294,13 @@ func (qb QB) SQL(statement Statement) Raw {
 					} else {
 						warning = "qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
 					}
-					Log.Warn(warningTitle + "\n" +warning)
+					Log.Warn(warningTitle + "\n" + warning)
 					return Raw{Query: warningTitle + " " + warning}
 				} else {
 
 				}
 				sqlList.Push(strings.Join(columnsToStringsWithAS(qb.Select), ", "))
-			} else{
+			} else {
 				var rawColumns []string
 				for _, raws := range qb.SelectRaw {
 					rawColumns = append(rawColumns, raws.Query)
@@ -314,9 +327,9 @@ func (qb QB) SQL(statement Statement) Raw {
 		}
 		sqlList.Push(qb.from)
 		sqlList.Push("SET")
-		var sets  []string
+		var sets []string
 		for _, data := range qb.Set {
-			if len(data.Raw.Query) !=0  {
+			if len(data.Raw.Query) != 0 {
 				sets = append(sets, data.Raw.Query)
 				values = append(values, data.Raw.Values...)
 			} else {
@@ -385,7 +398,9 @@ func (qb QB) SQL(statement Statement) Raw {
 			whereRaw = qb.WhereRaw
 		} else {
 			tooMuchWhere := len(qb.Where) != 0 && len(qb.WhereOR) != 0
-			if tooMuchWhere { panic(xerr.New("if qb.WhereOR not empty, then qb.Where must be nil")) }
+			if tooMuchWhere {
+				panic(xerr.New("if qb.WhereOR not empty, then qb.Where must be nil"))
+			}
 			if len(qb.Where) != 0 && len(qb.WhereOR) == 0 {
 				qb.WhereOR = append(qb.WhereOR, qb.Where)
 			}
@@ -403,7 +418,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		}
 		if !qb.DisableSoftDelete {
 			needSoftDelete := qb.softDelete.Query != ""
-			if needSoftDelete  {
+			if needSoftDelete {
 				whereSoftDelete := qb.softDelete
 				values = append(values, whereSoftDelete.Values...)
 				if len(whereString) != 0 {
@@ -428,7 +443,7 @@ func (qb QB) SQL(statement Statement) Raw {
 		sqlList.Push(strings.Join(columnsToStrings(qb.GroupBy), ", "))
 	}
 	// having
-	if qb.HavingRaw.Query != ""{
+	if qb.HavingRaw.Query != "" {
 		sqlList.Push("HAVING")
 		sqlList.Push(qb.HavingRaw.Query)
 		values = append(values, qb.HavingRaw.Values...)
@@ -480,8 +495,9 @@ func (qb QB) SQL(statement Statement) Raw {
 		if qb.Review != "" {
 			qb.Reviews = append(qb.Reviews, qb.Review)
 		}
-		if len(qb.Reviews) != 0 && qb.disableSQLChecker == false{
-			matched, refs, err := qb.SQLChecker.Check(qb.Reviews, query) ; if err != nil {
+		if len(qb.Reviews) != 0 && qb.disableSQLChecker == false {
+			matched, refs, err := qb.SQLChecker.Check(qb.Reviews, query)
+			if err != nil {
 				qb.SQLChecker.TrackFail(qb.debugData.id, err, qb.Reviews, query, "")
 			} else {
 				if matched == false {
@@ -515,20 +531,21 @@ func (qb QB) Paging(page uint64, perPage uint32) QB {
 	qb.Limit = uint64(perPage)
 	return qb
 }
-func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement Statement){
+func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement Statement) {
 	var err error
 	defer func() {
 		if err != nil {
 			Log.Debug("error", "error", err)
 		}
 	}()
-	debugID, err := rand.Int(rand.Reader, new(big.Int).SetUint64(9999)) ; if err != nil {
+	debugID, err := rand.Int(rand.Reader, new(big.Int).SetUint64(9999))
+	if err != nil {
 		// 这个错误故意不处理
 		Log.Debug("error", "error", err)
 		err = nil
 	}
 	qb.debugData.id = debugID.Uint64()
-	var debugLog  []string
+	var debugLog []string
 	if qb.Debug {
 		debugLog = append(debugLog, "Debug:")
 		qb.PrintSQL = true
@@ -546,7 +563,7 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	}
 	// EXPLAIN
 	if qb.Explain {
-		row := core.QueryRowxContext(ctx, "EXPLAIN " + raw.Query, raw.Values...)
+		row := core.QueryRowxContext(ctx, "EXPLAIN "+raw.Query, raw.Values...)
 		debugLog = append(debugLog, renderExplain(qb.debugData.id, row))
 	}
 	if qb.RunTime {
@@ -558,7 +575,7 @@ func (qb *QB) execDebugBefore(ctx context.Context, storager Storager, statement 
 	return
 }
 
-func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement Statement){
+func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement Statement) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -570,13 +587,14 @@ func (qb *QB) execDebugAfter(ctx context.Context, storager Storager, statement S
 	}
 	if qb.LastQueryCost {
 		var lastQueryCost float64
-		lastQueryCost, err = coreLastQueryCost(ctx, storager) ; if err != nil {
-		    return
+		lastQueryCost, err = coreLastQueryCost(ctx, storager)
+		if err != nil {
+			return
 		}
 		Log.Debug(renderLastQueryCost(qb.debugData.id, lastQueryCost))
 	}
 }
 
-func (qb QB) whereIsEmpty () bool {
+func (qb QB) whereIsEmpty() bool {
 	return qb.Raw.IsZero() && len(qb.Where) == 0 && len(qb.WhereOR) == 0 && qb.WhereRaw.IsZero()
 }

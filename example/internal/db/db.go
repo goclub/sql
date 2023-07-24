@@ -6,7 +6,8 @@ import (
 )
 
 var DB *sq.Database
-func init () {
+
+func init() {
 	var err error
 	var dbClose func() error
 	DB, dbClose, err = sq.Open("mysql", sq.MysqlDataSource{
@@ -17,11 +18,12 @@ func init () {
 		Port:     "3306",
 		DB:       "example_goclub_sql",
 		Query: map[string]string{
-			"charset": "utf8",
+			"charset":   "utf8",
 			"parseTime": "True",
-			"loc": "Local",
+			"loc":       "Local",
 		},
-	}.FormatDSN()) ; if err != nil {
+	}.FormatDSN())
+	if err != nil {
 		// 大部分创建数据库连接失败应该panic
 		panic(err)
 	}

@@ -9,7 +9,8 @@ import (
 )
 
 var db *sq.Database
-func init () {
+
+func init() {
 	var err error
 	var dbClose func() error
 	db, dbClose, err = sq.Open("mysql", sq.MysqlDataSource{
@@ -20,11 +21,12 @@ func init () {
 		Port:     "3306",
 		DB:       "example_goclub_sql",
 		Query: map[string]string{
-			"charset": "utf8",
+			"charset":   "utf8",
 			"parseTime": "True",
-			"loc": "Local",
+			"loc":       "Local",
 		},
-	}.FormatDSN()) ; if err != nil {
+	}.FormatDSN())
+	if err != nil {
 		// 大部分创建数据库连接失败应该panic
 		panic(err)
 	}
@@ -36,7 +38,8 @@ func main() {
 	// 设置ping超时1s则视为失败
 	pingCtx, cancelFunc := context.WithTimeout(ctx, time.Second)
 	defer cancelFunc()
-	err := db.Ping(pingCtx) ; if err != nil {
+	err := db.Ping(pingCtx)
+	if err != nil {
 		panic(err)
 	}
 	log.Print("连接成功")

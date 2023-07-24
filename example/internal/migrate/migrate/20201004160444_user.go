@@ -21,7 +21,7 @@ func (dep Migrate) Migrate20201004160444CreateUserTable() (err error) {
  	  PRIMARY KEY (id),
  	  KEY name (name)
  	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`, nil); err != nil {
-	    return
+		return
 	}
 	if _, err = dep.Exec(context.TODO(), `
 	CREATE TABLE user_address (

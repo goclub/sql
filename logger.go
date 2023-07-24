@@ -17,6 +17,7 @@ type Logger interface {
 }
 
 var Log = NewZapLogger()
+
 type DefaultLog struct {
 	core *zap.SugaredLogger
 }

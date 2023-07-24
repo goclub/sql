@@ -8,7 +8,6 @@ import (
 	"strings"
 )
 
-
 const createMigratestringQueueL = `
 CREATE TABLE IF NOT EXISTS goclub_sql_migrations (
   id int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -29,10 +28,10 @@ func ExecMigrate(db *Database, ptr interface{}) (err error) {
 	rValue := rPtrValue.Elem()
 	rType := rValue.Type()
 	if _, err = db.Exec(ctx, createMigratestringQueueL, nil); err != nil {
-	    return
+		return
 	}
 	methodNames := []string{}
-	for i:=0;i<rType.NumMethod();i++ {
+	for i := 0; i < rType.NumMethod(); i++ {
 		method := rType.Method(i)
 		if strings.HasPrefix(method.Name, "Migrate") {
 			methodNames = append(methodNames, method.Name)
@@ -41,14 +40,14 @@ func ExecMigrate(db *Database, ptr interface{}) (err error) {
 	for _, methodName := range methodNames {
 		var has bool
 		if has, err = db.Has(ctx, table, QB{
- 			Where: And("name", Equal(methodName)),
- 		}); err != nil {
-		    return
+			Where: And("name", Equal(methodName)),
+		}); err != nil {
+			return
 		}
-		if has  {
+		if has {
 			continue
 		}
-		log.Print("[goclub_sql migrate]exec: " +methodName)
+		log.Print("[goclub_sql migrate]exec: " + methodName)
 		out := rValue.MethodByName(methodName).Call([]reflect.Value{})
 		if len(out) != 1 {
 			return xerr.New(methodName + "() must return error or nil")
@@ -58,14 +57,14 @@ func ExecMigrate(db *Database, ptr interface{}) (err error) {
 			return errOrNil.(error)
 		}
 		if _, err = db.Insert(ctx, QB{
- 			From: table,
- 			Insert: Values{
- 				{"name", methodName},
- 			},
- 		}); err != nil {
-		    return
+			From: table,
+			Insert: Values{
+				{"name", methodName},
+			},
+		}); err != nil {
+			return
 		}
-		log.Printf("[goclub_sql migrate]done: " +methodName)
+		log.Printf("[goclub_sql migrate]done: " + methodName)
 	}
 	return
 }

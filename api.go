@@ -44,7 +44,6 @@ type Connecter interface {
 	// 更新(返回影响行数)
 	UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error)
 
-
 	// 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
 	ClearTestData(ctx context.Context, qb QB) (result Result, err error)
 	// // 基于 Model 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
