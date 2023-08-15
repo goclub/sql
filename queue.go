@@ -174,7 +174,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 	consumed = true
 	mqResult := consume.HandleMessage(message)
 	if mqResult.err != nil {
-		consume.HandleError(err)
+		consume.HandleError(mqResult.err)
 	}
 	var execErr error
 	if mqResult.ack {
