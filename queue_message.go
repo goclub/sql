@@ -9,14 +9,14 @@ import (
 
 type Message struct {
 	QueueName        string
-	ID               uint64         `db:"id" sq:"ignoreInsert"`
-	BusinessID       uint64         `db:"business_id"`
-	NextConsumeTime  time.Time      `db:"next_consume_time"`
-	ConsumeChance    uint16         `db:"consume_chance"`
-	MaxConsumeChance uint16         `db:"max_consume_chance"`
-	UpdateID         sql.NullString `db:"update_id"`
-	Priority         uint8          `db:"priority"`
-	CreateTime       time.Time      `db:"create_time"`
+	ID               uint64    `db:"id" sq:"ignoreInsert"`
+	BusinessID       uint64    `db:"business_id"`
+	NextConsumeTime  time.Time `db:"next_consume_time"`
+	ConsumeChance    uint16    `db:"consume_chance"`
+	MaxConsumeChance uint16    `db:"max_consume_chance"`
+	UpdateID         string    `db:"update_id"`
+	Priority         uint8     `db:"priority"`
+	CreateTime       time.Time `db:"create_time"`
 	consume          Consume
 	DefaultLifeCycle
 	WithoutSoftDelete

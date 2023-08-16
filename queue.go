@@ -2,7 +2,6 @@ package sq
 
 import (
 	"context"
-	"database/sql"
 	xerr "github.com/goclub/error"
 	"strconv"
 	"time"
@@ -15,9 +14,11 @@ type Publish struct {
 	Priority         uint8 `default:"100"`
 }
 
-func (tx *T) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
+func corePublishMessage(ctx context.Context, queueTimeLocation *time.Location, s interface {
+	InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error)
+}, queueName string, publish Publish) (message Message, err error) {
 	if queueName == "" {
-		err = xerr.New("goclub/sql: T{}.PublishMessage(ctx, queueName, publish) queue can not be empty string")
+		err = xerr.New("goclub/sql: PublishMessage(ctx, queueName, publish) queue can not be empty string")
 		return
 	}
 	if publish.Priority == 0 {
@@ -27,16 +28,22 @@ func (tx *T) PublishMessage(ctx context.Context, queueName string, publish Publi
 		QueueName:        queueName,
 		BusinessID:       publish.BusinessID,
 		Priority:         publish.Priority,
-		NextConsumeTime:  time.Now().In(tx.db.QueueTimeLocation).Add(publish.NextConsumeTime),
+		NextConsumeTime:  time.Now().In(queueTimeLocation).Add(publish.NextConsumeTime),
 		ConsumeChance:    0,
 		MaxConsumeChance: publish.MaxConsumeChance,
-		UpdateID:         sql.NullString{},
+		UpdateID:         "",
 	}
-	_, err = tx.InsertModel(ctx, &message, QB{})
+	_, err = s.InsertModel(ctx, &message, QB{})
 	if err != nil {
 		return
 	}
 	return
+}
+func (db *Database) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
+	return corePublishMessage(ctx, db.QueueTimeLocation, db, queueName, publish)
+}
+func (tx *T) PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error) {
+	return corePublishMessage(ctx, tx.db.QueueTimeLocation, tx, queueName, publish)
 }
 
 type Consume struct {
@@ -67,7 +74,7 @@ func (db *Database) InitQueue(ctx context.Context, queueName string) (err error)
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		business_id bigint(20) unsigned NOT NULL,
 		priority tinyint(3) unsigned NOT NULL,
-		update_id char(21) DEFAULT '',
+		update_id char(21) NOT NULL,
 		consume_chance smallint(6) unsigned NOT NULL,
 		max_consume_chance smallint(6) unsigned NOT NULL,
 		next_consume_time datetime NOT NULL,

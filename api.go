@@ -72,6 +72,7 @@ type Connecter interface {
 	LastQueryCost(ctx context.Context) (lastQueryCost float64, err error)
 	// 打印 show status like "last_query_cost" 的结果
 	PrintLastQueryCost(ctx context.Context)
+	PublishMessage(ctx context.Context, queueName string, publish Publish) (message Message, err error)
 }
 
 func verifyDoc() {
