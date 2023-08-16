@@ -60,6 +60,7 @@ func (v *DeadLetterQueueMessage) AfterInsert(result Result) error {
 type MessageResult struct {
 	ack              bool
 	requeue          bool
+	requeueDelay     time.Duration
 	deadLetter       bool
 	deadLetterReason string
 	err              error
@@ -78,6 +79,13 @@ func (v MessageResult) WithError(err error) MessageResult {
 func (Message) Ack() MessageResult {
 	return MessageResult{
 		ack: true,
+	}
+}
+func (Message) RequeueDelay(duration time.Duration, err error) MessageResult {
+	return MessageResult{
+		requeue:      true,
+		requeueDelay: duration,
+		err:          err,
 	}
 }
 func (Message) Requeue(err error) MessageResult {
@@ -105,12 +113,15 @@ func (message Message) execAck(db *Database) (err error) {
 	return
 }
 
-func (message Message) execRequeue(db *Database) (err error) {
+func (message Message) execRequeue(db *Database, delay time.Duration) (err error) {
 	ctx := context.Background()
 	if message.ConsumeChance == message.MaxConsumeChance {
 		return message.execDeadLetter(db, "MAX_CONSUME_CHANCE")
 	}
-	nextConsumeDuration := message.consume.NextConsumeTime(message.ConsumeChance, message.MaxConsumeChance)
+	nextConsumeDuration := delay
+	if nextConsumeDuration == 0 {
+		nextConsumeDuration = message.consume.NextConsumeTime(message.ConsumeChance, message.MaxConsumeChance)
+	}
 	if _, err = db.Update(ctx, &message, QB{
 		Where: And("id", Equal(message.ID)),
 		Set:   Set("next_consume_time", time.Now().In(message.consume.queueTimeLocation).Add(nextConsumeDuration)),

@@ -189,7 +189,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 			consume.HandleError(execErr)
 		}
 	} else if mqResult.requeue {
-		if execErr = message.execRequeue(db); execErr != nil {
+		if execErr = message.execRequeue(db, mqResult.requeueDelay); execErr != nil {
 			consume.HandleError(execErr)
 		}
 	} else if mqResult.deadLetter {
