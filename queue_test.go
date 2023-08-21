@@ -2,30 +2,16 @@ package sq_test
 
 import (
 	"context"
-	rand "crypto/rand"
 	"database/sql"
 	xerr "github.com/goclub/error"
 	sq "github.com/goclub/sql"
 	"github.com/stretchr/testify/assert"
 	"log"
-	"math/big"
-	"runtime/debug"
+	"math/rand"
 	"testing"
 	"time"
 )
 
-func RangeUint64(min uint64, max uint64) (random uint64, err error) {
-	if max < min {
-		min, max = max, min
-		log.Print("goclub/rand: RangeUint64(min, max) max should greater than or equal to min", "\n", string(debug.Stack()))
-	}
-	bigInt, err := rand.Int(rand.Reader, new(big.Int).SetUint64(max+1-min))
-	if err != nil {
-		return 0, err
-	}
-	random = bigInt.Uint64() + min
-	return random, err
-}
 func TestQueueMessage(t *testing.T) {
 	log.Print("skip TestQueueMessage (return)")
 	return
@@ -77,13 +63,9 @@ func TestQueueMessage(t *testing.T) {
 					log.Printf("%+v", err)
 				},
 				HandleMessage: func(message sq.Message) sq.MessageResult {
-					var random uint64
 					log.Print("consume message:", message.ID)
-					if random, err = RangeUint64(0, 2); err != nil { // indivisible end
-						// return err 等同于 requeueWithError(err)
-						return message.Requeue(err)
-					}
-					random = 1
+					random := rand.Uint64() % 3 // 0 1 2
+					// random = 1
 					switch random {
 					// 确认并删除消息
 					case 0:

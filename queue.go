@@ -77,7 +77,7 @@ func (db *Database) InitQueue(ctx context.Context, queueName string) (err error)
 		update_id char(21) NOT NULL,
 		consume_chance smallint(6) unsigned NOT NULL,
 		max_consume_chance smallint(6) unsigned NOT NULL,
-		next_consume_time datetime NOT NULL,
+		next_consume_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (id),
 		KEY business_id (business_id),
