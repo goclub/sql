@@ -34,29 +34,6 @@ func (v *Message) AfterInsert(result Result) error {
 	return nil
 }
 
-type DeadLetterQueueMessage struct {
-	QueueName  string
-	ID         uint64    `db:"id" sq:"ignoreInsert"`
-	BusinessID uint64    `db:"business_id"`
-	Reason     string    `db:"reason"`
-	CreateTime time.Time `db:"create_time"`
-	DefaultLifeCycle
-	WithoutSoftDelete
-}
-
-func (q *DeadLetterQueueMessage) TableName() string {
-	return "queue_" + q.QueueName + "_dead_letter"
-}
-
-func (v *DeadLetterQueueMessage) AfterInsert(result Result) error {
-	id, err := result.LastInsertUint64Id()
-	if err != nil {
-		return err
-	}
-	v.ID = uint64(id)
-	return nil
-}
-
 type MessageResult struct {
 	ack              bool
 	requeue          bool
@@ -103,7 +80,7 @@ func (Message) DeadLetter(reason string, err error) MessageResult {
 }
 func (message Message) execAck(db *Database) (err error) {
 	ctx := context.Background()
-	if _, err = db.HardDelete(ctx, QB{
+	if err = db.HardDelete(ctx, QB{
 		From:  &message,
 		Where: And("id", Equal(message.ID)),
 		Limit: 1,
@@ -122,7 +99,7 @@ func (message Message) execRequeue(db *Database, delay time.Duration) (err error
 	if nextConsumeDuration == 0 {
 		nextConsumeDuration = message.consume.NextConsumeTime(message.ConsumeChance, message.MaxConsumeChance)
 	}
-	if _, err = db.Update(ctx, &message, QB{
+	if err = db.Update(ctx, &message, QB{
 		Where: And("id", Equal(message.ID)),
 		Set:   Set("next_consume_time", time.Now().In(message.consume.queueTimeLocation).Add(nextConsumeDuration)),
 		Limit: 1,
@@ -135,14 +112,14 @@ func (message Message) execDeadLetter(db *Database, reason string) (err error) {
 	ctx := context.Background()
 	var rollbackNoError bool
 	if rollbackNoError, err = db.Begin(ctx, sql.LevelReadCommitted, func(tx *T) TxResult {
-		if _, err = tx.HardDelete(ctx, QB{
+		if err = tx.HardDelete(ctx, QB{
 			From:  &message,
 			Where: And("id", Equal(message.ID)),
 			Limit: 1,
 		}); err != nil { // indivisible end
 			return tx.RollbackWithError(err)
 		}
-		if _, err = tx.InsertModel(ctx, &DeadLetterQueueMessage{
+		if err = tx.InsertModel(ctx, &DeadLetterQueueMessage{
 			QueueName:  message.QueueName,
 			BusinessID: message.BusinessID,
 			Reason:     reason,

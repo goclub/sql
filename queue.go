@@ -15,7 +15,7 @@ type Publish struct {
 }
 
 func corePublishMessage(ctx context.Context, queueTimeLocation *time.Location, s interface {
-	InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error)
+	InsertModel(ctx context.Context, ptr Model, qb QB) (err error)
 }, queueName string, publish Publish) (message Message, err error) {
 	if queueName == "" {
 		err = xerr.New("goclub/sql: PublishMessage(ctx, queueName, publish) queue can not be empty string")
@@ -33,7 +33,7 @@ func corePublishMessage(ctx context.Context, queueTimeLocation *time.Location, s
 		MaxConsumeChance: publish.MaxConsumeChance,
 		UpdateID:         "",
 	}
-	_, err = s.InsertModel(ctx, &message, QB{})
+	err = s.InsertModel(ctx, &message, QB{})
 	if err != nil {
 		return
 	}
@@ -74,7 +74,7 @@ func (db *Database) InitQueue(ctx context.Context, queueName string) (err error)
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		business_id bigint(20) unsigned NOT NULL,
 		priority tinyint(3) unsigned NOT NULL,
-		update_id char(21) NOT NULL,
+		update_id char(24) NOT NULL,
 		consume_chance smallint(6) unsigned NOT NULL,
 		max_consume_chance smallint(6) unsigned NOT NULL,
 		next_consume_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -92,9 +92,12 @@ func (db *Database) InitQueue(ctx context.Context, queueName string) (err error)
 		id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 		business_id bigint(20) unsigned NOT NULL,
 		reason varchar(255) NOT NULL DEFAULT '',
+		handled tinyint(3) unsigned NOT NULL,
+  		handled_result varchar(255) NOT NULL,
 		create_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (id),
-		KEY business_id (business_id)
+		KEY business_id (business_id),
+		KEY create_time (create_time)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
 	_, err = db.Exec(ctx, createDeadLetterTableSQL, nil) // indivisible begin
 	if err != nil {                                      // indivisible end
@@ -145,9 +148,9 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 	if len(queueIDs) == 0 {
 		return
 	}
-	updateID := NanoID21()
+	updateID := NanoID24()
 	// 通过更新并发安全的标记数据 (使用where id = 进行更新,避免并发事务死锁)
-	change, err := RowsAffected(db.Update(ctx, &message, QB{
+	change, err := db.UpdateAffected(ctx, &message, QB{
 		Index: "update_id",
 		Set: Set("update_id", updateID).
 			SetRaw(`consume_chance = consume_chance + ?`, 1).
@@ -158,7 +161,7 @@ func (db *Database) tryReadQueueMessage(ctx context.Context, consume Consume) (c
 			{"priority", DESC},
 		},
 		Limit: 1,
-	})) // indivisible begin
+	}) // indivisible begin
 	if err != nil { // indivisible end
 		return
 	}

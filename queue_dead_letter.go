@@ -16,3 +16,28 @@ type DeadLetterHandler interface {
 	// ArchiveHandledDeadLetter 将已处理过的死信消息归档以备将来分析
 	ArchiveHandledDeadLetter(ctx context.Context, ago time.Duration) (cleanCount bool, err error)
 }
+
+type DeadLetterQueueMessage struct {
+	QueueName     string
+	ID            uint64    `db:"id" sq:"ignoreInsert"`
+	BusinessID    uint64    `db:"business_id"`
+	Reason        string    `db:"reason"`
+	Handled       bool      `db:"handled"`
+	HandledResult string    `db:"handled_result"`
+	CreateTime    time.Time `db:"create_time"`
+	DefaultLifeCycle
+	WithoutSoftDelete
+}
+
+func (q *DeadLetterQueueMessage) TableName() string {
+	return "queue_" + q.QueueName + "_dead_letter"
+}
+
+func (v *DeadLetterQueueMessage) AfterInsert(result Result) error {
+	id, err := result.LastInsertUint64Id()
+	if err != nil {
+		return err
+	}
+	v.ID = id
+	return nil
+}
