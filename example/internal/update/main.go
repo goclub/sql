@@ -30,12 +30,11 @@ func example(ctx context.Context) (err error) {
 		// Review 的作用是用于审查 sql 或增加代码可读性，可以忽略
 		Review: "UPDATE `user` SET `mobile`= ?,`name`= ? WHERE `id` = ? AND `deleted_at` IS NULL",
 	}
-	result, err := db.Update(ctx, qb)
+	affected, err := db.UpdateAffected(ctx, &m.TableUser{}, qb)
 	if err != nil {
 		// 无法处理的错误应当向上传递
 		return
 	}
-	affected, err := result.RowsAffected()
 	if err != nil {
 		return
 	}

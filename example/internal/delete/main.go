@@ -24,7 +24,7 @@ func example(ctx context.Context) (err error) {
 		Mobile:        "13400001111",
 		ChinaIDCardNo: "340828199912121111",
 	}
-	_, err = db.InsertModel(ctx, &insertUser, sq.QB{
+	err = db.InsertModel(ctx, &insertUser, sq.QB{
 		UseInsertIgnoreInto: true,
 	})
 	if err != nil {

@@ -28,13 +28,13 @@ func example(ctx context.Context) (err error) {
 			Mobile:        "13411122222",
 			ChinaIDCardNo: "310113199912121112",
 		}
-		_, err = tx.InsertModel(ctx, &insertUser, sq.QB{
+		err = tx.InsertModel(ctx, &insertUser, sq.QB{
 			UseInsertIgnoreInto: true, // 为了便于测试忽略重复插入
 		})
 		if err != nil {
 			return tx.RollbackWithError(err)
 		}
-		_, err = tx.InsertModel(ctx, &m.UserAddress{
+		err = tx.InsertModel(ctx, &m.UserAddress{
 			UserID:  insertUser.ID,
 			Address: "天堂路",
 		}, sq.QB{

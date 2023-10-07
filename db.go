@@ -83,14 +83,20 @@ func coreInsert(ctx context.Context, storager Storager, qb QB) (result Result, e
 	return coreExecQB(ctx, storager, qb, StatementInsert)
 }
 
-func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
-	return coreInsertModel(ctx, db, ptr, qb)
+func (db *Database) InsertModel(ctx context.Context, ptr Model, qb QB) (err error) {
+	if _, err = coreInsertModel(ctx, db, ptr, qb); err != nil {
+		return
+	}
+	return
 }
 func (db *Database) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
 	return RowsAffected(coreInsertModel(ctx, db, ptr, qb))
 }
-func (tx *T) InsertModel(ctx context.Context, ptr Model, qb QB) (result Result, err error) {
-	return coreInsertModel(ctx, tx, ptr, qb)
+func (tx *T) InsertModel(ctx context.Context, ptr Model, qb QB) (err error) {
+	if _, err = coreInsertModel(ctx, tx, ptr, qb); err != nil {
+		return
+	}
+	return
 }
 func (tx *T) InsertModelAffected(ctx context.Context, ptr Model, qb QB) (affected int64, err error) {
 	return RowsAffected(coreInsertModel(ctx, tx, ptr, qb))
@@ -167,14 +173,14 @@ func insertEachField(elemValue reflect.Value, elemType reflect.Type, handle func
 		handle(column, fieldType, fieldValue)
 	}
 }
-func (db *Database) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
+func (db *Database) QueryRow(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
 	err = qb.mustInTransaction()
 	if err != nil {
 		return
 	}
 	return coreQueryRowScan(ctx, db, qb, desc)
 }
-func (tx *T) QueryRowScan(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
+func (tx *T) QueryRow(ctx context.Context, qb QB, desc []interface{}) (has bool, err error) {
 	return coreQueryRowScan(ctx, tx, qb, desc)
 }
 func coreQueryRowScan(ctx context.Context, storager Storager, qb QB, desc []interface{}) (has bool, err error) {
@@ -428,14 +434,20 @@ func coreSum(ctx context.Context, storager Storager, from Tabler, column Column,
 	return
 }
 
-func (db *Database) Update(ctx context.Context, from Tabler, qb QB) (result Result, err error) {
-	return coreUpdate(ctx, db, from, qb)
+func (db *Database) Update(ctx context.Context, from Tabler, qb QB) (err error) {
+	if _, err = coreUpdate(ctx, db, from, qb); err != nil {
+		return
+	}
+	return
 }
 func (db *Database) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
 	return RowsAffected(coreUpdate(ctx, db, from, qb))
 }
-func (tx *T) Update(ctx context.Context, from Tabler, qb QB) (result Result, err error) {
-	return coreUpdate(ctx, tx, from, qb)
+func (tx *T) Update(ctx context.Context, from Tabler, qb QB) (err error) {
+	if _, err = coreUpdate(ctx, tx, from, qb); err != nil {
+		return
+	}
+	return
 }
 func (tx *T) UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
 	return RowsAffected(coreUpdate(ctx, tx, from, qb))
@@ -463,7 +475,7 @@ func coreUpdate(ctx context.Context, storager Storager, from Tabler, qb QB) (res
 
 func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	var databaseName string
-	_, err = db.QueryRowScan(ctx, QB{Raw: Raw{"SELECT DATABASE()", nil}}, []interface{}{&databaseName})
+	_, err = db.QueryRow(ctx, QB{Raw: Raw{"SELECT DATABASE()", nil}}, []interface{}{&databaseName})
 	if err != nil {
 		return
 	}
@@ -472,7 +484,7 @@ func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	}
 	return
 }
-func (db *Database) ClearTestData(ctx context.Context, qb QB) (result Result, err error) {
+func (db *Database) ClearTestData(ctx context.Context, qb QB) (err error) {
 	defer func() {
 		if err != nil {
 			err = xerr.WithStack(err)
@@ -484,14 +496,20 @@ func (db *Database) ClearTestData(ctx context.Context, qb QB) (result Result, er
 	}
 	return db.HardDelete(ctx, qb)
 }
-func (db *Database) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
-	return coreHardDelete(ctx, db, qb)
+func (db *Database) HardDelete(ctx context.Context, qb QB) (err error) {
+	if _, err = coreHardDelete(ctx, db, qb); err != nil {
+		return
+	}
+	return
 }
 func (db *Database) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreHardDelete(ctx, db, qb))
 }
-func (tx *T) HardDelete(ctx context.Context, qb QB) (result Result, err error) {
-	return coreHardDelete(ctx, tx, qb)
+func (tx *T) HardDelete(ctx context.Context, qb QB) (err error) {
+	if _, err = coreHardDelete(ctx, tx, qb); err != nil {
+		return
+	}
+	return
 }
 func (tx *T) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreHardDelete(ctx, tx, qb))

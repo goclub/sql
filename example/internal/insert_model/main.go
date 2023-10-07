@@ -24,7 +24,7 @@ func example(ctx context.Context) (err error) {
 	}
 	// InsertModel 会自动获取 user 的结构体字段(struct field),会忽略 struct tag 中带有 sq:"ignoreInsert" 的字段
 	// 使用 InsertModel 时 sq.QB 不需要配置 Form
-	_, err = db.InsertModel(ctx, &user, sq.QB{
+	err = db.InsertModel(ctx, &user, sq.QB{
 		// Review 的作用是用于审查 sql 或增加代码可读性，可以忽略
 		Review: "INSERT INTO `user` (`name`,`mobile`,`china_id_card_no`,`created_at`,`updated_at`) VALUES (?,?,?,?,?)",
 	})
