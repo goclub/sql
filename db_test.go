@@ -937,25 +937,24 @@ func (suite TestDBSuite) TestSoftDelete() {
 		assert.Equal(t, count, uint64(2))
 	}
 	{
-		result, err := testDB.SoftDelete(context.TODO(), sq.QB{
+		affected, err := testDB.SoftDeleteAffected(context.TODO(), sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews: []string{"UPDATE `user` SET `deleted_at` = ? WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
 		})
 		assert.NoError(t, err)
-		affected, err := result.RowsAffected()
 		assert.NoError(t, err)
 		assert.Equal(t, affected, int64(2))
 	}
 	{
-		_, err := testDB.SoftDelete(context.TODO(), sq.QB{
+		err := testDB.SoftDelete(context.TODO(), sq.QB{
 			From:            &User{},
 			WhereAllowEmpty: true,
 		})
 		assert.EqualError(t, err, "Error 1064: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'goclub/sql:(MAYBE_FORGET_WHERE)' at line 1")
 	}
 	{
-		_, err := testDB.SoftDelete(context.TODO(), sq.QB{
+		err := testDB.SoftDelete(context.TODO(), sq.QB{
 			From: sq.Table("user", nil, nil),
 		})
 		assert.EqualError(t, err, "goclub/sql: SoftDelete(ctx, qb) qb.Form.SoftDeleteWhere().Query can not be empty string")

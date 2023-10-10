@@ -555,15 +555,21 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Resul
 // 	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
 // 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 // }
-func (db *Database) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
-	return coreSoftDelete(ctx, db, qb)
+func (db *Database) SoftDelete(ctx context.Context, qb QB) (err error) {
+	if _, err = coreSoftDelete(ctx, db, qb); err != nil {
+		return
+	}
+	return
 }
 func (db *Database) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreSoftDelete(ctx, db, qb))
 }
 
-func (tx *T) SoftDelete(ctx context.Context, qb QB) (result Result, err error) {
-	return coreSoftDelete(ctx, tx, qb)
+func (tx *T) SoftDelete(ctx context.Context, qb QB) (err error) {
+	if _, err = coreSoftDelete(ctx, tx, qb); err != nil {
+		return
+	}
+	return
 }
 func (tx *T) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
 	return RowsAffected(coreSoftDelete(ctx, tx, qb))

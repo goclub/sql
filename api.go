@@ -52,7 +52,7 @@ type API interface {
 	// HardDeleteAffected 硬删除（不可恢复）(返回影响行数)
 	HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error)
 	// SoftDelete 软删除（可恢复）
-	SoftDelete(ctx context.Context, qb QB) (result Result, err error)
+	SoftDelete(ctx context.Context, qb QB) (err error)
 	// SoftDeleteAffected 软删除（可恢复）(返回影响行数)
 	SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error)
 
