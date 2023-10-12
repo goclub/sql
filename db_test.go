@@ -61,8 +61,7 @@ func (suite TestDBSuite) TestInsert() {
 	userCol := User{}.Column()
 	newID := sq.UUID()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
-			From:    &TableUser{},
+		err := testDB.ClearTestData(context.TODO(), &TableUser{}, sq.QB{
 			Where:   sq.And(userCol.Name, sq.Like("TestInsert")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -101,8 +100,7 @@ func (suite TestDBSuite) TestInsertModel() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
-			From:    &User{},
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestInsertModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -147,8 +145,7 @@ func (suite TestDBSuite) TestQueryRowScan() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
-			From:    &User{},
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
 		})
@@ -195,7 +192,7 @@ func (suite TestDBSuite) TestQuery() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestQueryRowScan")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -258,7 +255,7 @@ func (suite TestDBSuite) TestQuerySliceScaner() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestQuerySliceScaner")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -310,7 +307,7 @@ func (suite TestDBSuite) TestQuerySlice() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestQuerySlice")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -352,7 +349,7 @@ func (suite TestDBSuite) TestCount() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestCount")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -398,7 +395,7 @@ func (suite TestDBSuite) TestHas() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestHas")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -434,7 +431,7 @@ func (suite TestDBSuite) TestSum() {
 	userCol := User{}.Column()
 	// 清空数据
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestSum")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -510,7 +507,7 @@ func (suite TestDBSuite) TestSum() {
 // 	userCol := User{}.Column()
 // 	newID := sq.UUID()
 // 	{
-// 		err := testDB.ClearTestData(context.TODO(), sq.QB{
+// 		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 // 			From: &User{},
 // 			Where: sq.And(userCol.Name, sq.Like("TestQueryModel")),
 // 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -551,7 +548,7 @@ func (suite TestDBSuite) TestQueryModelSlice() {
 	userCol := User{}.Column()
 
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestQueryModelSlice")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -610,7 +607,7 @@ func (suite TestDBSuite) TestUpdate() {
 	createTime := time.Now()
 	_ = createTime
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestUpdate")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -679,7 +676,7 @@ func (suite TestDBSuite) TestUpdateModel() {
 	_ = createTime
 
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestUpdateModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -751,7 +748,7 @@ func (suite TestDBSuite) TestHardDelete() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestHardDelete")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -793,7 +790,7 @@ func (suite TestDBSuite) TestHardDelete() {
 		assert.Equal(t, count, uint64(1))
 	}
 	{
-		affected, err := testDB.HardDeleteAffected(context.TODO(), sq.QB{
+		affected, err := testDB.HardDeleteAffected(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestHardDelete")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -817,7 +814,7 @@ func (suite TestDBSuite) TestHardDeleteModel() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestHardDeleteModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -882,7 +879,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestSoftDelete")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -937,7 +934,7 @@ func (suite TestDBSuite) TestSoftDelete() {
 		assert.Equal(t, count, uint64(2))
 	}
 	{
-		affected, err := testDB.SoftDeleteAffected(context.TODO(), sq.QB{
+		affected, err := testDB.SoftDeleteAffected(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.LikeLeft("TestSoftDelete")),
 			Reviews: []string{"UPDATE `user` SET `deleted_at` = ? WHERE `name` LIKE ? AND `deleted_at` IS NULL"},
@@ -947,14 +944,14 @@ func (suite TestDBSuite) TestSoftDelete() {
 		assert.Equal(t, affected, int64(2))
 	}
 	{
-		err := testDB.SoftDelete(context.TODO(), sq.QB{
+		err := testDB.SoftDelete(context.TODO(), &User{}, sq.QB{
 			From:            &User{},
 			WhereAllowEmpty: true,
 		})
 		assert.EqualError(t, err, "Error 1064: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'goclub/sql:(MAYBE_FORGET_WHERE)' at line 1")
 	}
 	{
-		err := testDB.SoftDelete(context.TODO(), sq.QB{
+		err := testDB.SoftDelete(context.TODO(), &User{}, sq.QB{
 			From: sq.Table("user", nil, nil),
 		})
 		assert.EqualError(t, err, "goclub/sql: SoftDelete(ctx, qb) qb.Form.SoftDeleteWhere().Query can not be empty string")
@@ -965,7 +962,7 @@ func (suite TestDBSuite) TestSoftDeleteModel() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestSoftDeleteModel")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -1018,7 +1015,7 @@ func (suite TestDBSuite) TestExecQB() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestExecQB")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -1055,7 +1052,7 @@ func (suite TestDBSuite) TestTransaction() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestTransaction")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -1148,7 +1145,7 @@ func (suite TestDBSuite) TestQueryRelation() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestQueryRelation")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -1156,7 +1153,7 @@ func (suite TestDBSuite) TestQueryRelation() {
 		assert.NoError(t, err)
 	}
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    UserAddress{},
 			Where:   sq.And("address", sq.Like("TestQueryRelation_address")),
 			Reviews: []string{"DELETE FROM `user_address` WHERE `address` LIKE ?"},
@@ -1204,7 +1201,7 @@ func (suite TestDBSuite) TestQueryRelationSlice() {
 	t := suite.T()
 	userCol := User{}.Column()
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    &User{},
 			Where:   sq.And(userCol.Name, sq.Like("TestQueryRelationSlice")),
 			Reviews: []string{"DELETE FROM `user` WHERE `name` LIKE ?"},
@@ -1212,7 +1209,7 @@ func (suite TestDBSuite) TestQueryRelationSlice() {
 		assert.NoError(t, err)
 	}
 	{
-		err := testDB.ClearTestData(context.TODO(), sq.QB{
+		err := testDB.ClearTestData(context.TODO(), &User{}, sq.QB{
 			From:    UserAddress{},
 			Where:   sq.And("address", sq.Like("TestQueryRelationSlice_address")),
 			Reviews: []string{"DELETE FROM `user_address` WHERE `address` LIKE ?"},

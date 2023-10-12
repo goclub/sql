@@ -80,8 +80,7 @@ func (Message) DeadLetter(reason string, err error) MessageResult {
 }
 func (message Message) execAck(db *Database) (err error) {
 	ctx := context.Background()
-	if err = db.HardDelete(ctx, QB{
-		From:  &message,
+	if err = db.HardDelete(ctx, &message, QB{
 		Where: And("id", Equal(message.ID)),
 		Limit: 1,
 	}); err != nil {
@@ -112,8 +111,7 @@ func (message Message) execDeadLetter(db *Database, reason string) (err error) {
 	ctx := context.Background()
 	var rollbackNoError bool
 	if rollbackNoError, err = db.Begin(ctx, sql.LevelReadCommitted, func(tx *T) TxResult {
-		if err = tx.HardDelete(ctx, QB{
-			From:  &message,
+		if err = tx.HardDelete(ctx, &message, QB{
 			Where: And("id", Equal(message.ID)),
 			Limit: 1,
 		}); err != nil { // indivisible end
