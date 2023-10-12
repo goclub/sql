@@ -43,18 +43,18 @@ type API interface {
 	// UpdateAffected 更新(返回影响行数)
 	UpdateAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error)
 	// ClearTestData 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
-	ClearTestData(ctx context.Context, qb QB) (err error)
+	ClearTestData(ctx context.Context, form Tabler, qb QB) (err error)
 	// // 基于 Model 删除测试数据库的数据，只能运行在 test_ 为前缀的数据库中
 	// ClearTestModel(ctx context.Context, model Model, qb QB) (result Result, err error)
 
 	// HardDelete 硬删除（不可恢复）
-	HardDelete(ctx context.Context, qb QB) (err error)
+	HardDelete(ctx context.Context, form Tabler, qb QB) (err error)
 	// HardDeleteAffected 硬删除（不可恢复）(返回影响行数)
-	HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error)
+	HardDeleteAffected(ctx context.Context, form Tabler, qb QB) (affected int64, err error)
 	// SoftDelete 软删除（可恢复）
-	SoftDelete(ctx context.Context, qb QB) (err error)
+	SoftDelete(ctx context.Context, form Tabler, qb QB) (err error)
 	// SoftDeleteAffected 软删除（可恢复）(返回影响行数)
-	SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error)
+	SoftDeleteAffected(ctx context.Context, form Tabler, qb QB) (affected int64, err error)
 
 	// ExecQB 执行QB
 	ExecQB(ctx context.Context, qb QB, statement Statement) (result Result, err error)
@@ -98,7 +98,7 @@ func (onlyDB) Ping(ctx context.Context) error {
 func (onlyDB) Close() error {
 	return nil
 }
-func (onlyDB) ClearTestData(ctx context.Context, qb QB) (err error) {
+func (onlyDB) ClearTestData(ctx context.Context, form Tabler, qb QB) (err error) {
 	return
 }
 func (onlyDB) Begin(ctx context.Context, level sql.IsolationLevel, handle func(tx *T) TxResult) (rollbackNoError bool, err error) {

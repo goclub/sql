@@ -32,7 +32,7 @@ func example(ctx context.Context) (err error) {
 	}
 	userID := insertUser.ID
 	// 软删
-	_, err = db.SoftDelete(ctx, sq.QB{
+	err = db.SoftDelete(ctx, sq.QB{
 		From: &m.TableUser{},
 		Where: sq.
 			And(col.ID, sq.Equal(userID)),

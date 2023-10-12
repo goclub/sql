@@ -30,7 +30,7 @@ func init() {
 		// 大部分创建数据库连接失败应该panic
 		panic(err)
 	}
-	// 使用 init 方式连接数据库则无需 close ，依赖注入场景下才需要 close
+	// 使用 init 方式连接数据库则无需 close ，程序退出再执行close
 	_ = dbClose()
 }
 func main() {

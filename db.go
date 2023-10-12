@@ -484,7 +484,7 @@ func (db *Database) checkIsTestDatabase(ctx context.Context) (err error) {
 	}
 	return
 }
-func (db *Database) ClearTestData(ctx context.Context, qb QB) (err error) {
+func (db *Database) ClearTestData(ctx context.Context, from Tabler, qb QB) (err error) {
 	defer func() {
 		if err != nil {
 			err = xerr.WithStack(err)
@@ -494,32 +494,35 @@ func (db *Database) ClearTestData(ctx context.Context, qb QB) (err error) {
 	if err != nil {
 		return
 	}
-	return db.HardDelete(ctx, qb)
+	return db.HardDelete(ctx, from, qb)
 }
-func (db *Database) HardDelete(ctx context.Context, qb QB) (err error) {
-	if _, err = coreHardDelete(ctx, db, qb); err != nil {
+func (db *Database) HardDelete(ctx context.Context, from Tabler, qb QB) (err error) {
+	if _, err = coreHardDelete(ctx, db, from, qb); err != nil {
 		return
 	}
 	return
 }
-func (db *Database) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
-	return RowsAffected(coreHardDelete(ctx, db, qb))
+func (db *Database) HardDeleteAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
+	return RowsAffected(coreHardDelete(ctx, db, from, qb))
 }
-func (tx *T) HardDelete(ctx context.Context, qb QB) (err error) {
-	if _, err = coreHardDelete(ctx, tx, qb); err != nil {
+func (tx *T) HardDelete(ctx context.Context, from Tabler, qb QB) (err error) {
+	if _, err = coreHardDelete(ctx, tx, from, qb); err != nil {
 		return
 	}
 	return
 }
-func (tx *T) HardDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
-	return RowsAffected(coreHardDelete(ctx, tx, qb))
+func (tx *T) HardDeleteAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
+	return RowsAffected(coreHardDelete(ctx, tx, from, qb))
 }
-func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
+func coreHardDelete(ctx context.Context, storager Storager, from Tabler, qb QB) (result Result, err error) {
 	defer func() {
 		if err != nil {
 			err = xerr.WithStack(err)
 		}
 	}()
+	if qb.From == nil {
+		qb.From = from
+	}
 	qb.SQLChecker = storager.getSQLChecker()
 	raw := qb.SQLDelete()
 	result.core, err = storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
@@ -555,31 +558,34 @@ func coreHardDelete(ctx context.Context, storager Storager, qb QB) (result Resul
 // 	defer qb.execDebugAfter(ctx, storager, StatementUpdate)
 // 	return storager.getCore().ExecContext(ctx, raw.Query, raw.Values...)
 // }
-func (db *Database) SoftDelete(ctx context.Context, qb QB) (err error) {
-	if _, err = coreSoftDelete(ctx, db, qb); err != nil {
+func (db *Database) SoftDelete(ctx context.Context, from Tabler, qb QB) (err error) {
+	if _, err = coreSoftDelete(ctx, db, from, qb); err != nil {
 		return
 	}
 	return
 }
-func (db *Database) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
-	return RowsAffected(coreSoftDelete(ctx, db, qb))
+func (db *Database) SoftDeleteAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
+	return RowsAffected(coreSoftDelete(ctx, db, from, qb))
 }
 
-func (tx *T) SoftDelete(ctx context.Context, qb QB) (err error) {
-	if _, err = coreSoftDelete(ctx, tx, qb); err != nil {
+func (tx *T) SoftDelete(ctx context.Context, from Tabler, qb QB) (err error) {
+	if _, err = coreSoftDelete(ctx, tx, from, qb); err != nil {
 		return
 	}
 	return
 }
-func (tx *T) SoftDeleteAffected(ctx context.Context, qb QB) (affected int64, err error) {
-	return RowsAffected(coreSoftDelete(ctx, tx, qb))
+func (tx *T) SoftDeleteAffected(ctx context.Context, from Tabler, qb QB) (affected int64, err error) {
+	return RowsAffected(coreSoftDelete(ctx, tx, from, qb))
 }
-func coreSoftDelete(ctx context.Context, storager Storager, qb QB) (result Result, err error) {
+func coreSoftDelete(ctx context.Context, storager Storager, from Tabler, qb QB) (result Result, err error) {
 	defer func() {
 		if err != nil {
 			err = xerr.WithStack(err)
 		}
 	}()
+	if qb.From == nil {
+		qb.From = from
+	}
 	softDeleteWhere := qb.From.SoftDeleteWhere()
 	if softDeleteWhere.Query == "" {
 		err = xerr.New("goclub/sql: SoftDelete(ctx, qb) qb.Form.SoftDeleteWhere().Query can not be empty string")
