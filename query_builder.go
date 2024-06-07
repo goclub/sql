@@ -290,7 +290,7 @@ func (qb QB) SQL(statement Statement) Raw {
 					warningTitle := "goclub/sql: (NO SELECT FIELD)"
 					var warning string
 					if qb.From != nil {
-						warning = "qb.From field does not have db struct tag( XXX string `db:\"name\"` ), or you forget set qb.Select"
+						warning = "qb.From field does not have db struct tag or you forget set qb.Select"
 					} else {
 						warning = "qb.Select is empty and qb.Form is nil, maybe you forget set qb.Select"
 					}
